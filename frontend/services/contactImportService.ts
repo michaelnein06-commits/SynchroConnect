@@ -75,8 +75,16 @@ export function formatContactForCRM(importedContact: ImportedContact) {
   return {
     name: importedContact.name,
     job: importedContact.jobTitle || importedContact.company || '',
+    phone: importedContact.phoneNumbers && importedContact.phoneNumbers.length > 0 ? importedContact.phoneNumbers[0] : '',
+    email: importedContact.emails && importedContact.emails.length > 0 ? importedContact.emails[0] : '',
+    birthday: importedContact.birthday || '',
+    profile_picture: importedContact.image?.uri || '',
+    device_contact_id: importedContact.id || '',
     tags: [],
+    groups: [],
     pipeline_stage: 'Monthly',
-    notes: `Imported from phone contacts${importedContact.phoneNumbers && importedContact.phoneNumbers.length > 0 ? ` - ${importedContact.phoneNumbers[0]}` : ''}`,
+    language: 'English',
+    tone: 'Casual',
+    notes: `Imported from phone contacts`,
   };
 }
