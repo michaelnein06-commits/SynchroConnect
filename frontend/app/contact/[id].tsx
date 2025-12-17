@@ -346,20 +346,22 @@ export default function ContactDetail() {
             <Text style={styles.label}>Birthday</Text>
             <TouchableOpacity
               style={styles.datePickerButton}
-              onPress={() => {
-                setShowDatePicker(true);
-                // For birthday, set a default past date if empty
-                if (!formData.birthday) {
-                  const defaultDate = new Date();
-                  defaultDate.setFullYear(defaultDate.getFullYear() - 30);
-                  setSelectedDate(defaultDate);
-                }
-              }}
+              onPress={() => setShowBirthdayPicker(true)}
             >
               <Ionicons name="calendar-outline" size={20} color={COLORS.textLight} style={{ marginRight: 12 }} />
               <Text style={[styles.datePickerText, !formData.birthday && styles.datePickerPlaceholder]}>
                 {formData.birthday || 'Select birthday'}
-              </Text>\n            </TouchableOpacity>
+              </Text>
+            </TouchableOpacity>
+            {showBirthdayPicker && (
+              <DateTimePicker
+                value={selectedBirthday}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleBirthdayChange}
+                maximumDate={new Date()}
+              />
+            )}
           </View>
 
           {/* Favorite Food */}
