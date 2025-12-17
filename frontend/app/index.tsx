@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useAuth } from '../context/AuthContext';
+import ContactImportPrompt from '../components/ContactImportPrompt';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
