@@ -416,4 +416,37 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     lineHeight: 18,
   },
+  accountInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  accountText: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  accountName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  accountEmail: {
+    fontSize: 14,
+    color: COLORS.textLight,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: COLORS.accent + '20',
+    gap: 8,
+  },
+  logoutButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.accent,
+  },
 });
