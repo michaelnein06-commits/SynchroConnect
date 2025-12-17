@@ -421,4 +421,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.accent,
   },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  datePickerText: {
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  datePickerPlaceholder: {
+    color: COLORS.textLight,
+  },
 });
