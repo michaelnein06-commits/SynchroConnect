@@ -34,10 +34,12 @@ interface Contact {
 
 export default function Index() {
   const router = useRouter();
+  const { user } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedStage, setSelectedStage] = useState('Monthly');
+  const [showImportPrompt, setShowImportPrompt] = useState(false);
 
   const fetchContacts = async () => {
     try {
