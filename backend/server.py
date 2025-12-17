@@ -53,10 +53,17 @@ class Contact(BaseModel):
     favorite_food: Optional[str] = None
     notes: Optional[str] = None
     tags: List[str] = []
+    groups: List[str] = []  # Groups like "University", "Work", "Tennis Club"
     pipeline_stage: str = "Monthly"  # Weekly, Bi-Weekly, Monthly, Quarterly, Annually
     last_contact_date: Optional[str] = None
     next_due: Optional[str] = None
     target_interval_days: int = 30
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    profile_picture: Optional[str] = None  # base64 image
+    language: Optional[str] = "English"  # Communication language
+    tone: Optional[str] = "Casual"  # Communication tone: Casual, Professional, Friendly
+    device_contact_id: Optional[str] = None  # ID from phone contacts for syncing
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
