@@ -477,6 +477,21 @@ async def mark_draft_sent(draft_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# Groups Routes
+@api_router.get("/groups")
+async def get_groups():
+    """Get all unique groups from contacts"""
+    contacts = await db.contacts.find().to_list(1000)
+    groups_set = set()
+    for contact in contacts:
+        groups_set.update(contact.get('groups', []))
+    return {"groups": sorted(list(groups_set))}
+
+@api_router.post("/groups")
+async def create_group(group_name: str):
+    """Create a new group"""
+    return {"group": group_name, "message": "Group created"}
+
 # Settings Routes
 @api_router.get("/settings", response_model=Settings)
 async def get_settings():
