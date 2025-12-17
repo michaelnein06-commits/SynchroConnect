@@ -357,4 +357,24 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     lineHeight: 18,
   },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  settingInfo: {
+    flex: 1,
+    marginRight: 16,
+  },
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  settingDescription: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    lineHeight: 18,
+  },
 });
