@@ -36,6 +36,16 @@ export default function ImportContacts() {
   const [importStats, setImportStats] = useState({ total: 0, success: 0, failed: 0 });
 
   const handleImportFromPhone = async () => {
+    // Check if running on web
+    if (Platform.OS === 'web') {
+      Alert.alert(
+        'Not Available on Web',
+        'Contact import from phone is only available on iOS and Android devices. Please use the Expo Go app on your phone to test this feature.',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+      return;
+    }
+
     setImporting(true);
     try {
       const contacts = await importPhoneContacts();
