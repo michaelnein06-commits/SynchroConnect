@@ -75,8 +75,15 @@ class ContactUpdate(BaseModel):
     favorite_food: Optional[str] = None
     notes: Optional[str] = None
     tags: Optional[List[str]] = None
+    groups: Optional[List[str]] = None
     pipeline_stage: Optional[str] = None
     last_contact_date: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    profile_picture: Optional[str] = None
+    language: Optional[str] = None
+    tone: Optional[str] = None
+    device_contact_id: Optional[str] = None
 
 class MovePipelineRequest(BaseModel):
     pipeline_stage: str
