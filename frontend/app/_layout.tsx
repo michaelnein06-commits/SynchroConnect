@@ -12,14 +12,13 @@ function RootLayoutNav() {
     if (loading) return;
 
     const inAuthGroup = segments[0] === 'auth';
-    const inTabs = segments[0] === '(tabs)';
 
     if (!user && !inAuthGroup) {
       // Redirect to login if not authenticated
       router.replace('/auth/login');
     } else if (user && inAuthGroup) {
       // Redirect to main app if authenticated
-      router.replace('/(tabs)/pipeline');
+      router.replace('/');
     }
   }, [user, loading]);
 
