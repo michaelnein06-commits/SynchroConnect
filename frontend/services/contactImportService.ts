@@ -44,6 +44,9 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         Contacts.Fields.Emails,
         Contacts.Fields.Company,
         Contacts.Fields.JobTitle,
+        Contacts.Fields.Birthday,
+        Contacts.Fields.Image,
+        Contacts.Fields.ID,
       ],
     });
 
@@ -55,9 +58,12 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         emails: contact.emails?.map((e) => e.email || '') || [],
         company: contact.company,
         jobTitle: contact.jobTitle,
+        birthday: contact.birthday ? new Date(contact.birthday.year || 2000, (contact.birthday.month || 1) - 1, contact.birthday.day || 1).toLocaleDateString() : undefined,
+        image: contact.image,
+        id: contact.id,
       }));
 
-    console.log(`Imported ${importedContacts.length} contacts`);
+    console.log(`Imported ${importedContacts.length} contacts with full data`);
     return importedContacts;
   } catch (error) {
     console.error('Error importing contacts:', error);
