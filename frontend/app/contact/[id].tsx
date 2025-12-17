@@ -229,13 +229,24 @@ export default function ContactDetail() {
           {/* Last Met */}
           <View style={styles.formGroup}>
             <Text style={styles.label}>Last Met</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.last_met}
-              onChangeText={(text) => setFormData({ ...formData, last_met: text })}
-              placeholder="e.g., Coffee last Friday"
-              placeholderTextColor={COLORS.textLight}
-            />
+            <TouchableOpacity
+              style={styles.datePickerButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Ionicons name="calendar-outline" size={20} color={COLORS.textLight} style={{ marginRight: 12 }} />
+              <Text style={[styles.datePickerText, !formData.last_met && styles.datePickerPlaceholder]}>
+                {formData.last_met || 'Select date'}
+              </Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleDateChange}
+                maximumDate={new Date()}
+              />
+            )}
           </View>
 
           {/* Birthday */}
