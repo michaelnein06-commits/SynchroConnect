@@ -231,6 +231,25 @@ export default function Settings() {
             </View>
           </View>
 
+          {/* Account Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account</Text>
+            <View style={styles.card}>
+              <View style={styles.accountInfo}>
+                <Ionicons name="person-circle-outline" size={48} color={COLORS.primary} />
+                <View style={styles.accountText}>
+                  <Text style={styles.accountName}>{user?.name}</Text>
+                  <Text style={styles.accountEmail}>{user?.email}</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Ionicons name="log-out-outline" size={20} color={COLORS.accent} />
+                <Text style={styles.logoutButtonText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
