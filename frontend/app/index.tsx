@@ -247,6 +247,12 @@ export default function Index() {
         >
           <Ionicons name="add" size={32} color={COLORS.surface} />
         </TouchableOpacity>
+
+        {/* Contact Import Prompt */}
+        <ContactImportPrompt
+          visible={showImportPrompt}
+          onClose={() => setShowImportPrompt(false)}
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );
