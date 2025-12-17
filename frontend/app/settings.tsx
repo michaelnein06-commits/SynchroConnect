@@ -113,6 +113,36 @@ export default function Settings() {
             </View>
           </View>
 
+          {/* Notifications Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Notifications</Text>
+            <View style={styles.card}>
+              <View style={styles.settingRow}>
+                <View style={styles.settingInfo}>
+                  <Text style={styles.settingLabel}>Daily Morning Briefing</Text>
+                  <Text style={styles.settingDescription}>
+                    Get notified at 9 AM about contacts you should reach out to
+                  </Text>
+                </View>
+                <Switch
+                  value={notificationsEnabled}
+                  onValueChange={async (value) => {
+                    setNotificationsEnabled(value);
+                    if (value) {
+                      await scheduleDailyMorningBriefing(9, 0);
+                      Alert.alert('Enabled', 'Morning briefing notifications enabled at 9 AM');
+                    } else {
+                      await cancelAllNotifications();
+                      Alert.alert('Disabled', 'All notifications have been disabled');
+                    }
+                  }}
+                  trackColor={{ false: COLORS.textLight, true: COLORS.primary }}
+                  thumbColor={COLORS.surface}
+                />
+              </View>
+            </View>
+          </View>
+
           {/* Writing Style Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>AI Personalization</Text>
