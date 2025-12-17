@@ -7,6 +7,9 @@ export interface ImportedContact {
   emails?: string[];
   company?: string;
   jobTitle?: string;
+  birthday?: string;
+  image?: any;
+  id?: string;
 }
 
 export async function requestContactsPermission(): Promise<boolean> {
