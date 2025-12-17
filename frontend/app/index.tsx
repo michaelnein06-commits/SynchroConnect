@@ -170,6 +170,12 @@ export default function Index() {
           <View style={styles.headerActions}>
             <TouchableOpacity 
               style={styles.iconButton}
+              onPress={() => router.push('/import-contacts')}
+            >
+              <Ionicons name="download" size={24} color={COLORS.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.iconButton}
               onPress={() => router.push('/morning-briefing')}
             >
               <Ionicons name="sunny" size={24} color={COLORS.primary} />
