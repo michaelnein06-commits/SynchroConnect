@@ -223,6 +223,23 @@ export default function ContactDetail() {
         </View>
 
         <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+          {/* Profile Picture */}
+          <View style={styles.profilePictureSection}>
+            <TouchableOpacity style={styles.profilePictureButton} onPress={pickImage}>
+              {profileImage || formData.profile_picture ? (
+                <Image source={{ uri: profileImage || formData.profile_picture }} style={styles.profilePicture} />
+              ) : (
+                <View style={styles.profilePicturePlaceholder}>
+                  <Ionicons name="person" size={40} color={COLORS.textLight} />
+                </View>
+              )}
+              <View style={styles.editBadge}>
+                <Ionicons name="camera" size={16} color={COLORS.surface} />
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.profilePictureLabel}>Tap to change photo</Text>
+          </View>
+
           {/* Name */}
           <View style={styles.formGroup}>
             <Text style={styles.label}>Name *</Text>
@@ -232,6 +249,33 @@ export default function ContactDetail() {
               onChangeText={(text) => setFormData({ ...formData, name: text })}
               placeholder="John Doe"
               placeholderTextColor={COLORS.textLight}
+            />
+          </View>
+
+          {/* Phone */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Phone Number</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.phone}
+              onChangeText={(text) => setFormData({ ...formData, phone: text })}
+              placeholder="+1 234 567 8900"
+              placeholderTextColor={COLORS.textLight}
+              keyboardType="phone-pad"
+            />
+          </View>
+
+          {/* Email */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.email}
+              onChangeText={(text) => setFormData({ ...formData, email: text })}
+              placeholder="john@example.com"
+              placeholderTextColor={COLORS.textLight}
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
           </View>
 
