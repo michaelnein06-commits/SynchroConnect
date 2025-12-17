@@ -40,16 +40,25 @@ export default function ContactDetail() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showBirthdayPicker, setShowBirthdayPicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedBirthday, setSelectedBirthday] = useState(new Date(1990, 0, 1));
+  const [profileImage, setProfileImage] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     job: '',
+    phone: '',
+    email: '',
     birthday: '',
     last_met: '',
     favorite_food: '',
     notes: '',
     tags: '',
+    groups: '',
     pipeline_stage: 'Monthly',
+    language: 'English',
+    tone: 'Casual',
+    profile_picture: '',
   });
 
   const handleDateChange = (event: any, date?: Date) => {
