@@ -39,6 +39,8 @@ export default function ContactDetail() {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [formData, setFormData] = useState({
     name: '',
     job: '',
@@ -49,6 +51,14 @@ export default function ContactDetail() {
     tags: '',
     pipeline_stage: 'Monthly',
   });
+
+  const handleDateChange = (event: any, date?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios'); // Keep open on iOS
+    if (date) {
+      setSelectedDate(date);
+      setFormData({ ...formData, last_met: format(date, 'MMM dd, yyyy') });
+    }
+  };
 
   useEffect(() => {
     if (!isNew) {
