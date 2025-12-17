@@ -351,6 +351,15 @@ async def delete_contact(contact_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@api_router.delete("/contacts")
+async def delete_all_contacts():
+    """Delete all contacts - use with caution!"""
+    try:
+        result = await db.contacts.delete_many({})
+        return {"message": f"Deleted {result.deleted_count} contacts successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @api_router.post("/contacts/{contact_id}/move-pipeline")
 async def move_pipeline(contact_id: str, request: MovePipelineRequest):
     """Move contact to different pipeline stage and recalculate next_due"""
