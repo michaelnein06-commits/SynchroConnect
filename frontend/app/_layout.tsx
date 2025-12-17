@@ -12,19 +12,20 @@ function RootLayoutNav() {
     if (loading) return;
 
     const inAuthGroup = segments[0] === 'auth';
+    const inTabs = segments[0] === '(tabs)';
 
     if (!user && !inAuthGroup) {
       // Redirect to login if not authenticated
       router.replace('/auth/login');
     } else if (user && inAuthGroup) {
       // Redirect to main app if authenticated
-      router.replace('/');
+      router.replace('/(tabs)/pipeline');
     }
-  }, [user, loading, segments]);
+  }, [user, loading]);
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
         <ActivityIndicator size="large" color="#4F46E5" />
       </View>
     );
@@ -34,11 +35,9 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="auth/login" />
       <Stack.Screen name="auth/signup" />
-      <Stack.Screen name="index" />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="morning-briefing" />
       <Stack.Screen name="contact/[id]" />
-      <Stack.Screen name="drafts" />
-      <Stack.Screen name="settings" />
       <Stack.Screen name="import-contacts" />
     </Stack>
   );
