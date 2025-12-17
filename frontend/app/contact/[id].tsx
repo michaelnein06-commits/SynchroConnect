@@ -62,10 +62,34 @@ export default function ContactDetail() {
   });
 
   const handleDateChange = (event: any, date?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios'); // Keep open on iOS
+    setShowDatePicker(Platform.OS === 'ios');
     if (date) {
       setSelectedDate(date);
       setFormData({ ...formData, last_met: format(date, 'MMM dd, yyyy') });
+    }
+  };
+
+  const handleBirthdayChange = (event: any, date?: Date) => {
+    setShowBirthdayPicker(Platform.OS === 'ios');
+    if (date) {
+      setSelectedBirthday(date);
+      setFormData({ ...formData, birthday: format(date, 'MMM dd, yyyy') });
+    }
+  };
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setProfileImage(base64Image);
+      setFormData({ ...formData, profile_picture: base64Image });
     }
   };
 
