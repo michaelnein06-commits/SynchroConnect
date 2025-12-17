@@ -33,10 +33,29 @@ const COLORS = {
 
 export default function Settings() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [writingStyle, setWritingStyle] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/auth/login');
+          },
+        },
+      ]
+    );
+  };
 
   useEffect(() => {
     fetchSettings();
