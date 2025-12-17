@@ -388,6 +388,72 @@ export default function ContactDetail() {
             />
           </View>
 
+          {/* Groups */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Groups (comma-separated)</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.groups}
+              onChangeText={(text) => setFormData({ ...formData, groups: text })}
+              placeholder="e.g., University, Work, Tennis Club"
+              placeholderTextColor={COLORS.textLight}
+            />
+            <Text style={styles.hint}>Add to groups for easy organization</Text>
+          </View>
+
+          {/* Language */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Communication Language</Text>
+            <View style={styles.pickerContainer}>
+              {['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese'].map((lang) => (
+                <TouchableOpacity
+                  key={lang}
+                  style={[
+                    styles.pickerOption,
+                    formData.language === lang && styles.pickerOptionActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, language: lang })}
+                >
+                  <Text
+                    style={[
+                      styles.pickerOptionText,
+                      formData.language === lang && styles.pickerOptionTextActive,
+                    ]}
+                  >
+                    {lang}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Tone */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Communication Tone</Text>
+            <View style={styles.pickerContainer}>
+              {['Casual', 'Professional', 'Friendly', 'Formal'].map((tone) => (
+                <TouchableOpacity
+                  key={tone}
+                  style={[
+                    styles.pickerOption,
+                    formData.tone === tone && styles.pickerOptionActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, tone: tone })}
+                >
+                  <Text
+                    style={[
+                      styles.pickerOptionText,
+                      formData.tone === tone && styles.pickerOptionTextActive,
+                    ]}
+                  >
+                    {tone}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.hint}>AI will use this tone when generating drafts</Text>
+          </View>
+
           {/* Notes */}
           <View style={styles.formGroup}>
             <Text style={styles.label}>Notes</Text>
