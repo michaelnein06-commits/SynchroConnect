@@ -50,39 +50,9 @@ export default function Index() {
     }
   };
 
-  const notificationListener = useRef<any>();
-  const responseListener = useRef<any>();
-
   useEffect(() => {
     fetchContacts();
-    initializeNotifications();
-
-    return () => {
-      // Properly remove notification subscriptions
-      if (notificationListener.current && typeof notificationListener.current.remove === 'function') {
-        notificationListener.current.remove();
-      }
-      if (responseListener.current && typeof responseListener.current.remove === 'function') {
-        responseListener.current.remove();
-      }
-    };
   }, []);
-
-  const initializeNotifications = async () => {
-    // Register for push notifications
-    await registerForPushNotifications();
-    
-    // Schedule daily morning briefing
-    await scheduleDailyMorningBriefing(9, 0);
-
-    // Listen for notification taps
-    responseListener.current = setupNotificationResponseListener((response: any) => {
-      const screen = response.notification.request.content.data?.screen;
-      if (screen === 'morning-briefing') {
-        router.push('/morning-briefing');
-      }
-    });
-  };
 
   const onRefresh = () => {
     setRefreshing(true);
