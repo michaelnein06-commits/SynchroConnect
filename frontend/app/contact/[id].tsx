@@ -145,6 +145,10 @@ export default function ContactDetail() {
           .split(',')
           .map((t) => t.trim())
           .filter((t) => t),
+        groups: formData.groups
+          .split(',')
+          .map((g) => g.trim())
+          .filter((g) => g),
       };
 
       if (isNew) {
