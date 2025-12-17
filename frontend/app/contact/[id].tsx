@@ -541,4 +541,43 @@ const styles = StyleSheet.create({
   datePickerPlaceholder: {
     color: COLORS.textLight,
   },
+  profilePictureSection: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  profilePictureButton: {
+    position: 'relative',
+    marginBottom: 8,
+  },
+  profilePicture: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  profilePicturePlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: COLORS.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.surface,
+  },
+  profilePictureLabel: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    textAlign: 'center',
+  },
 });
