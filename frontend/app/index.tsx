@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import ContactImportPrompt from '../components/ContactImportPrompt';
+import * as ImagePicker from 'expo-image-picker';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -17,11 +18,12 @@ const COLORS = {
   text: '#1E293B',
   textLight: '#64748B',
   border: '#E2E8F0',
+  success: '#10B981',
 };
 
 const PIPELINE_STAGES = ['Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually'];
 
-type Tab = 'pipeline' | 'contacts' | 'drafts' | 'profile';
+type Tab = 'pipeline' | 'contacts' | 'groups' | 'drafts' | 'profile';
 
 interface Contact {
   id: string;
@@ -30,6 +32,12 @@ interface Contact {
   pipeline_stage: string;
   next_due?: string;
   notes?: string;
+  profile_picture?: string;
+  groups?: string[];
+  phone?: string;
+  email?: string;
+  language?: string;
+  tone?: string;
 }
 
 interface Draft {
@@ -46,11 +54,14 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState<Tab>('pipeline');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [groups, setGroups] = useState<string[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedStage, setSelectedStage] = useState('Monthly');
   const [showImportPrompt, setShowImportPrompt] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [newGroupName, setNewGroupName] = useState('');
 
   const fetchContacts = async () => {
     try {
@@ -74,9 +85,19 @@ export default function Index() {
     }
   };
 
+  const fetchGroups = async () => {
+    try {
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/groups`);
+      setGroups(response.data.groups || []);
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+    }
+  };
+
   useEffect(() => {
     fetchContacts();
     fetchDrafts();
+    fetchGroups();
     
     if (user && !user.has_imported_contacts) {
       setTimeout(() => setShowImportPrompt(true), 1000);
@@ -87,6 +108,30 @@ export default function Index() {
     setRefreshing(true);
     fetchContacts();
     fetchDrafts();
+    fetchGroups();
+  };
+
+  const handleDeleteAllContacts = () => {
+    Alert.alert(
+      'Delete All Contacts',
+      'Are you sure you want to delete ALL contacts? This cannot be undone!',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete All',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts`);
+              Alert.alert('Success', 'All contacts deleted');
+              fetchContacts();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete contacts');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleLogout = () => {
@@ -101,6 +146,18 @@ export default function Index() {
         },
       },
     ]);
+  };
+
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) return;
+    try {
+      await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/groups?group_name=${newGroupName.trim()}`);
+      setNewGroupName('');
+      fetchGroups();
+      Alert.alert('Success', `Group "${newGroupName}" created!`);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create group');
+    }
   };
 
   const getDaysUntilDue = (nextDue?: string) => {
@@ -126,6 +183,53 @@ export default function Index() {
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (c.job && c.job.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const renderContactCard = (contact: Contact, showDraftButton = true) => {
+    const daysUntil = getDaysUntilDue(contact.next_due);
+    const isOverdue = daysUntil !== null && daysUntil < 0;
+
+    return (
+      <TouchableOpacity
+        key={contact.id}
+        style={[styles.contactCard, isOverdue && styles.contactCardOverdue]}
+        onPress={() => router.push(`/contact/${contact.id}`)}
+      >
+        <View style={styles.contactCardHeader}>
+          {contact.profile_picture ? (
+            <Image source={{ uri: contact.profile_picture }} style={styles.contactAvatar} />
+          ) : (
+            <View style={styles.contactAvatarPlaceholder}>
+              <Text style={styles.contactAvatarText}>{contact.name.charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={styles.contactName}>{contact.name}</Text>
+            {contact.job && <Text style={styles.contactJob}>{contact.job}</Text>}
+            {contact.phone && <Text style={styles.contactPhone}>{contact.phone}</Text>}
+            {activeTab === 'contacts' && <Text style={styles.contactStage}>{contact.pipeline_stage}</Text>}
+            {contact.groups && contact.groups.length > 0 && (
+              <Text style={styles.contactGroups}>{contact.groups.join(', ')}</Text>
+            )}
+          </View>
+          {showDraftButton && (
+            <TouchableOpacity
+              style={styles.draftButton}
+              onPress={() => generateDraft(contact.id, contact.name)}
+            >
+              <Ionicons name="sparkles" size={16} color={COLORS.primary} />
+            </TouchableOpacity>
+          )}
+        </View>
+        {daysUntil !== null && activeTab === 'pipeline' && (
+          <View style={styles.dueBadge}>
+            <Text style={styles.dueText}>
+              {isOverdue ? `${Math.abs(daysUntil)}d overdue` : `Due in ${daysUntil}d`}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const renderPipeline = () => {
     const stageContacts = filteredContacts.filter(c => c.pipeline_stage === selectedStage);
@@ -164,39 +268,7 @@ export default function Index() {
               <Text style={styles.emptyText}>No contacts in {selectedStage}</Text>
             </View>
           ) : (
-            stageContacts.map((contact) => {
-              const daysUntil = getDaysUntilDue(contact.next_due);
-              const isOverdue = daysUntil !== null && daysUntil < 0;
-
-              return (
-                <TouchableOpacity
-                  key={contact.id}
-                  style={[styles.contactCard, isOverdue && styles.contactCardOverdue]}
-                  onPress={() => router.push(`/contact/${contact.id}`)}
-                >
-                  <View style={styles.contactCardHeader}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.contactName}>{contact.name}</Text>
-                      {contact.job && <Text style={styles.contactJob}>{contact.job}</Text>}
-                    </View>
-                    <TouchableOpacity
-                      style={styles.draftButton}
-                      onPress={() => generateDraft(contact.id, contact.name)}
-                    >
-                      <Ionicons name="sparkles" size={16} color={COLORS.primary} />
-                      <Text style={styles.draftButtonText}>Draft</Text>
-                    </TouchableOpacity>
-                  </View>
-                  {daysUntil !== null && (
-                    <View style={styles.dueBadge}>
-                      <Text style={styles.dueText}>
-                        {isOverdue ? `${Math.abs(daysUntil)}d overdue` : `Due in ${daysUntil}d`}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })
+            stageContacts.map((contact) => renderContactCard(contact))
           )}
         </ScrollView>
       </>
@@ -205,28 +277,62 @@ export default function Index() {
 
   const renderContacts = () => (
     <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-      {filteredContacts.map((contact) => (
-        <TouchableOpacity
-          key={contact.id}
-          style={styles.contactCard}
-          onPress={() => router.push(`/contact/${contact.id}`)}
-        >
-          <View style={styles.contactCardHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.contactName}>{contact.name}</Text>
-              {contact.job && <Text style={styles.contactJob}>{contact.job}</Text>}
-              <Text style={styles.contactStage}>{contact.pipeline_stage}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.draftButton}
-              onPress={() => generateDraft(contact.id, contact.name)}
-            >
-              <Ionicons name="sparkles" size={16} color={COLORS.primary} />
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      ))}
+      {filteredContacts.map((contact) => renderContactCard(contact))}
     </ScrollView>
+  );
+
+  const renderGroups = () => (
+    <>
+      <View style={styles.groupsHeader}>
+        <TextInput
+          style={styles.groupInput}
+          placeholder="New group name..."
+          placeholderTextColor={COLORS.textLight}
+          value={newGroupName}
+          onChangeText={setNewGroupName}
+        />
+        <TouchableOpacity style={styles.addGroupButton} onPress={handleCreateGroup}>
+          <Ionicons name="add" size={24} color={COLORS.surface} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.groupSelector}
+        contentContainerStyle={styles.stageSelectorContent}
+      >
+        <TouchableOpacity
+          style={[styles.stageButton, !selectedGroup && styles.stageButtonActive]}
+          onPress={() => setSelectedGroup('')}
+        >
+          <Text style={[styles.stageButtonText, !selectedGroup && styles.stageButtonTextActive]}>
+            All
+          </Text>
+        </TouchableOpacity>
+        {groups.map(group => {
+          const count = contacts.filter(c => c.groups?.includes(group)).length;
+          return (
+            <TouchableOpacity
+              key={group}
+              style={[styles.stageButton, selectedGroup === group && styles.stageButtonActive]}
+              onPress={() => setSelectedGroup(group)}
+            >
+              <Text style={[styles.stageButtonText, selectedGroup === group && styles.stageButtonTextActive]}>
+                {group}
+              </Text>
+              <View style={[styles.stageBadge, selectedGroup === group && styles.stageBadgeActive]}>
+                <Text style={styles.stageBadgeText}>{count}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        {(selectedGroup ? contacts.filter(c => c.groups?.includes(selectedGroup)) : contacts).map((contact) => renderContactCard(contact, false))}
+      </ScrollView>
+    </>
   );
 
   const renderDrafts = () => (
@@ -283,6 +389,11 @@ export default function Index() {
         <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
       </TouchableOpacity>
 
+      <TouchableOpacity style={[styles.menuItem, { backgroundColor: COLORS.accent + '20' }]} onPress={handleDeleteAllContacts}>
+        <Ionicons name="trash-outline" size={24} color={COLORS.accent} />
+        <Text style={[styles.menuText, { color: COLORS.accent }]}>Delete All Contacts</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={24} color={COLORS.accent} />
         <Text style={[styles.menuText, styles.logoutText]}>Logout</Text>
@@ -299,13 +410,14 @@ export default function Index() {
           <Text style={styles.headerSubtitle}>
             {activeTab === 'pipeline' && 'Organize by frequency'}
             {activeTab === 'contacts' && `${contacts.length} contacts`}
+            {activeTab === 'groups' && `${groups.length} groups`}
             {activeTab === 'drafts' && `${drafts.length} AI drafts`}
             {activeTab === 'profile' && 'Your profile'}
           </Text>
         </View>
       </View>
 
-      {/* Search Bar (for contacts and pipeline) */}
+      {/* Search Bar */}
       {(activeTab === 'contacts' || activeTab === 'pipeline') && (
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={COLORS.textLight} style={{ marginRight: 8 }} />
@@ -322,11 +434,12 @@ export default function Index() {
       {/* Content */}
       {activeTab === 'pipeline' && renderPipeline()}
       {activeTab === 'contacts' && renderContacts()}
+      {activeTab === 'groups' && renderGroups()}
       {activeTab === 'drafts' && renderDrafts()}
       {activeTab === 'profile' && renderProfile()}
 
       {/* FAB */}
-      {(activeTab === 'pipeline' || activeTab === 'contacts') && (
+      {(activeTab === 'pipeline' || activeTab === 'contacts' || activeTab === 'groups') && (
         <TouchableOpacity style={styles.fab} onPress={() => router.push('/contact/new')}>
           <Ionicons name="add" size={32} color={COLORS.surface} />
         </TouchableOpacity>
@@ -352,13 +465,22 @@ export default function Index() {
           <Text style={[styles.tabLabel, activeTab === 'contacts' && styles.tabLabelActive]}>Contacts</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('groups')}>
+          <Ionicons
+            name={activeTab === 'groups' ? 'albums' : 'albums-outline'}
+            size={24}
+            color={activeTab === 'groups' ? COLORS.primary : COLORS.textLight}
+          />
+          <Text style={[styles.tabLabel, activeTab === 'groups' && styles.tabLabelActive]}>Groups</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('drafts')}>
           <Ionicons
             name={activeTab === 'drafts' ? 'sparkles' : 'sparkles-outline'}
             size={24}
             color={activeTab === 'drafts' ? COLORS.primary : COLORS.textLight}
           />
-          <Text style={[styles.tabLabel, activeTab === 'drafts' && styles.tabLabelActive]}>AI Drafts</Text>
+          <Text style={[styles.tabLabel, activeTab === 'drafts' && styles.tabLabelActive]}>Drafts</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('profile')}>
@@ -481,7 +603,24 @@ const styles = StyleSheet.create({
   contactCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+  },
+  contactAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  contactAvatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contactAvatarText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.surface,
   },
   contactName: {
     fontSize: 18,
@@ -493,25 +632,29 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 2,
   },
+  contactPhone: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
   contactStage: {
     fontSize: 12,
     color: COLORS.primary,
     marginTop: 4,
     fontWeight: '600',
   },
-  draftButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary + '20',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  draftButtonText: {
+  contactGroups: {
     fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.primary,
+    color: COLORS.success,
+    marginTop: 4,
+  },
+  draftButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   dueBadge: {
     alignSelf: 'flex-start',
@@ -525,6 +668,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: COLORS.textLight,
+  },
+  groupsHeader: {
+    flexDirection: 'row',
+    padding: 16,
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    gap: 8,
+  },
+  groupInput: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  addGroupButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  groupSelector: {
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   draftCard: {
     backgroundColor: COLORS.surface,
@@ -665,7 +838,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   tabLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: COLORS.textLight,
     marginTop: 4,
