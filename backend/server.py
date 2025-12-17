@@ -162,9 +162,104 @@ Just write the message, no extra explanation."""
 
 # ============ API Routes ============
 
+from auth import hash_password, verify_password, create_access_token, get_current_user
+
+# Auth Models
+class UserSignup(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user: dict
+
 @api_router.get("/")
 async def root():
     return {"message": "SynchroConnectr API", "version": "1.0.0"}
+
+# Auth Routes
+@api_router.post("/auth/signup", response_model=Token)
+async def signup(user_data: UserSignup):
+    # Check if user exists
+    existing_user = await db.users.find_one({"email": user_data.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create user
+    hashed_password = hash_password(user_data.password)
+    user_dict = {
+        "email": user_data.email,
+        "name": user_data.name,
+        "password": hashed_password,
+        "created_at": datetime.utcnow().isoformat(),
+        "has_imported_contacts": False
+    }
+    
+    result = await db.users.insert_one(user_dict)
+    user_id = str(result.inserted_id)
+    
+    # Create token
+    access_token = create_access_token(data={"user_id": user_id, "email": user_data.email})
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {"id": user_id, "email": user_data.email, "name": user_data.name, "has_imported_contacts": False}
+    }
+
+@api_router.post("/auth/login", response_model=Token)
+async def login(user_data: UserLogin):
+    # Find user
+    user = await db.users.find_one({"email": user_data.email})
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Verify password
+    if not verify_password(user_data.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    user_id = str(user["_id"])
+    
+    # Create token
+    access_token = create_access_token(data={"user_id": user_id, "email": user["email"]})
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user_id,
+            "email": user["email"],
+            "name": user.get("name", ""),
+            "has_imported_contacts": user.get("has_imported_contacts", False)
+        }
+    }
+
+@api_router.get("/auth/me")
+async def get_me(current_user: dict = Depends(get_current_user)):
+    user = await db.users.find_one({"_id": ObjectId(current_user["user_id"])})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {
+        "id": str(user["_id"]),
+        "email": user["email"],
+        "name": user.get("name", ""),
+        "has_imported_contacts": user.get("has_imported_contacts", False)
+    }
+
+@api_router.put("/auth/update-import-status")
+async def update_import_status(current_user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"_id": ObjectId(current_user["user_id"])},
+        {"$set": {"has_imported_contacts": True}}
+    )
+    return {"message": "Import status updated"}
 
 # Contact Routes
 @api_router.post("/contacts", response_model=dict)
