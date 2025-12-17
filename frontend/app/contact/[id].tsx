@@ -107,13 +107,22 @@ export default function ContactDetail() {
       setFormData({
         name: contact.name || '',
         job: contact.job || '',
+        phone: contact.phone || '',
+        email: contact.email || '',
         birthday: contact.birthday || '',
         last_met: contact.last_met || '',
         favorite_food: contact.favorite_food || '',
         notes: contact.notes || '',
         tags: contact.tags?.join(', ') || '',
+        groups: contact.groups?.join(', ') || '',
         pipeline_stage: contact.pipeline_stage || 'Monthly',
+        language: contact.language || 'English',
+        tone: contact.tone || 'Casual',
+        profile_picture: contact.profile_picture || '',
       });
+      if (contact.profile_picture) {
+        setProfileImage(contact.profile_picture);
+      }
     } catch (error) {
       console.error('Error fetching contact:', error);
       Alert.alert('Error', 'Failed to load contact');
