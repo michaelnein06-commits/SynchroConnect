@@ -56,7 +56,14 @@ export default function Index() {
 
   useEffect(() => {
     fetchContacts();
-  }, []);
+    
+    // Show import prompt if user hasn't imported contacts yet
+    if (user && !user.has_imported_contacts) {
+      setTimeout(() => {
+        setShowImportPrompt(true);
+      }, 1000);
+    }
+  }, [user]);
 
   const onRefresh = () => {
     setRefreshing(true);
