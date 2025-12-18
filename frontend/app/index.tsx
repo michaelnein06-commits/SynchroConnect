@@ -64,7 +64,7 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState<Tab>('pipeline');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [groups, setGroups] = useState<string[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,6 +72,9 @@ export default function Index() {
   const [showImportPrompt, setShowImportPrompt] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [newGroupName, setNewGroupName] = useState('');
+  // Move modal state
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
   const fetchContacts = async () => {
     try {
