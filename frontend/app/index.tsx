@@ -162,15 +162,53 @@ export default function Index() {
     ]);
   };
 
-  const handleCreateGroup = async () => {
-    if (!newGroupName.trim()) return;
+  // Long press handler to show move modal
+  const handleLongPressContact = (contact: Contact) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSelectedContact(contact);
+    setShowMoveModal(true);
+  };
+
+  // Move contact to different pipeline stage
+  const moveContactToPipeline = async (stage: string) => {
+    if (!selectedContact) return;
     try {
-      await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/groups?group_name=${newGroupName.trim()}`);
-      setNewGroupName('');
-      fetchGroups();
-      Alert.alert('Success', `Group "${newGroupName}" created!`);
+      await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${selectedContact.id}/move-pipeline`, {
+        pipeline_stage: stage
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowMoveModal(false);
+      setSelectedContact(null);
+      fetchContacts();
     } catch (error) {
-      Alert.alert('Error', 'Failed to create group');
+      console.error('Error moving contact:', error);
+      Alert.alert('Error', 'Failed to move contact');
+    }
+  };
+
+  // Add or remove contact from group
+  const toggleContactGroup = async (groupName: string) => {
+    if (!selectedContact) return;
+    try {
+      const currentGroups = selectedContact.groups || [];
+      const isInGroup = currentGroups.includes(groupName);
+      const updatedGroups = isInGroup
+        ? currentGroups.filter(g => g !== groupName)
+        : [...currentGroups, groupName];
+      
+      await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${selectedContact.id}`, {
+        groups: updatedGroups
+      });
+      
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      // Update local state
+      setContacts(contacts.map(c => 
+        c.id === selectedContact.id ? { ...c, groups: updatedGroups } : c
+      ));
+      setSelectedContact({ ...selectedContact, groups: updatedGroups });
+    } catch (error) {
+      console.error('Error updating contact group:', error);
+      Alert.alert('Error', 'Failed to update group');
     }
   };
 
