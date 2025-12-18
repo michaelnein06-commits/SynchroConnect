@@ -11,7 +11,7 @@ import time
 import sys
 
 # Use the production URL from frontend/.env
-BASE_URL = "https://smart-crm-18.preview.emergentagent.com/api"
+BASE_URL = "https://relationcrm.preview.emergentagent.com/api"
 
 class SynchroConnectrTester:
     def __init__(self):
