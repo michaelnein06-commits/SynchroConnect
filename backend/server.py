@@ -486,20 +486,73 @@ async def mark_draft_sent(draft_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# Groups Routes
-@api_router.get("/groups")
-async def get_groups():
-    """Get all unique groups from contacts"""
-    contacts = await db.contacts.find().to_list(1000)
-    groups_set = set()
-    for contact in contacts:
-        groups_set.update(contact.get('groups', []))
-    return {"groups": sorted(list(groups_set))}
+# Group Model
+class Group(BaseModel):
+    name: str
+    description: Optional[str] = None
+    profile_picture: Optional[str] = None  # base64 image
+    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
-@api_router.post("/groups")
-async def create_group(group_name: str):
+class GroupUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    profile_picture: Optional[str] = None
+
+# Groups Routes
+@api_router.post("/groups", response_model=dict)
+async def create_group(group: Group):
     """Create a new group"""
-    return {"group": group_name, "message": "Group created"}
+    group_dict = group.dict()
+    result = await db.groups.insert_one(group_dict)
+    group_dict['id'] = str(result.inserted_id)
+    del group_dict['_id']
+    return group_dict
+
+@api_router.get("/groups", response_model=List[dict])
+async def get_groups():
+    """Get all groups"""
+    groups = await db.groups.find().to_list(1000)
+    return [serialize_doc(g) for g in groups]
+
+@api_router.get("/groups/{group_id}", response_model=dict)
+async def get_group(group_id: str):
+    try:
+        group = await db.groups.find_one({"_id": ObjectId(group_id)})
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+        return serialize_doc(group)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.put("/groups/{group_id}", response_model=dict)
+async def update_group(group_id: str, group_update: GroupUpdate):
+    try:
+        update_data = {k: v for k, v in group_update.dict().items() if v is not None}
+        update_data['updated_at'] = datetime.utcnow().isoformat()
+        
+        result = await db.groups.update_one(
+            {"_id": ObjectId(group_id)},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Group not found")
+        
+        updated_group = await db.groups.find_one({"_id": ObjectId(group_id)})
+        return serialize_doc(updated_group)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.delete("/groups/{group_id}")
+async def delete_group(group_id: str):
+    try:
+        result = await db.groups.delete_one({"_id": ObjectId(group_id)})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Group not found")
+        return {"message": "Group deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 # Settings Routes
 @api_router.get("/settings", response_model=Settings)
