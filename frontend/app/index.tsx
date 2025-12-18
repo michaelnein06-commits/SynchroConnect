@@ -281,59 +281,64 @@ export default function Index() {
     </ScrollView>
   );
 
-  const renderGroups = () => (
-    <>
-      <View style={styles.groupsHeader}>
-        <TextInput
-          style={styles.groupInput}
-          placeholder="New group name..."
-          placeholderTextColor={COLORS.textLight}
-          value={newGroupName}
-          onChangeText={setNewGroupName}
-        />
-        <TouchableOpacity style={styles.addGroupButton} onPress={handleCreateGroup}>
-          <Ionicons name="add" size={24} color={COLORS.surface} />
-        </TouchableOpacity>
-      </View>
+  const renderGroups = () => {
+    interface GroupData {
+      id: string;
+      name: string;
+      description?: string;
+      profile_picture?: string;
+    }
 
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.groupSelector}
-        contentContainerStyle={styles.stageSelectorContent}
-      >
-        <TouchableOpacity
-          style={[styles.stageButton, !selectedGroup && styles.stageButtonActive]}
-          onPress={() => setSelectedGroup('')}
-        >
-          <Text style={[styles.stageButtonText, !selectedGroup && styles.stageButtonTextActive]}>
-            All
-          </Text>
-        </TouchableOpacity>
-        {groups.map(group => {
-          const count = contacts.filter(c => c.groups?.includes(group)).length;
-          return (
-            <TouchableOpacity
-              key={group}
-              style={[styles.stageButton, selectedGroup === group && styles.stageButtonActive]}
-              onPress={() => setSelectedGroup(group)}
-            >
-              <Text style={[styles.stageButtonText, selectedGroup === group && styles.stageButtonTextActive]}>
-                {group}
-              </Text>
-              <View style={[styles.stageBadge, selectedGroup === group && styles.stageBadgeActive]}>
-                <Text style={styles.stageBadgeText}>{count}</Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+    const groupsData = groups as GroupData[];
 
+    return (
       <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-        {(selectedGroup ? contacts.filter(c => c.groups?.includes(selectedGroup)) : contacts).map((contact) => renderContactCard(contact, false))}
+        {groupsData.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="albums-outline" size={64} color={COLORS.textLight} />
+            <Text style={styles.emptyText}>No Groups Yet</Text>
+            <Text style={styles.emptySubtext}>Tap + to create your first group</Text>
+          </View>
+        ) : (
+          groupsData.map((group) => {
+            const groupContacts = contacts.filter(c => c.groups?.includes(group.name));
+            return (
+              <TouchableOpacity
+                key={group.id}
+                style={styles.groupCard}
+                onPress={() => router.push(`/group/${group.id}`)}
+              >
+                <View style={styles.groupCardHeader}>
+                  {group.profile_picture ? (
+                    <Image source={{ uri: group.profile_picture }} style={styles.groupAvatar} />
+                  ) : (
+                    <View style={styles.groupAvatarPlaceholder}>
+                      <Ionicons name="people" size={24} color={COLORS.primary} />
+                    </View>
+                  )}
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={styles.groupName}>{group.name}</Text>
+                    {group.description && (
+                      <Text style={styles.groupDescription} numberOfLines={1}>
+                        {group.description}
+                      </Text>
+                    )}
+                    <View style={styles.groupStats}>
+                      <Ionicons name="people-outline" size={14} color={COLORS.textLight} />
+                      <Text style={styles.groupContactCount}>
+                        {groupContacts.length} {groupContacts.length === 1 ? 'contact' : 'contacts'}
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
-    </>
-  );
+    );
+  };
 
   const renderDrafts = () => (
     <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
