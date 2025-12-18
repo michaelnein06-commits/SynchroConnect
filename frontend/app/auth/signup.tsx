@@ -49,7 +49,8 @@ export default function Signup() {
     setLoading(true);
     try {
       await signup(email, password, name);
-      // Navigation will be handled by _layout.tsx based on auth state
+      // Navigate to home after successful signup
+      router.replace('/');
     } catch (error: any) {
       Alert.alert('Signup Failed', error.message);
     } finally {
