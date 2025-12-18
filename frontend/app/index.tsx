@@ -336,25 +336,16 @@ export default function Index() {
   );
 
   const renderGroups = () => {
-    interface GroupData {
-      id: string;
-      name: string;
-      description?: string;
-      profile_picture?: string;
-    }
-
-    const groupsData = groups as GroupData[];
-
     return (
       <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-        {groupsData.length === 0 ? (
+        {groups.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="albums-outline" size={64} color={COLORS.textLight} />
             <Text style={styles.emptyText}>No Groups Yet</Text>
             <Text style={styles.emptySubtext}>Tap + to create your first group</Text>
           </View>
         ) : (
-          groupsData.map((group) => {
+          groups.map((group) => {
             const groupContacts = contacts.filter(c => c.groups?.includes(group.name));
             return (
               <TouchableOpacity
