@@ -285,18 +285,80 @@ export default function Index() {
     );
   };
 
-  const renderPipeline = () => {
-    const stageContacts = filteredContacts.filter(c => c.pipeline_stage === selectedStage);
+  // Handle drag end - move contact to new pipeline stage
+  const handleDragEnd = async (contact: Contact, newStage: string) => {
+    if (contact.pipeline_stage === newStage) return;
+    
+    try {
+      await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${contact.id}/move-pipeline`, {
+        pipeline_stage: newStage
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      fetchContacts();
+    } catch (error) {
+      console.error('Error moving contact:', error);
+      Alert.alert('Error', 'Failed to move contact');
+    }
+  };
+
+  // Draggable contact item for pipeline
+  const renderDraggableContact = ({ item, drag, isActive }: RenderItemParams<Contact>) => {
+    const daysUntil = getDaysUntilDue(item.next_due);
+    const isOverdue = daysUntil !== null && daysUntil < 0;
 
     return (
-      <>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.stageSelector}
-          contentContainerStyle={styles.stageSelectorContent}
+      <ScaleDecorator>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onLongPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            drag();
+          }}
+          onPress={() => router.push(`/contact/${item.id}`)}
+          delayLongPress={150}
+          style={[
+            styles.draggableContactCard,
+            isOverdue && styles.contactCardOverdue,
+            isActive && styles.draggableContactActive,
+          ]}
         >
-          {PIPELINE_STAGES.map(stage => {
+          <View style={styles.dragHandle}>
+            <Ionicons name="menu" size={16} color={COLORS.textLight} />
+          </View>
+          <View style={styles.contactInfo}>
+            {item.profile_picture ? (
+              <Image source={{ uri: item.profile_picture }} style={styles.contactAvatar} />
+            ) : (
+              <View style={styles.contactAvatarPlaceholder}>
+                <Ionicons name="person" size={18} color={COLORS.primary} />
+              </View>
+            )}
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.contactName} numberOfLines={1}>{item.name}</Text>
+              {item.job && <Text style={styles.contactJob} numberOfLines={1}>{item.job}</Text>}
+            </View>
+          </View>
+          {daysUntil !== null && (
+            <View style={[styles.dueBadgeSmall, isOverdue ? styles.overdueBadge : styles.upcomingBadge]}>
+              <Text style={styles.dueBadgeTextSmall}>
+                {isOverdue ? `${Math.abs(daysUntil)}d ago` : `${daysUntil}d`}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </ScaleDecorator>
+    );
+  };
+
+  const renderPipeline = () => {
+    const screenWidth = Dimensions.get('window').width;
+    const columnWidth = screenWidth * 0.75;
+
+    return (
+      <View style={styles.pipelineContainer}>
+        {/* Stage Tabs */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stageSelector}>
+          {PIPELINE_STAGES.map((stage) => {
             const count = contacts.filter(c => c.pipeline_stage === stage).length;
             return (
               <TouchableOpacity
@@ -315,17 +377,75 @@ export default function Index() {
           })}
         </ScrollView>
 
-        <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-          {stageContacts.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="people-outline" size={64} color={COLORS.textLight} />
-              <Text style={styles.emptyText}>No contacts in {selectedStage}</Text>
-            </View>
-          ) : (
-            stageContacts.map((contact) => renderContactCard(contact))
-          )}
+        {/* Kanban Board */}
+        <ScrollView 
+          horizontal 
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={styles.kanbanBoard}
+          contentContainerStyle={styles.kanbanContent}
+        >
+          {PIPELINE_STAGES.map((stage) => {
+            const stageContacts = contacts.filter(c => c.pipeline_stage === stage);
+            return (
+              <View key={stage} style={[styles.kanbanColumn, { width: columnWidth }]}>
+                <View style={styles.columnHeader}>
+                  <Text style={styles.columnTitle}>{stage}</Text>
+                  <View style={styles.columnBadge}>
+                    <Text style={styles.columnBadgeText}>{stageContacts.length}</Text>
+                  </View>
+                </View>
+                
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <DraggableFlatList
+                    data={stageContacts}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderDraggableContact}
+                    onDragEnd={({ data }) => {
+                      // Reorder within same column - just update local state
+                      const otherContacts = contacts.filter(c => c.pipeline_stage !== stage);
+                      setContacts([...otherContacts, ...data]);
+                    }}
+                    ListEmptyComponent={
+                      <View style={styles.emptyColumn}>
+                        <Ionicons name="people-outline" size={32} color={COLORS.textLight} />
+                        <Text style={styles.emptyColumnText}>No contacts</Text>
+                        <Text style={styles.emptyColumnHint}>Long press to drag</Text>
+                      </View>
+                    }
+                    refreshControl={
+                      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    }
+                  />
+                </GestureHandlerRootView>
+
+                {/* Drop zone indicators for moving between stages */}
+                <View style={styles.dropZoneContainer}>
+                  {PIPELINE_STAGES.filter(s => s !== stage).map((targetStage) => (
+                    <TouchableOpacity
+                      key={targetStage}
+                      style={styles.dropZoneButton}
+                      onPress={() => {
+                        if (selectedContact) {
+                          handleDragEnd(selectedContact, targetStage);
+                        }
+                      }}
+                    >
+                      <Text style={styles.dropZoneText}>→ {targetStage}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            );
+          })}
         </ScrollView>
-      </>
+
+        {/* Quick Move Hint */}
+        <View style={styles.hintBar}>
+          <Ionicons name="hand-left-outline" size={16} color={COLORS.textLight} />
+          <Text style={styles.hintText}>Long press contact to drag, tap to edit</Text>
+        </View>
+      </View>
     );
   };
 
