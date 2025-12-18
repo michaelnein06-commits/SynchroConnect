@@ -549,6 +549,90 @@ export default function Index() {
       </View>
 
       <ContactImportPrompt visible={showImportPrompt} onClose={() => setShowImportPrompt(false)} />
+
+      {/* Move Contact Modal */}
+      <Modal
+        visible={showMoveModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMoveModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowMoveModal(false)}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+            
+            {selectedContact && (
+              <>
+                <Text style={styles.modalTitle}>Move "{selectedContact.name}"</Text>
+                
+                {/* Pipeline Stages */}
+                <Text style={styles.modalSectionTitle}>Pipeline Stage</Text>
+                <View style={styles.modalSection}>
+                  {PIPELINE_STAGES.map((stage) => {
+                    const isCurrentStage = selectedContact.pipeline_stage === stage;
+                    return (
+                      <TouchableOpacity
+                        key={stage}
+                        style={[styles.modalOption, isCurrentStage && styles.modalOptionActive]}
+                        onPress={() => moveContactToPipeline(stage)}
+                      >
+                        <View style={[styles.stageIndicator, isCurrentStage && styles.stageIndicatorActive]} />
+                        <Text style={[styles.modalOptionText, isCurrentStage && styles.modalOptionTextActive]}>
+                          {stage}
+                        </Text>
+                        {isCurrentStage && (
+                          <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {/* Groups */}
+                {groups.length > 0 && (
+                  <>
+                    <Text style={styles.modalSectionTitle}>Groups</Text>
+                    <View style={styles.modalSection}>
+                      {groups.map((group) => {
+                        const isInGroup = selectedContact.groups?.includes(group.name);
+                        return (
+                          <TouchableOpacity
+                            key={group.id}
+                            style={[styles.modalOption, isInGroup && styles.modalOptionActive]}
+                            onPress={() => toggleContactGroup(group.name)}
+                          >
+                            <View style={[styles.groupIndicator, isInGroup && styles.groupIndicatorActive]}>
+                              <Ionicons 
+                                name={isInGroup ? "checkmark" : "add"} 
+                                size={16} 
+                                color={isInGroup ? COLORS.surface : COLORS.textLight} 
+                              />
+                            </View>
+                            <Text style={[styles.modalOptionText, isInGroup && styles.modalOptionTextActive]}>
+                              {group.name}
+                            </Text>
+                            {isInGroup && (
+                              <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </>
+                )}
+
+                {/* Close Button */}
+                <TouchableOpacity 
+                  style={styles.modalCloseButton}
+                  onPress={() => setShowMoveModal(false)}
+                >
+                  <Text style={styles.modalCloseButtonText}>Done</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
