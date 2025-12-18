@@ -51,6 +51,13 @@ interface Draft {
   created_at: string;
 }
 
+interface Group {
+  id: string;
+  name: string;
+  description?: string;
+  profile_picture?: string;
+}
+
 export default function Index() {
   const router = useRouter();
   const { user, logout } = useAuth();
