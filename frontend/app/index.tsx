@@ -443,9 +443,14 @@ export default function Index() {
       {activeTab === 'drafts' && renderDrafts()}
       {activeTab === 'profile' && renderProfile()}
 
-      {/* FAB - Only in Contacts tab */}
+      {/* FAB - Contacts and Groups tabs */}
       {activeTab === 'contacts' && (
         <TouchableOpacity style={styles.fab} onPress={() => router.push('/contact/new')}>
+          <Ionicons name="add" size={32} color={COLORS.surface} />
+        </TouchableOpacity>
+      )}
+      {activeTab === 'groups' && (
+        <TouchableOpacity style={styles.fab} onPress={() => router.push('/group/new')}>
           <Ionicons name="add" size={32} color={COLORS.surface} />
         </TouchableOpacity>
       )}
