@@ -32,12 +32,15 @@ function RootLayoutNav() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
       <Stack.Screen name="auth/login" />
       <Stack.Screen name="auth/signup" />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="morning-briefing" />
       <Stack.Screen name="contact/[id]" />
+      <Stack.Screen name="group/[id]" />
       <Stack.Screen name="import-contacts" />
+      <Stack.Screen name="settings" />
+      <Stack.Screen name="drafts" />
     </Stack>
   );
 }
