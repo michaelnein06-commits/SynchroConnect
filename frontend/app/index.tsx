@@ -236,7 +236,7 @@ export default function Index() {
     (c.job && c.job.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const renderContactCard = (contact: Contact, showDraftButton = true) => {
+  const renderContactCard = (contact: Contact, showDraftButton = true, isDraggable = false) => {
     const daysUntil = getDaysUntilDue(contact.next_due);
     const isOverdue = daysUntil !== null && daysUntil < 0;
 
@@ -245,6 +245,8 @@ export default function Index() {
         key={contact.id}
         style={[styles.contactCard, isOverdue && styles.contactCardOverdue]}
         onPress={() => router.push(`/contact/${contact.id}`)}
+        onLongPress={() => handleLongPressContact(contact)}
+        delayLongPress={300}
       >
         <View style={styles.contactCardHeader}>
           {contact.profile_picture ? (
