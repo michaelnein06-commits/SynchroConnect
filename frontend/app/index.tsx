@@ -438,8 +438,8 @@ export default function Index() {
       {activeTab === 'drafts' && renderDrafts()}
       {activeTab === 'profile' && renderProfile()}
 
-      {/* FAB */}
-      {(activeTab === 'pipeline' || activeTab === 'contacts' || activeTab === 'groups') && (
+      {/* FAB - Only in Contacts tab */}
+      {activeTab === 'contacts' && (
         <TouchableOpacity style={styles.fab} onPress={() => router.push('/contact/new')}>
           <Ionicons name="add" size={32} color={COLORS.surface} />
         </TouchableOpacity>
