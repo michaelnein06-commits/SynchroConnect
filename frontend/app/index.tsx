@@ -88,7 +88,8 @@ export default function Index() {
   const fetchGroups = async () => {
     try {
       const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/groups`);
-      setGroups(response.data.groups || []);
+      // Backend returns array directly, not { groups: [...] }
+      setGroups(response.data || []);
     } catch (error) {
       console.error('Error fetching groups:', error);
     }
