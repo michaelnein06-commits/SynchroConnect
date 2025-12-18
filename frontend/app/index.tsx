@@ -856,4 +856,50 @@ const styles = StyleSheet.create({
   tabLabelActive: {
     color: COLORS.primary,
   },
+  groupCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  groupCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  groupAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  groupAvatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  groupName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  groupDescription: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  groupStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+  },
+  groupContactCount: {
+    fontSize: 12,
+    color: COLORS.textLight,
+  },
 });
