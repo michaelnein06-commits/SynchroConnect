@@ -43,7 +43,8 @@ export default function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      // Navigation will be handled by _layout.tsx based on auth state
+      // Navigate to home after successful login
+      router.replace('/');
     } catch (error: any) {
       Alert.alert('Login Failed', error.message);
     } finally {
