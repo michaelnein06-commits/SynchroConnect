@@ -21,6 +21,7 @@
     "date-fns": "^4.1.0",
     "expo": "^54.0.30",
     "expo-blur": "~14.1.5",
+    "expo-clipboard": "^8.0.8",
     "expo-constants": "~17.1.7",
     "expo-contacts": "^15.0.11",
     "expo-device": "^8.0.10",
