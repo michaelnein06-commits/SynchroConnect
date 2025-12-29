@@ -233,6 +233,43 @@ export default function GroupDetail() {
             </TouchableOpacity>
           )}
 
+          {/* Group Members */}
+          {!isNew && (
+            <View style={styles.membersSection}>
+              <Text style={styles.sectionTitle}>Group Members ({groupContacts.length})</Text>
+              {groupContacts.length === 0 ? (
+                <View style={styles.emptyMembers}>
+                  <Ionicons name="people-outline" size={40} color={COLORS.textLight} />
+                  <Text style={styles.emptyMembersText}>No contacts in this group yet</Text>
+                  <Text style={styles.emptyMembersHint}>Add contacts to this group from their profile</Text>
+                </View>
+              ) : (
+                groupContacts.map((contact) => (
+                  <TouchableOpacity
+                    key={contact.id}
+                    style={styles.memberCard}
+                    onPress={() => router.push(`/contact/${contact.id}`)}
+                  >
+                    {contact.profile_picture ? (
+                      <Image source={{ uri: contact.profile_picture }} style={styles.memberAvatar} />
+                    ) : (
+                      <View style={styles.memberAvatarPlaceholder}>
+                        <Ionicons name="person" size={20} color={COLORS.primary} />
+                      </View>
+                    )}
+                    <View style={styles.memberInfo}>
+                      <Text style={styles.memberName}>{contact.name}</Text>
+                      {contact.job && <Text style={styles.memberJob}>{contact.job}</Text>}
+                    </View>
+                    <View style={styles.memberBadge}>
+                      <Text style={styles.memberBadgeText}>{contact.pipeline_stage}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          )}
+
           <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
