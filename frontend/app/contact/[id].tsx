@@ -221,7 +221,7 @@ export default function ContactDetail() {
       const draft = response.data;
       setGeneratedDraft(draft.draft_message);
       setShowDraftModal(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      triggerHaptic('success');
     } catch (error: any) {
       console.error('Error generating draft:', error);
       Alert.alert('Error', error.response?.data?.detail || 'Failed to generate AI draft');
@@ -232,7 +232,7 @@ export default function ContactDetail() {
 
   const copyDraftToClipboard = async () => {
     await Clipboard.setStringAsync(generatedDraft);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    triggerHaptic('light');
     Alert.alert('Copied!', 'Draft message copied to clipboard');
   };
 
