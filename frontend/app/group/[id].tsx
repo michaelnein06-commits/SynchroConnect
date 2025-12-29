@@ -38,6 +38,7 @@ export default function GroupDetail() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [profileImage, setProfileImage] = useState('');
+  const [groupContacts, setGroupContacts] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -47,6 +48,7 @@ export default function GroupDetail() {
   useEffect(() => {
     if (!isNew) {
       fetchGroup();
+      fetchGroupContacts();
     }
   }, [id]);
 
@@ -67,6 +69,19 @@ export default function GroupDetail() {
       Alert.alert('Error', 'Failed to load group');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchGroupContacts = async () => {
+    try {
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts`);
+      // Filter contacts that belong to this group
+      const groupResponse = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/groups/${id}`);
+      const groupName = groupResponse.data.name;
+      const contacts = response.data.filter((c: any) => c.groups?.includes(groupName));
+      setGroupContacts(contacts);
+    } catch (error) {
+      console.error('Error fetching group contacts:', error);
     }
   };
 
