@@ -506,8 +506,81 @@ export default function ContactDetail() {
             </TouchableOpacity>
           )}
 
+          {/* AI Draft Generation Button */}
+          {!isNew && (
+            <TouchableOpacity 
+              style={styles.aiDraftButton} 
+              onPress={generateAIDraft}
+              disabled={generatingDraft}
+            >
+              {generatingDraft ? (
+                <ActivityIndicator color={COLORS.surface} />
+              ) : (
+                <>
+                  <Ionicons name="sparkles" size={20} color={COLORS.surface} />
+                  <Text style={styles.aiDraftButtonText}>Generate AI Message</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+
           <View style={{ height: 40 }} />
         </ScrollView>
+
+        {/* AI Draft Modal */}
+        <Modal
+          visible={showDraftModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowDraftModal(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setShowDraftModal(false)}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHandle} />
+              
+              <View style={styles.modalHeader}>
+                <Ionicons name="sparkles" size={24} color={COLORS.primary} />
+                <Text style={styles.modalTitle}>AI Generated Message</Text>
+              </View>
+              
+              <Text style={styles.modalSubtitle}>
+                Personalized message for {formData.name}
+              </Text>
+              
+              <View style={styles.draftContainer}>
+                <Text style={styles.draftText}>{generatedDraft}</Text>
+              </View>
+              
+              <View style={styles.modalActions}>
+                <TouchableOpacity 
+                  style={styles.copyButton}
+                  onPress={copyDraftToClipboard}
+                >
+                  <Ionicons name="copy-outline" size={20} color={COLORS.primary} />
+                  <Text style={styles.copyButtonText}>Copy to Clipboard</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.regenerateButton}
+                  onPress={() => {
+                    setShowDraftModal(false);
+                    generateAIDraft();
+                  }}
+                >
+                  <Ionicons name="refresh" size={20} color={COLORS.textLight} />
+                  <Text style={styles.regenerateButtonText}>Regenerate</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.closeModalButton}
+                onPress={() => setShowDraftModal(false)}
+              >
+                <Text style={styles.closeModalButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
