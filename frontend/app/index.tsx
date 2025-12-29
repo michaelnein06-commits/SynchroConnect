@@ -306,7 +306,7 @@ export default function Index() {
       await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${contact.id}/move-pipeline`, {
         pipeline_stage: newStage
       });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      triggerHaptic('success');
       fetchContacts();
     } catch (error) {
       console.error('Error moving contact:', error);
