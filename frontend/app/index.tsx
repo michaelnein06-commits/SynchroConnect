@@ -416,54 +416,6 @@ export default function Index() {
       </View>
     );
   };
-                    renderItem={renderDraggableContact}
-                    onDragEnd={({ data }) => {
-                      // Reorder within same column - just update local state
-                      const otherContacts = contacts.filter(c => c.pipeline_stage !== stage);
-                      setContacts([...otherContacts, ...data]);
-                    }}
-                    ListEmptyComponent={
-                      <View style={styles.emptyColumn}>
-                        <Ionicons name="people-outline" size={32} color={COLORS.textLight} />
-                        <Text style={styles.emptyColumnText}>No contacts</Text>
-                        <Text style={styles.emptyColumnHint}>Long press to drag</Text>
-                      </View>
-                    }
-                    refreshControl={
-                      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                    }
-                  />
-                </GestureHandlerRootView>
-
-                {/* Drop zone indicators for moving between stages */}
-                <View style={styles.dropZoneContainer}>
-                  {PIPELINE_STAGES.filter(s => s !== stage).map((targetStage) => (
-                    <TouchableOpacity
-                      key={targetStage}
-                      style={styles.dropZoneButton}
-                      onPress={() => {
-                        if (selectedContact) {
-                          handleDragEnd(selectedContact, targetStage);
-                        }
-                      }}
-                    >
-                      <Text style={styles.dropZoneText}>→ {targetStage}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            );
-          })}
-        </ScrollView>
-
-        {/* Quick Move Hint */}
-        <View style={styles.hintBar}>
-          <Ionicons name="hand-left-outline" size={16} color={COLORS.textLight} />
-          <Text style={styles.hintText}>Long press contact to drag, tap to edit</Text>
-        </View>
-      </View>
-    );
-  };
 
   const renderContacts = () => (
     <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
