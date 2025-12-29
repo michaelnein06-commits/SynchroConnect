@@ -299,58 +299,53 @@ export default function Index() {
     }
   };
 
-  // Draggable contact item for pipeline
-  const renderDraggableContact = ({ item, drag, isActive }: RenderItemParams<Contact>) => {
-    const daysUntil = getDaysUntilDue(item.next_due);
+  // Render a contact card for the pipeline
+  const renderPipelineContactCard = (contact: Contact) => {
+    const daysUntil = getDaysUntilDue(contact.next_due);
     const isOverdue = daysUntil !== null && daysUntil < 0;
 
     return (
-      <ScaleDecorator>
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onLongPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            drag();
-          }}
-          onPress={() => router.push(`/contact/${item.id}`)}
-          delayLongPress={150}
-          style={[
-            styles.draggableContactCard,
-            isOverdue && styles.contactCardOverdue,
-            isActive && styles.draggableContactActive,
-          ]}
-        >
-          <View style={styles.dragHandle}>
-            <Ionicons name="menu" size={16} color={COLORS.textLight} />
-          </View>
-          <View style={styles.contactInfo}>
-            {item.profile_picture ? (
-              <Image source={{ uri: item.profile_picture }} style={styles.contactAvatar} />
-            ) : (
-              <View style={styles.contactAvatarPlaceholder}>
-                <Ionicons name="person" size={18} color={COLORS.primary} />
-              </View>
-            )}
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.contactName} numberOfLines={1}>{item.name}</Text>
-              {item.job && <Text style={styles.contactJob} numberOfLines={1}>{item.job}</Text>}
-            </View>
-          </View>
-          {daysUntil !== null && (
-            <View style={[styles.dueBadgeSmall, isOverdue ? styles.overdueBadge : styles.upcomingBadge]}>
-              <Text style={styles.dueBadgeTextSmall}>
-                {isOverdue ? `${Math.abs(daysUntil)}d ago` : `${daysUntil}d`}
-              </Text>
+      <TouchableOpacity
+        key={contact.id}
+        activeOpacity={0.9}
+        onLongPress={() => handleLongPressContact(contact)}
+        onPress={() => router.push(`/contact/${contact.id}`)}
+        delayLongPress={200}
+        style={[
+          styles.draggableContactCard,
+          isOverdue && styles.contactCardOverdue,
+        ]}
+      >
+        <View style={styles.dragHandle}>
+          <Ionicons name="menu" size={16} color={COLORS.textLight} />
+        </View>
+        <View style={styles.contactInfo}>
+          {contact.profile_picture ? (
+            <Image source={{ uri: contact.profile_picture }} style={styles.contactAvatar} />
+          ) : (
+            <View style={styles.contactAvatarPlaceholder}>
+              <Ionicons name="person" size={18} color={COLORS.primary} />
             </View>
           )}
-        </TouchableOpacity>
-      </ScaleDecorator>
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.contactName} numberOfLines={1}>{contact.name}</Text>
+            {contact.job && <Text style={styles.contactJob} numberOfLines={1}>{contact.job}</Text>}
+          </View>
+        </View>
+        {daysUntil !== null && (
+          <View style={[styles.dueBadgeSmall, isOverdue ? styles.overdueBadge : styles.upcomingBadge]}>
+            <Text style={styles.dueBadgeTextSmall}>
+              {isOverdue ? `${Math.abs(daysUntil)}d ago` : `${daysUntil}d`}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
     );
   };
 
   const renderPipeline = () => {
     const screenWidth = Dimensions.get('window').width;
-    const columnWidth = screenWidth * 0.75;
+    const columnWidth = screenWidth * 0.8;
 
     return (
       <View style={styles.pipelineContainer}>
@@ -394,10 +389,33 @@ export default function Index() {
                   </View>
                 </View>
                 
-                <GestureHandlerRootView style={{ flex: 1 }}>
-                  <DraggableFlatList
-                    data={stageContacts}
-                    keyExtractor={(item) => item.id}
+                <ScrollView 
+                  style={{ flex: 1 }}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {stageContacts.length === 0 ? (
+                    <View style={styles.emptyColumn}>
+                      <Ionicons name="people-outline" size={32} color={COLORS.textLight} />
+                      <Text style={styles.emptyColumnText}>No contacts</Text>
+                      <Text style={styles.emptyColumnHint}>Long press to move</Text>
+                    </View>
+                  ) : (
+                    stageContacts.map((contact) => renderPipelineContactCard(contact))
+                  )}
+                </ScrollView>
+              </View>
+            );
+          })}
+        </ScrollView>
+
+        {/* Quick Move Hint */}
+        <View style={styles.hintBar}>
+          <Ionicons name="hand-left-outline" size={16} color={COLORS.textLight} />
+          <Text style={styles.hintText}>Long press contact to move, tap to edit</Text>
+        </View>
+      </View>
+    );
+  };
                     renderItem={renderDraggableContact}
                     onDragEnd={({ data }) => {
                       // Reorder within same column - just update local state
