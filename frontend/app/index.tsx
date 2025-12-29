@@ -177,7 +177,7 @@ export default function Index() {
 
   // Long press handler to show move modal
   const handleLongPressContact = (contact: Contact) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    triggerHaptic('medium');
     setSelectedContact(contact);
     setShowMoveModal(true);
   };
@@ -189,7 +189,7 @@ export default function Index() {
       await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${selectedContact.id}/move-pipeline`, {
         pipeline_stage: stage
       });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      triggerHaptic('success');
       setShowMoveModal(false);
       setSelectedContact(null);
       fetchContacts();
@@ -213,7 +213,7 @@ export default function Index() {
         groups: updatedGroups
       });
       
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      triggerHaptic('light');
       // Update local state
       setContacts(contacts.map(c => 
         c.id === selectedContact.id ? { ...c, groups: updatedGroups } : c
