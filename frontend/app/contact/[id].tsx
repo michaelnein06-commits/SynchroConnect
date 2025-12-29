@@ -22,7 +22,22 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import * as ImagePicker from 'expo-image-picker';
 import * as Clipboard from 'expo-clipboard';
-import * as Haptics from 'expo-haptics';
+
+// Safe haptics wrapper
+const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => {
+  try {
+    const Haptics = await import('expo-haptics');
+    if (type === 'success') {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else if (type === 'medium') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } else {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  } catch (e) {
+    // Haptics not available
+  }
+};
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
