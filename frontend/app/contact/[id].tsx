@@ -41,6 +41,9 @@ export default function ContactDetail() {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [generatedDraft, setGeneratedDraft] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showBirthdayPicker, setShowBirthdayPicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
