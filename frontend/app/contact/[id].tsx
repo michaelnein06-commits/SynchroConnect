@@ -199,6 +199,28 @@ export default function ContactDetail() {
     );
   };
 
+  const generateAIDraft = async () => {
+    setGeneratingDraft(true);
+    try {
+      const response = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/drafts/generate/${id}`);
+      const draft = response.data;
+      setGeneratedDraft(draft.draft_message);
+      setShowDraftModal(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error: any) {
+      console.error('Error generating draft:', error);
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to generate AI draft');
+    } finally {
+      setGeneratingDraft(false);
+    }
+  };
+
+  const copyDraftToClipboard = async () => {
+    await Clipboard.setStringAsync(generatedDraft);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert('Copied!', 'Draft message copied to clipboard');
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
