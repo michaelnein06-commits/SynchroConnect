@@ -16,6 +16,7 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
+  loginWithGoogle: (accessToken: string, userData: User) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
   updateImportStatus: () => Promise<void>;
