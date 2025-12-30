@@ -120,6 +120,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithGoogle = async (accessToken: string, userData: User) => {
+    try {
+      // Store in state
+      setToken(accessToken);
+      setUser(userData);
+      
+      // Store in AsyncStorage
+      await AsyncStorage.setItem('auth_token', accessToken);
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      
+      // Set default auth header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
+    }
+  };
+
   const updateImportStatus = async () => {
     try {
       await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/auth/update-import-status`);
