@@ -287,6 +287,100 @@ async def login(user_data: UserLogin):
         }
     }
 
+class GoogleAuthRequest(BaseModel):
+    session_id: str
+
+@api_router.post("/auth/google", response_model=Token)
+async def google_auth(auth_data: GoogleAuthRequest):
+    """Sign in or sign up with Google"""
+    try:
+        # Exchange session_id for session data from Emergent Auth
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                EMERGENT_SESSION_API,
+                headers={"X-Session-ID": auth_data.session_id}
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=400, detail="Failed to validate Google session")
+            
+            session_data = response.json()
+        
+        google_email = session_data.get("email")
+        google_name = session_data.get("name", "")
+        google_picture = session_data.get("picture", "")
+        
+        if not google_email:
+            raise HTTPException(status_code=400, detail="Could not get email from Google")
+        
+        # Check if user exists
+        user = await db.users.find_one({"email": google_email})
+        
+        if user:
+            # User exists - log them in
+            user_id = str(user["_id"])
+            
+            # Update their Google info if needed
+            await db.users.update_one(
+                {"_id": user["_id"]},
+                {"$set": {
+                    "google_connected": True,
+                    "google_picture": google_picture,
+                    "name": user.get("name") or google_name  # Only update if not set
+                }}
+            )
+        else:
+            # New user - create account
+            user_dict = {
+                "email": google_email,
+                "name": google_name,
+                "google_connected": True,
+                "google_picture": google_picture,
+                "password": None,  # No password for Google users
+                "created_at": datetime.utcnow().isoformat(),
+                "has_imported_contacts": False
+            }
+            
+            result = await db.users.insert_one(user_dict)
+            user_id = str(result.inserted_id)
+        
+        # Store Google connection
+        google_connection = {
+            "user_id": user_id,
+            "google_email": google_email,
+            "google_name": google_name,
+            "google_picture": google_picture,
+            "session_token": session_data.get("session_token"),
+            "connected_at": datetime.utcnow().isoformat()
+        }
+        
+        await db.google_connections.update_one(
+            {"user_id": user_id},
+            {"$set": google_connection},
+            upsert=True
+        )
+        
+        # Create token
+        access_token = create_access_token(data={"user_id": user_id, "email": google_email})
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user_id,
+                "email": google_email,
+                "name": google_name,
+                "picture": google_picture,
+                "has_imported_contacts": False if not user else user.get("has_imported_contacts", False)
+            }
+        }
+        
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=500, detail=f"Network error: {str(e)}")
+    except Exception as e:
+        logging.error(f"Google auth error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
     user = await db.users.find_one({"_id": ObjectId(current_user["user_id"])})
