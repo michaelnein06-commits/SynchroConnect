@@ -1463,4 +1463,238 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textLight,
   },
+  // Fancy Pipeline Styles
+  pipelineHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: COLORS.surface,
+  },
+  pipelineTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  pipelineStats: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statItemOverdue: {
+    backgroundColor: COLORS.accent + '10',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: COLORS.textLight,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  stagePillsContainer: {
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  stagePillsContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
+    flexDirection: 'row',
+  },
+  stagePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 25,
+    backgroundColor: COLORS.surface,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    gap: 8,
+  },
+  stagePillDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  stagePillText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  stagePillTextActive: {
+    color: '#FFFFFF',
+  },
+  stagePillBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  stagePillBadgeActive: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  stagePillBadgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  stagePillBadgeTextActive: {
+    color: '#FFFFFF',
+  },
+  selectedStageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    gap: 10,
+  },
+  selectedStageDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  selectedStageTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  selectedStageCount: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginLeft: 'auto',
+  },
+  pipelineContactsList: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  pipelineCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  pipelineCardOverdue: {
+    backgroundColor: COLORS.accent + '08',
+    borderLeftColor: COLORS.accent,
+  },
+  pipelineCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pipelineAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  pipelineAvatarPlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pipelineAvatarText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  pipelineCardInfo: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  pipelineCardName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  pipelineCardJob: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  pipelineTagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  pipelineTag: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  pipelineTagText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  pipelineCardRight: {
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  pipelineDueBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 4,
+  },
+  pipelineDueOverdue: {
+    backgroundColor: COLORS.accent + '15',
+  },
+  pipelineDueOk: {
+    backgroundColor: COLORS.success + '15',
+  },
+  pipelineDueText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  pipelineDueTextOverdue: {
+    color: COLORS.accent,
+  },
+  pipelineDueTextOk: {
+    color: COLORS.success,
+  },
+  emptyPipeline: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyPipelineIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyPipelineTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  emptyPipelineHint: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    textAlign: 'center',
+  },
 });
