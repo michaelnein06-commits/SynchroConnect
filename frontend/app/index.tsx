@@ -27,12 +27,51 @@ const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 const COLORS = {
-  primary: '#4F46E5',
-  accent: '#FF6B6B',
-  background: '#F8FAFC',
+  primary: '#6366F1',
+  primaryDark: '#4F46E5',
+  primaryLight: '#A5B4FC',
+  accent: '#F43F5E',
+  accentLight: '#FDA4AF',
+  background: '#F1F5F9',
   surface: '#FFFFFF',
-  text: '#1E293B',
+  text: '#0F172A',
   textLight: '#64748B',
+  border: '#E2E8F0',
+  success: '#10B981',
+  successLight: '#D1FAE5',
+  warning: '#F59E0B',
+  warningLight: '#FEF3C7',
+  // Pipeline stage colors
+  weekly: '#8B5CF6',
+  biweekly: '#06B6D4',
+  monthly: '#10B981',
+  quarterly: '#F59E0B',
+  annually: '#EC4899',
+};
+
+// Get color for pipeline stage
+const getStageColor = (stage: string) => {
+  switch (stage) {
+    case 'Weekly': return COLORS.weekly;
+    case 'Bi-Weekly': return COLORS.biweekly;
+    case 'Monthly': return COLORS.monthly;
+    case 'Quarterly': return COLORS.quarterly;
+    case 'Annually': return COLORS.annually;
+    default: return COLORS.primary;
+  }
+};
+
+// Get gradient colors for stage
+const getStageGradient = (stage: string) => {
+  switch (stage) {
+    case 'Weekly': return ['#8B5CF6', '#A78BFA'];
+    case 'Bi-Weekly': return ['#06B6D4', '#22D3EE'];
+    case 'Monthly': return ['#10B981', '#34D399'];
+    case 'Quarterly': return ['#F59E0B', '#FBBF24'];
+    case 'Annually': return ['#EC4899', '#F472B6'];
+    default: return [COLORS.primary, COLORS.primaryLight];
+  }
+};
   border: '#E2E8F0',
   success: '#10B981',
 };
