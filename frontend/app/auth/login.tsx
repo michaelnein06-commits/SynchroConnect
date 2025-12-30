@@ -10,20 +10,25 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 
+const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const EMERGENT_AUTH_URL = 'https://auth.emergentagent.com';
+
 const COLORS = {
-  primary: '#4F46E5',
-  accent: '#FF6B6B',
-  background: '#F8FAFC',
+  primary: '#6366F1',
+  accent: '#F43F5E',
+  background: '#F1F5F9',
   surface: '#FFFFFF',
-  text: '#1E293B',
+  text: '#0F172A',
   textLight: '#64748B',
   border: '#E2E8F0',
+  google: '#4285F4',
 };
 
 export default function Login() {
@@ -32,6 +37,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
@@ -49,6 +55,27 @@ export default function Login() {
       Alert.alert('Login Failed', error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      // Construct callback URL to our app's callback page
+      const callbackUrl = `${EXPO_PUBLIC_BACKEND_URL?.replace('/api', '')}/auth/google-callback`;
+      const authUrl = `${EMERGENT_AUTH_URL}/?redirect=${encodeURIComponent(callbackUrl)}`;
+      
+      const supported = await Linking.canOpenURL(authUrl);
+      if (supported) {
+        await Linking.openURL(authUrl);
+      } else {
+        Alert.alert('Error', 'Cannot open Google sign-in');
+      }
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      Alert.alert('Error', 'Failed to start Google sign-in');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
