@@ -383,6 +383,92 @@ export default function Settings() {
             </View>
           </View>
 
+          {/* Integrations Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Integrations</Text>
+            <View style={styles.card}>
+              {/* Google Integration */}
+              <View style={styles.integrationItem}>
+                <View style={[styles.integrationIcon, { backgroundColor: COLORS.google + '15' }]}>
+                  <Ionicons name="logo-google" size={24} color={COLORS.google} />
+                </View>
+                <View style={styles.integrationInfo}>
+                  <Text style={styles.integrationName}>Google</Text>
+                  {googleConnected ? (
+                    <Text style={styles.integrationStatus}>
+                      Connected as {googleEmail}
+                    </Text>
+                  ) : (
+                    <Text style={styles.integrationStatus}>
+                      Connect Gmail & Calendar
+                    </Text>
+                  )}
+                </View>
+                {googleConnected ? (
+                  <TouchableOpacity 
+                    style={styles.disconnectButton}
+                    onPress={handleDisconnectGoogle}
+                  >
+                    <Text style={styles.disconnectButtonText}>Disconnect</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity 
+                    style={[styles.connectButton, { backgroundColor: COLORS.google }]}
+                    onPress={handleConnectGoogle}
+                    disabled={connectingGoogle}
+                  >
+                    {connectingGoogle ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <Text style={styles.connectButtonText}>Connect</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Telegram Integration */}
+              <View style={[styles.integrationItem, { borderBottomWidth: 0 }]}>
+                <View style={[styles.integrationIcon, { backgroundColor: COLORS.telegram + '15' }]}>
+                  <Ionicons name="paper-plane" size={24} color={COLORS.telegram} />
+                </View>
+                <View style={styles.integrationInfo}>
+                  <Text style={styles.integrationName}>Telegram</Text>
+                  {telegramConnected ? (
+                    <Text style={styles.integrationStatus}>
+                      Connected {telegramUsername ? `@${telegramUsername}` : ''}
+                    </Text>
+                  ) : (
+                    <Text style={styles.integrationStatus}>
+                      Connect via Bot
+                    </Text>
+                  )}
+                </View>
+                {telegramConnected ? (
+                  <TouchableOpacity 
+                    style={styles.disconnectButton}
+                    onPress={handleDisconnectTelegram}
+                  >
+                    <Text style={styles.disconnectButtonText}>Disconnect</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity 
+                    style={[styles.connectButton, { backgroundColor: COLORS.telegram }]}
+                    onPress={handleConnectTelegram}
+                  >
+                    <Text style={styles.connectButtonText}>Connect</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.integrationHint}>
+              <Ionicons name="information-circle-outline" size={16} color={COLORS.textLight} />
+              <Text style={styles.integrationHintText}>
+                Connect your accounts to automatically track interactions and build richer contact profiles.
+              </Text>
+            </View>
+          </View>
+
           {/* Account Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
