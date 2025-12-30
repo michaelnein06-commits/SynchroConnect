@@ -100,6 +100,38 @@ class Settings(BaseModel):
     writing_style_sample: str = "Hey! How have you been? Just wanted to catch up and see what you've been up to lately."
     notification_time: str = "09:00"
 
+# ============ Integration Models ============
+class GoogleConnection(BaseModel):
+    user_id: str
+    google_email: str
+    google_name: str
+    google_picture: Optional[str] = None
+    access_token: str
+    refresh_token: Optional[str] = None
+    token_expiry: Optional[str] = None
+    scopes: List[str] = []
+    connected_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+
+class TelegramConnection(BaseModel):
+    user_id: str
+    telegram_chat_id: str
+    telegram_username: Optional[str] = None
+    telegram_first_name: Optional[str] = None
+    bot_token: Optional[str] = None  # User's own bot token if they want to use their own
+    connected_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+
+class TelegramWebhookUpdate(BaseModel):
+    update_id: int
+    message: Optional[dict] = None
+
+class GoogleOAuthCallback(BaseModel):
+    session_id: str
+
+class ConnectTelegramRequest(BaseModel):
+    chat_id: str
+    username: Optional[str] = None
+    first_name: Optional[str] = None
+
 # ============ Utility Functions ============
 def calculate_target_interval(pipeline_stage: str) -> int:
     """Convert pipeline stage to days"""
