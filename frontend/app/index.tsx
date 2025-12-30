@@ -353,120 +353,173 @@ export default function Index() {
     }
   };
 
-  // Render a contact card for the pipeline
-  const renderPipelineContactCard = (contact: Contact) => {
+  // Render a contact card for the pipeline with fancy styling
+  const renderPipelineContactCard = (contact: Contact, index: number) => {
     const daysUntil = getDaysUntilDue(contact.next_due);
     const isOverdue = daysUntil !== null && daysUntil < 0;
+    const stageColor = getStageColor(selectedStage);
 
     return (
       <TouchableOpacity
         key={contact.id}
-        activeOpacity={0.9}
+        activeOpacity={0.8}
         onLongPress={() => handleLongPressContact(contact)}
         onPress={() => router.push(`/contact/${contact.id}`)}
         delayLongPress={200}
         style={[
-          styles.draggableContactCard,
-          isOverdue && styles.contactCardOverdue,
+          styles.pipelineCard,
+          { borderLeftColor: stageColor },
+          isOverdue && styles.pipelineCardOverdue,
         ]}
       >
-        <View style={styles.dragHandle}>
-          <Ionicons name="menu" size={16} color={COLORS.textLight} />
-        </View>
-        <View style={styles.contactInfo}>
+        <View style={styles.pipelineCardContent}>
           {contact.profile_picture ? (
-            <Image source={{ uri: contact.profile_picture }} style={styles.contactAvatar} />
+            <Image source={{ uri: contact.profile_picture }} style={styles.pipelineAvatar} />
           ) : (
-            <View style={styles.contactAvatarPlaceholder}>
-              <Ionicons name="person" size={18} color={COLORS.primary} />
+            <View style={[styles.pipelineAvatarPlaceholder, { backgroundColor: stageColor + '20' }]}>
+              <Text style={[styles.pipelineAvatarText, { color: stageColor }]}>
+                {contact.name.charAt(0).toUpperCase()}
+              </Text>
             </View>
           )}
-          <View style={{ flex: 1, marginLeft: 10 }}>
-            <Text style={styles.contactName} numberOfLines={1}>{contact.name}</Text>
-            {contact.job && <Text style={styles.contactJob} numberOfLines={1}>{contact.job}</Text>}
+          <View style={styles.pipelineCardInfo}>
+            <Text style={styles.pipelineCardName} numberOfLines={1}>{contact.name}</Text>
+            {contact.job && (
+              <Text style={styles.pipelineCardJob} numberOfLines={1}>{contact.job}</Text>
+            )}
+            {contact.groups && contact.groups.length > 0 && (
+              <View style={styles.pipelineTagsRow}>
+                {contact.groups.slice(0, 2).map((group, idx) => (
+                  <View key={idx} style={[styles.pipelineTag, { backgroundColor: stageColor + '15' }]}>
+                    <Text style={[styles.pipelineTagText, { color: stageColor }]}>{group}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+          <View style={styles.pipelineCardRight}>
+            {daysUntil !== null && (
+              <View style={[
+                styles.pipelineDueBadge,
+                isOverdue ? styles.pipelineDueOverdue : styles.pipelineDueOk
+              ]}>
+                <Ionicons 
+                  name={isOverdue ? "alert-circle" : "time-outline"} 
+                  size={12} 
+                  color={isOverdue ? COLORS.accent : COLORS.success} 
+                />
+                <Text style={[
+                  styles.pipelineDueText,
+                  isOverdue ? styles.pipelineDueTextOverdue : styles.pipelineDueTextOk
+                ]}>
+                  {isOverdue ? `${Math.abs(daysUntil)}d` : `${daysUntil}d`}
+                </Text>
+              </View>
+            )}
+            <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
           </View>
         </View>
-        {daysUntil !== null && (
-          <View style={[styles.dueBadgeSmall, isOverdue ? styles.overdueBadge : styles.upcomingBadge]}>
-            <Text style={styles.dueBadgeTextSmall}>
-              {isOverdue ? `${Math.abs(daysUntil)}d ago` : `${daysUntil}d`}
-            </Text>
-          </View>
-        )}
       </TouchableOpacity>
     );
   };
 
   const renderPipeline = () => {
-    const screenWidth = Dimensions.get('window').width;
-    const columnWidth = screenWidth * 0.8;
+    const stageContacts = contacts.filter(c => c.pipeline_stage === selectedStage);
+    const stageColor = getStageColor(selectedStage);
+    const overdueCount = stageContacts.filter(c => {
+      const days = getDaysUntilDue(c.next_due);
+      return days !== null && days < 0;
+    }).length;
 
     return (
       <View style={styles.pipelineContainer}>
-        {/* Stage Tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stageSelector}>
+        {/* Fancy Stage Selector */}
+        <View style={styles.pipelineHeader}>
+          <Text style={styles.pipelineTitle}>Pipeline</Text>
+          <View style={styles.pipelineStats}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{contacts.length}</Text>
+              <Text style={styles.statLabel}>Total</Text>
+            </View>
+            {overdueCount > 0 && (
+              <View style={[styles.statItem, styles.statItemOverdue]}>
+                <Text style={[styles.statNumber, { color: COLORS.accent }]}>{overdueCount}</Text>
+                <Text style={styles.statLabel}>Overdue</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Stage Pills */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          style={styles.stagePillsContainer}
+          contentContainerStyle={styles.stagePillsContent}
+        >
           {PIPELINE_STAGES.map((stage) => {
             const count = contacts.filter(c => c.pipeline_stage === stage).length;
+            const isActive = selectedStage === stage;
+            const color = getStageColor(stage);
+            
             return (
               <TouchableOpacity
                 key={stage}
-                style={[styles.stageButton, selectedStage === stage && styles.stageButtonActive]}
+                style={[
+                  styles.stagePill,
+                  isActive && { backgroundColor: color, borderColor: color }
+                ]}
                 onPress={() => setSelectedStage(stage)}
               >
-                <Text style={[styles.stageButtonText, selectedStage === stage && styles.stageButtonTextActive]}>
+                <View style={[styles.stagePillDot, { backgroundColor: isActive ? '#fff' : color }]} />
+                <Text style={[
+                  styles.stagePillText,
+                  isActive && styles.stagePillTextActive
+                ]}>
                   {stage}
                 </Text>
-                <View style={[styles.stageBadge, selectedStage === stage && styles.stageBadgeActive]}>
-                  <Text style={styles.stageBadgeText}>{count}</Text>
+                <View style={[
+                  styles.stagePillBadge,
+                  isActive && styles.stagePillBadgeActive
+                ]}>
+                  <Text style={[
+                    styles.stagePillBadgeText,
+                    isActive && styles.stagePillBadgeTextActive
+                  ]}>{count}</Text>
                 </View>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        {/* Kanban Board */}
-        <ScrollView 
-          horizontal 
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          style={styles.kanbanBoard}
-          contentContainerStyle={styles.kanbanContent}
-        >
-          {PIPELINE_STAGES.map((stage) => {
-            const stageContacts = contacts.filter(c => c.pipeline_stage === stage);
-            return (
-              <View key={stage} style={[styles.kanbanColumn, { width: columnWidth }]}>
-                <View style={styles.columnHeader}>
-                  <Text style={styles.columnTitle}>{stage}</Text>
-                  <View style={styles.columnBadge}>
-                    <Text style={styles.columnBadgeText}>{stageContacts.length}</Text>
-                  </View>
-                </View>
-                
-                <ScrollView 
-                  style={{ flex: 1 }}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {stageContacts.length === 0 ? (
-                    <View style={styles.emptyColumn}>
-                      <Ionicons name="people-outline" size={32} color={COLORS.textLight} />
-                      <Text style={styles.emptyColumnText}>No contacts</Text>
-                      <Text style={styles.emptyColumnHint}>Long press to move</Text>
-                    </View>
-                  ) : (
-                    stageContacts.map((contact) => renderPipelineContactCard(contact))
-                  )}
-                </ScrollView>
-              </View>
-            );
-          })}
-        </ScrollView>
-
-        {/* Quick Move Hint */}
-        <View style={styles.hintBar}>
-          <Ionicons name="hand-left-outline" size={16} color={COLORS.textLight} />
-          <Text style={styles.hintText}>Long press contact to move, tap to edit</Text>
+        {/* Selected Stage Header */}
+        <View style={[styles.selectedStageHeader, { backgroundColor: stageColor + '10' }]}>
+          <View style={[styles.selectedStageDot, { backgroundColor: stageColor }]} />
+          <Text style={[styles.selectedStageTitle, { color: stageColor }]}>{selectedStage}</Text>
+          <Text style={styles.selectedStageCount}>{stageContacts.length} contacts</Text>
         </View>
+
+        {/* Contacts List */}
+        <ScrollView 
+          style={styles.pipelineContactsList}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        >
+          {stageContacts.length === 0 ? (
+            <View style={styles.emptyPipeline}>
+              <View style={[styles.emptyPipelineIcon, { backgroundColor: stageColor + '15' }]}>
+                <Ionicons name="people-outline" size={40} color={stageColor} />
+              </View>
+              <Text style={styles.emptyPipelineTitle}>No contacts in {selectedStage}</Text>
+              <Text style={styles.emptyPipelineHint}>
+                Long press any contact to move them here
+              </Text>
+            </View>
+          ) : (
+            stageContacts.map((contact, index) => renderPipelineContactCard(contact, index))
+          )}
+          <View style={{ height: 100 }} />
+        </ScrollView>
       </View>
     );
   };
