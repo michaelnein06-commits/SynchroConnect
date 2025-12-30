@@ -11,6 +11,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Switch,
+  Linking,
+  Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -18,26 +21,42 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { scheduleDailyMorningBriefing, cancelAllNotifications } from '../services/notificationService';
 import { useAuth } from '../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+const EMERGENT_AUTH_URL = 'https://auth.emergentagent.com';
 
 const COLORS = {
-  primary: '#4F46E5',
-  accent: '#FF6B6B',
-  background: '#F8FAFC',
+  primary: '#6366F1',
+  accent: '#F43F5E',
+  background: '#F1F5F9',
   surface: '#FFFFFF',
-  text: '#1E293B',
+  text: '#0F172A',
   textLight: '#64748B',
   border: '#E2E8F0',
+  success: '#10B981',
+  google: '#4285F4',
+  telegram: '#0088CC',
 };
 
 export default function Settings() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [writingStyle, setWritingStyle] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  
+  // Integration states
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [googleEmail, setGoogleEmail] = useState('');
+  const [googleName, setGoogleName] = useState('');
+  const [telegramConnected, setTelegramConnected] = useState(false);
+  const [telegramUsername, setTelegramUsername] = useState('');
+  const [showTelegramModal, setShowTelegramModal] = useState(false);
+  const [telegramChatId, setTelegramChatId] = useState('');
+  const [connectingGoogle, setConnectingGoogle] = useState(false);
+  const [connectingTelegram, setConnectingTelegram] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -59,6 +78,7 @@ export default function Settings() {
 
   useEffect(() => {
     fetchSettings();
+    fetchIntegrationStatus();
   }, []);
 
   const fetchSettings = async () => {
@@ -67,10 +87,142 @@ export default function Settings() {
       setWritingStyle(response.data.writing_style_sample || '');
     } catch (error) {
       console.error('Error fetching settings:', error);
-      Alert.alert('Error', 'Failed to load settings');
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchIntegrationStatus = async () => {
+    try {
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/integrations/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.google?.connected) {
+        setGoogleConnected(true);
+        setGoogleEmail(response.data.google.email || '');
+        setGoogleName(response.data.google.name || '');
+      }
+      
+      if (response.data.telegram?.connected) {
+        setTelegramConnected(true);
+        setTelegramUsername(response.data.telegram.username || '');
+      }
+    } catch (error) {
+      console.error('Error fetching integration status:', error);
+    }
+  };
+
+  const handleConnectGoogle = async () => {
+    setConnectingGoogle(true);
+    try {
+      // Get the auth URL
+      const redirectUrl = encodeURIComponent(`${EXPO_PUBLIC_BACKEND_URL}/api/integrations/google/callback-page`);
+      const authUrl = `${EMERGENT_AUTH_URL}/?redirect=${redirectUrl}`;
+      
+      // Open the auth URL in browser
+      const supported = await Linking.canOpenURL(authUrl);
+      if (supported) {
+        await Linking.openURL(authUrl);
+        // User will be redirected back after auth
+        // We'll need to handle the callback
+        Alert.alert(
+          'Google Sign In',
+          'After signing in with Google, come back to this app and tap "Verify Connection" to complete the setup.',
+          [
+            { text: 'OK' }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error connecting Google:', error);
+      Alert.alert('Error', 'Failed to open Google sign-in');
+    } finally {
+      setConnectingGoogle(false);
+    }
+  };
+
+  const handleDisconnectGoogle = async () => {
+    Alert.alert(
+      'Disconnect Google',
+      'Are you sure you want to disconnect your Google account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`${EXPO_PUBLIC_BACKEND_URL}/api/integrations/google/disconnect`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              setGoogleConnected(false);
+              setGoogleEmail('');
+              setGoogleName('');
+              Alert.alert('Success', 'Google account disconnected');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to disconnect Google');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleConnectTelegram = () => {
+    setShowTelegramModal(true);
+  };
+
+  const submitTelegramConnection = async () => {
+    if (!telegramChatId.trim()) {
+      Alert.alert('Error', 'Please enter your Telegram Chat ID');
+      return;
+    }
+    
+    setConnectingTelegram(true);
+    try {
+      await axios.post(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/integrations/telegram/connect`,
+        { chat_id: telegramChatId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setTelegramConnected(true);
+      setShowTelegramModal(false);
+      setTelegramChatId('');
+      Alert.alert('Success', 'Telegram connected successfully!');
+      fetchIntegrationStatus();
+    } catch (error) {
+      console.error('Error connecting Telegram:', error);
+      Alert.alert('Error', 'Failed to connect Telegram');
+    } finally {
+      setConnectingTelegram(false);
+    }
+  };
+
+  const handleDisconnectTelegram = async () => {
+    Alert.alert(
+      'Disconnect Telegram',
+      'Are you sure you want to disconnect your Telegram account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`${EXPO_PUBLIC_BACKEND_URL}/api/integrations/telegram/disconnect`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              setTelegramConnected(false);
+              setTelegramUsername('');
+              Alert.alert('Success', 'Telegram disconnected');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to disconnect Telegram');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleSave = async () => {
