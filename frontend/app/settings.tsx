@@ -490,6 +490,73 @@ export default function Settings() {
 
           <View style={{ height: 40 }} />
         </ScrollView>
+
+        {/* Telegram Setup Modal */}
+        <Modal
+          visible={showTelegramModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowTelegramModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Connect Telegram</Text>
+                <TouchableOpacity onPress={() => setShowTelegramModal(false)}>
+                  <Ionicons name="close" size={24} color={COLORS.text} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.telegramSteps}>
+                <Text style={styles.stepsTitle}>Follow these steps:</Text>
+                
+                <View style={styles.step}>
+                  <View style={styles.stepNumber}><Text style={styles.stepNumberText}>1</Text></View>
+                  <Text style={styles.stepText}>Open Telegram and search for @BotFather</Text>
+                </View>
+                
+                <View style={styles.step}>
+                  <View style={styles.stepNumber}><Text style={styles.stepNumberText}>2</Text></View>
+                  <Text style={styles.stepText}>Send /newbot and follow instructions to create your bot</Text>
+                </View>
+                
+                <View style={styles.step}>
+                  <View style={styles.stepNumber}><Text style={styles.stepNumberText}>3</Text></View>
+                  <Text style={styles.stepText}>Start a chat with your new bot and send any message</Text>
+                </View>
+                
+                <View style={styles.step}>
+                  <View style={styles.stepNumber}><Text style={styles.stepNumberText}>4</Text></View>
+                  <Text style={styles.stepText}>
+                    Visit: api.telegram.org/bot{'<YOUR_TOKEN>'}/getUpdates to find your chat_id
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.inputLabel}>Enter your Chat ID</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={telegramChatId}
+                onChangeText={setTelegramChatId}
+                placeholder="e.g., 123456789"
+                placeholderTextColor={COLORS.textLight}
+                keyboardType="numeric"
+              />
+
+              <TouchableOpacity 
+                style={[styles.modalButton, !telegramChatId.trim() && styles.modalButtonDisabled]}
+                onPress={submitTelegramConnection}
+                disabled={!telegramChatId.trim() || connectingTelegram}
+              >
+                {connectingTelegram ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.modalButtonText}>Connect Telegram</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
