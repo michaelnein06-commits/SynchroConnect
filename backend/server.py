@@ -610,6 +610,230 @@ async def update_settings(settings: Settings):
     )
     return settings
 
+# ============ Google OAuth Integration ============
+EMERGENT_AUTH_URL = "https://auth.emergentagent.com"
+EMERGENT_SESSION_API = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
+
+@api_router.get("/integrations/google/auth-url")
+async def get_google_auth_url(redirect_url: str):
+    """Get the Google OAuth URL for authentication"""
+    # The redirect_url should be your app's callback page
+    auth_url = f"{EMERGENT_AUTH_URL}/?redirect={redirect_url}"
+    return {"auth_url": auth_url}
+
+@api_router.post("/integrations/google/callback")
+async def google_oauth_callback(callback: GoogleOAuthCallback, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Process Google OAuth callback and store connection"""
+    try:
+        # Verify the user's JWT token
+        token = credentials.credentials
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get('user_id')
+        
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        # Exchange session_id for session data from Emergent Auth
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                EMERGENT_SESSION_API,
+                headers={"X-Session-ID": callback.session_id}
+            )
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=400, detail="Failed to validate Google session")
+            
+            session_data = response.json()
+        
+        # Store the Google connection
+        google_connection = {
+            "user_id": user_id,
+            "google_email": session_data.get("email"),
+            "google_name": session_data.get("name"),
+            "google_picture": session_data.get("picture"),
+            "session_token": session_data.get("session_token"),
+            "connected_at": datetime.utcnow().isoformat()
+        }
+        
+        # Upsert - update if exists, insert if not
+        await db.google_connections.update_one(
+            {"user_id": user_id},
+            {"$set": google_connection},
+            upsert=True
+        )
+        
+        return {
+            "status": "connected",
+            "email": session_data.get("email"),
+            "name": session_data.get("name"),
+            "picture": session_data.get("picture")
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/integrations/google/status")
+async def get_google_connection_status(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Check if user has connected their Google account"""
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get('user_id')
+        
+        connection = await db.google_connections.find_one({"user_id": user_id})
+        
+        if connection:
+            return {
+                "connected": True,
+                "email": connection.get("google_email"),
+                "name": connection.get("google_name"),
+                "picture": connection.get("google_picture"),
+                "connected_at": connection.get("connected_at")
+            }
+        return {"connected": False}
+        
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+@api_router.delete("/integrations/google/disconnect")
+async def disconnect_google(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Disconnect Google account"""
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get('user_id')
+        
+        await db.google_connections.delete_one({"user_id": user_id})
+        return {"status": "disconnected"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+# ============ Telegram Bot Integration ============
+# Users will create their own bot via @BotFather and provide the chat_id
+
+@api_router.post("/integrations/telegram/connect")
+async def connect_telegram(request: ConnectTelegramRequest, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Connect Telegram account by providing chat_id from the bot"""
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get('user_id')
+        
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        telegram_connection = {
+            "user_id": user_id,
+            "telegram_chat_id": request.chat_id,
+            "telegram_username": request.username,
+            "telegram_first_name": request.first_name,
+            "connected_at": datetime.utcnow().isoformat()
+        }
+        
+        await db.telegram_connections.update_one(
+            {"user_id": user_id},
+            {"$set": telegram_connection},
+            upsert=True
+        )
+        
+        return {
+            "status": "connected",
+            "chat_id": request.chat_id,
+            "username": request.username
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@api_router.get("/integrations/telegram/status")
+async def get_telegram_connection_status(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Check if user has connected their Telegram account"""
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get('user_id')
+        
+        connection = await db.telegram_connections.find_one({"user_id": user_id})
+        
+        if connection:
+            return {
+                "connected": True,
+                "chat_id": connection.get("telegram_chat_id"),
+                "username": connection.get("telegram_username"),
+                "first_name": connection.get("telegram_first_name"),
+                "connected_at": connection.get("connected_at")
+            }
+        return {"connected": False}
+        
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+@api_router.delete("/integrations/telegram/disconnect")
+async def disconnect_telegram(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Disconnect Telegram account"""
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get('user_id')
+        
+        await db.telegram_connections.delete_one({"user_id": user_id})
+        return {"status": "disconnected"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+@api_router.get("/integrations/telegram/bot-instructions")
+async def get_telegram_bot_instructions():
+    """Get instructions for setting up Telegram bot"""
+    return {
+        "steps": [
+            "1. Open Telegram and search for @BotFather",
+            "2. Send /newbot command",
+            "3. Follow the instructions to create your bot",
+            "4. Copy the bot token (you'll need this later)",
+            "5. Start a chat with your new bot",
+            "6. Send any message to the bot",
+            "7. Visit: https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates",
+            "8. Find your chat_id in the response",
+            "9. Enter the chat_id in the app to connect"
+        ],
+        "note": "Your chat_id is needed so the app can send you notifications via your bot"
+    }
+
+@api_router.get("/integrations/status")
+async def get_all_integrations_status(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get status of all integrations for the user"""
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get('user_id')
+        
+        google_conn = await db.google_connections.find_one({"user_id": user_id})
+        telegram_conn = await db.telegram_connections.find_one({"user_id": user_id})
+        
+        return {
+            "google": {
+                "connected": google_conn is not None,
+                "email": google_conn.get("google_email") if google_conn else None,
+                "name": google_conn.get("google_name") if google_conn else None
+            },
+            "telegram": {
+                "connected": telegram_conn is not None,
+                "username": telegram_conn.get("telegram_username") if telegram_conn else None,
+                "chat_id": telegram_conn.get("telegram_chat_id") if telegram_conn else None
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
 # Include the router in the main app
 app.include_router(api_router)
 
