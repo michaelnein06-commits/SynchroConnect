@@ -35,6 +35,7 @@ function RootLayoutNav() {
       <Stack.Screen name="index" />
       <Stack.Screen name="auth/login" />
       <Stack.Screen name="auth/signup" />
+      <Stack.Screen name="auth/google-callback" />
       <Stack.Screen name="morning-briefing" />
       <Stack.Screen name="contact/[id]" />
       <Stack.Screen name="group/[id]" />
