@@ -72,9 +72,6 @@ const getStageGradient = (stage: string) => {
     default: return [COLORS.primary, COLORS.primaryLight];
   }
 };
-  border: '#E2E8F0',
-  success: '#10B981',
-};
 
 const PIPELINE_STAGES = ['Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually'];
 
