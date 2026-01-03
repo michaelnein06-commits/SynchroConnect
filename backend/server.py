@@ -688,7 +688,7 @@ async def delete_interaction(interaction_id: str, current_user: dict = Depends(g
 # ============ Group Routes ============
 
 @api_router.post("/groups", response_model=dict)
-async def create_group(group: Group, current_user: dict = Depends(get_current_user)):
+async def create_group(group: GroupCreate, current_user: dict = Depends(get_current_user)):
     """Create a new group"""
     group_dict = group.dict()
     group_dict['user_id'] = current_user["user_id"]
