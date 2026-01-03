@@ -183,6 +183,12 @@ class InteractionCreate(BaseModel):
     notes: Optional[str] = None
 
 # --- Group Model ---
+class GroupCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    color: Optional[str] = "#6366F1"  # Default indigo color
+    profile_picture: Optional[str] = None
+
 class Group(BaseModel):
     user_id: str
     name: str
