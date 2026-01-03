@@ -161,10 +161,6 @@ export default function Index() {
     fetchContacts();
     fetchDrafts();
     fetchGroups();
-    
-    if (user && !user.has_imported_contacts) {
-      setTimeout(() => setShowImportPrompt(true), 1000);
-    }
   }, [user]);
 
   const onRefresh = () => {
