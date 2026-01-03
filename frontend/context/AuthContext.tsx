@@ -8,18 +8,18 @@ interface User {
   id: string;
   email: string;
   name: string;
-  has_imported_contacts: boolean;
+  picture?: string;
+  ui_language?: string;
+  default_draft_language?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
   loginWithGoogle: (accessToken: string, userData: User) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
-  updateImportStatus: () => Promise<void>;
+  updateUser: (userData: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,57 +49,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error loading stored auth:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/auth/login`, {
-        email,
-        password,
-      });
-
-      const { access_token, user: userData } = response.data;
-      
-      // Store in state
-      setToken(access_token);
-      setUser(userData);
-      
-      // Store in AsyncStorage
-      await AsyncStorage.setItem('auth_token', access_token);
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-      
-      // Set default auth header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-    } catch (error: any) {
-      console.error('Login error:', error);
-      throw new Error(error.response?.data?.detail || 'Login failed');
-    }
-  };
-
-  const signup = async (email: string, password: string, name: string) => {
-    try {
-      const response = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/auth/signup`, {
-        email,
-        password,
-        name,
-      });
-
-      const { access_token, user: userData } = response.data;
-      
-      // Store in state
-      setToken(access_token);
-      setUser(userData);
-      
-      // Store in AsyncStorage
-      await AsyncStorage.setItem('auth_token', access_token);
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-      
-      // Set default auth header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      throw new Error(error.response?.data?.detail || 'Signup failed');
     }
   };
 
@@ -138,22 +87,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateImportStatus = async () => {
+  const updateUser = async (userData: Partial<User>) => {
     try {
-      await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/auth/update-import-status`);
-      
       if (user) {
-        const updatedUser = { ...user, has_imported_contacts: true };
+        const updatedUser = { ...user, ...userData };
         setUser(updatedUser);
         await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
       }
     } catch (error) {
-      console.error('Error updating import status:', error);
+      console.error('Error updating user:', error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, signup, loginWithGoogle, logout, loading, updateImportStatus }}>
+    <AuthContext.Provider value={{ user, token, loginWithGoogle, logout, loading, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
