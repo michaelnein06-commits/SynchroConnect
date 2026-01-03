@@ -692,24 +692,15 @@ export default function Index() {
         </TouchableOpacity>
       )}
 
-      {/* Bottom Tab Bar */}
+      {/* Bottom Tab Bar - New order: Pipeline, Groups, Contacts, Drafts, Profile */}
       <View style={styles.tabBar}>
         <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('pipeline')}>
           <Ionicons
-            name={activeTab === 'pipeline' ? 'grid' : 'grid-outline'}
+            name={activeTab === 'pipeline' ? 'git-branch' : 'git-branch-outline'}
             size={24}
             color={activeTab === 'pipeline' ? COLORS.primary : COLORS.textLight}
           />
           <Text style={[styles.tabLabel, activeTab === 'pipeline' && styles.tabLabelActive]}>Pipeline</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('contacts')}>
-          <Ionicons
-            name={activeTab === 'contacts' ? 'people' : 'people-outline'}
-            size={24}
-            color={activeTab === 'contacts' ? COLORS.primary : COLORS.textLight}
-          />
-          <Text style={[styles.tabLabel, activeTab === 'contacts' && styles.tabLabelActive]}>Contacts</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('groups')}>
@@ -719,6 +710,15 @@ export default function Index() {
             color={activeTab === 'groups' ? COLORS.primary : COLORS.textLight}
           />
           <Text style={[styles.tabLabel, activeTab === 'groups' && styles.tabLabelActive]}>Groups</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('contacts')}>
+          <Ionicons
+            name={activeTab === 'contacts' ? 'people' : 'people-outline'}
+            size={24}
+            color={activeTab === 'contacts' ? COLORS.primary : COLORS.textLight}
+          />
+          <Text style={[styles.tabLabel, activeTab === 'contacts' && styles.tabLabelActive]}>Contacts</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('drafts')}>
