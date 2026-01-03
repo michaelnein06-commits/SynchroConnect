@@ -659,8 +659,8 @@ export default function Index() {
         </View>
       </View>
 
-      {/* Search Bar */}
-      {(activeTab === 'contacts' || activeTab === 'pipeline') && (
+      {/* Search Bar - Only in Contacts tab */}
+      {activeTab === 'contacts' && (
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={COLORS.textLight} style={{ marginRight: 8 }} />
           <TextInput
