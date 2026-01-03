@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 import time
 
-BASE_URL = "https://relationcrm.preview.emergentagent.com/api"
+BASE_URL = "https://synchnotes.preview.emergentagent.com/api"
 
 def test_draft_sent_functionality():
     session = requests.Session()
