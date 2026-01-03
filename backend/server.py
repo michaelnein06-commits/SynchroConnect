@@ -453,7 +453,7 @@ async def update_profile(profile_update: UserProfileUpdate, current_user: dict =
 # ============ Contact Routes ============
 
 @api_router.post("/contacts", response_model=dict)
-async def create_contact(contact: Contact, current_user: dict = Depends(get_current_user)):
+async def create_contact(contact: ContactCreate, current_user: dict = Depends(get_current_user)):
     contact_dict = contact.dict()
     contact_dict['user_id'] = current_user["user_id"]
     
