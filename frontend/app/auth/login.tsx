@@ -1,21 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   Alert,
-  ScrollView,
-  Linking,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+import axios from 'axios';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const EMERGENT_AUTH_URL = 'https://auth.emergentagent.com';
@@ -33,158 +32,152 @@ const COLORS = {
 
 export default function Login() {
   const router = useRouter();
-  const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { loginWithGoogle, user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.replace('/');
     }
+  }, [user]);
 
+  // Handle deep link callback
+  useEffect(() => {
+    const handleDeepLink = async (event: { url: string }) => {
+      const url = event.url;
+      if (url.includes('session_id=')) {
+        const sessionId = url.split('session_id=')[1]?.split('&')[0];
+        if (sessionId) {
+          await handleGoogleCallback(sessionId);
+        }
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    // Check if app was opened with a URL
+    Linking.getInitialURL().then((url) => {
+      if (url && url.includes('session_id=')) {
+        handleDeepLink({ url });
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const handleGoogleCallback = async (sessionId: string) => {
     setLoading(true);
     try {
-      await login(email, password);
-      // Navigate to home after successful login
+      const response = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/auth/google`, {
+        session_id: sessionId,
+      });
+
+      const { access_token, user: userData } = response.data;
+      await loginWithGoogle(access_token, userData);
       router.replace('/');
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message);
+      console.error('Google auth error:', error);
+      Alert.alert('Error', error.response?.data?.detail || 'Google sign-in failed');
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
+    setLoading(true);
     try {
-      // Construct callback URL to our app's callback page
-      const callbackUrl = `${EXPO_PUBLIC_BACKEND_URL?.replace('/api', '')}/auth/google-callback`;
-      const authUrl = `${EMERGENT_AUTH_URL}/?redirect=${encodeURIComponent(callbackUrl)}`;
+      // Create callback URL that will redirect back to app
+      const redirectUri = Linking.createURL('auth/google-callback');
+      const authUrl = `${EMERGENT_AUTH_URL}/?redirect=${encodeURIComponent(redirectUri)}`;
+
+      // Open browser for Google auth
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+
+      if (result.type === 'success' && result.url) {
+        // Extract session_id from the callback URL
+        const url = result.url;
+        if (url.includes('session_id=')) {
+          const sessionId = url.split('session_id=')[1]?.split('&')[0];
+          if (sessionId) {
+            await handleGoogleCallback(sessionId);
+            return;
+          }
+        }
+      }
       
-      const supported = await Linking.canOpenURL(authUrl);
-      if (supported) {
-        await Linking.openURL(authUrl);
-      } else {
-        Alert.alert('Error', 'Cannot open Google sign-in');
+      // If we didn't get a session_id, auth was cancelled or failed
+      if (result.type !== 'cancel') {
+        Alert.alert('Error', 'Could not complete Google sign-in');
       }
     } catch (error) {
       console.error('Google sign-in error:', error);
       Alert.alert('Error', 'Failed to start Google sign-in');
     } finally {
-      setGoogleLoading(false);
+      setLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Logo/Brand */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <Ionicons name="people-circle" size={80} color={COLORS.primary} />
-            </View>
-            <Text style={styles.title}>SynchroConnectr</Text>
-            <Text style={styles.subtitle}>Welcome back! Sign in to continue</Text>
+      <View style={styles.content}>
+        {/* Logo/Brand */}
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Ionicons name="people-circle" size={100} color={COLORS.primary} />
           </View>
+          <Text style={styles.title}>SynchroConnectr</Text>
+          <Text style={styles.subtitle}>
+            Your AI-powered personal CRM to stay meaningfully connected
+          </Text>
+        </View>
 
-          {/* Login Form */}
-          <View style={styles.form}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="mail-outline" size={20} color={COLORS.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="your@email.com"
-                  placeholderTextColor={COLORS.textLight}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
+        {/* Features */}
+        <View style={styles.features}>
+          <View style={styles.featureItem}>
+            <View style={styles.featureIcon}>
+              <Ionicons name="git-branch-outline" size={24} color={COLORS.primary} />
             </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color={COLORS.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="••••••••"
-                  placeholderTextColor={COLORS.textLight}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={COLORS.textLight}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={handleLogin}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color={COLORS.surface} />
-              ) : (
-                <Text style={styles.loginButtonText}>Sign In</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.divider} />
-            </View>
-
-            {/* Google Sign In Button */}
-            <TouchableOpacity
-              style={styles.googleButton}
-              onPress={handleGoogleSignIn}
-              disabled={googleLoading}
-            >
-              {googleLoading ? (
-                <ActivityIndicator color={COLORS.google} />
-              ) : (
-                <>
-                  <Ionicons name="logo-google" size={20} color={COLORS.google} />
-                  <Text style={styles.googleButtonText}>Continue with Google</Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Sign Up Link */}
-            <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => router.push('/auth/signup')}>
-                <Text style={styles.signupLink}>Sign Up</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.featureText}>Smart Pipeline Management</Text>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          <View style={styles.featureItem}>
+            <View style={styles.featureIcon}>
+              <Ionicons name="sparkles-outline" size={24} color={COLORS.primary} />
+            </View>
+            <Text style={styles.featureText}>AI Message Drafts</Text>
+          </View>
+          <View style={styles.featureItem}>
+            <View style={styles.featureIcon}>
+              <Ionicons name="time-outline" size={24} color={COLORS.primary} />
+            </View>
+            <Text style={styles.featureText}>Interaction History</Text>
+          </View>
+        </View>
+
+        {/* Google Sign In Button */}
+        <View style={styles.authContainer}>
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={handleGoogleSignIn}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={COLORS.surface} />
+            ) : (
+              <>
+                <Ionicons name="logo-google" size={24} color={COLORS.surface} />
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <Text style={styles.disclaimer}>
+            By continuing, you agree to our Terms of Service and Privacy Policy
+          </Text>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -194,14 +187,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
+  content: {
+    flex: 1,
+    justifyContent: 'space-between',
     padding: 24,
+    paddingTop: 60,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 48,
   },
   logoContainer: {
     marginBottom: 16,
@@ -210,106 +203,72 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: COLORS.primary,
-    marginBottom: 8,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     color: COLORS.textLight,
     textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 20,
   },
-  form: {
-    width: '100%',
+  features: {
+    gap: 16,
+    paddingHorizontal: 20,
   },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  inputContainer: {
+  featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    padding: 16,
     borderRadius: 12,
-    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: COLORS.text,
-  },
-  eyeIcon: {
-    padding: 8,
-  },
-  loginButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
+  featureIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    marginRight: 14,
   },
-  loginButtonText: {
-    color: COLORS.surface,
+  featureText: {
     fontSize: 16,
     fontWeight: '600',
+    color: COLORS.text,
   },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.border,
-  },
-  dividerText: {
-    color: COLORS.textLight,
-    paddingHorizontal: 16,
-    fontSize: 14,
+  authContainer: {
+    gap: 16,
   },
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: COLORS.google,
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 16,
     gap: 12,
+    shadowColor: COLORS.google,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   googleButtonText: {
-    color: COLORS.text,
-    fontSize: 16,
+    color: COLORS.surface,
+    fontSize: 18,
     fontWeight: '600',
   },
-  signupContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 24,
-  },
-  signupText: {
-    fontSize: 14,
+  disclaimer: {
+    fontSize: 12,
     color: COLORS.textLight,
-  },
-  signupLink: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });
