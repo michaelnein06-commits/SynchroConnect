@@ -75,6 +75,33 @@ class UserProfileUpdate(BaseModel):
     notifications_enabled: Optional[bool] = None
 
 # --- Contact Model (Updated with new fields) ---
+class ContactCreate(BaseModel):
+    name: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    job: Optional[str] = None  # Job Title
+    location: Optional[str] = None
+    academic_degree: Optional[str] = None
+    birthday: Optional[str] = None
+    # Personal details
+    hobbies: Optional[str] = None
+    favorite_food: Optional[str] = None
+    how_we_met: Optional[str] = None  # Kennengelernt
+    # Pipeline & Groups
+    pipeline_stage: str = "Monthly"  # Weekly, Bi-Weekly, Monthly, Quarterly, Annually
+    groups: List[str] = []  # List of group IDs
+    # Communication preferences
+    language: str = "English"
+    tone: str = "Casual"  # Casual, Professional, Friendly
+    example_message: Optional[str] = None  # Individual AI tone override
+    # Notes
+    notes: Optional[str] = None
+    # Calculated fields
+    last_contact_date: Optional[str] = None
+    # Profile picture
+    profile_picture: Optional[str] = None  # base64 image
+    device_contact_id: Optional[str] = None
+
 class Contact(BaseModel):
     user_id: str  # Owner of this contact
     name: str
