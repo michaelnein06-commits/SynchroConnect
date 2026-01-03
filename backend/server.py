@@ -13,7 +13,6 @@ import random
 from bson import ObjectId
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import jwt
-from passlib.context import CryptContext
 import httpx
 
 ROOT_DIR = Path(__file__).parent
@@ -31,7 +30,6 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 # Auth setup
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key')
@@ -46,91 +44,141 @@ def serialize_doc(doc):
     return doc
 
 # ============ Models ============
-class Contact(BaseModel):
+
+# --- User Model (Google-only auth) ---
+class User(BaseModel):
+    email: str
     name: str
+    google_picture: Optional[str] = None
+    # Profile fields (matching Contact Card style)
     job: Optional[str] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
+    # App settings
+    ui_language: str = "en"  # en, de
+    default_draft_language: str = "English"
+    default_writing_style: str = "Hey! How have you been? Just wanted to catch up and see what you've been up to lately."
+    notification_time: str = "09:00"
+    notifications_enabled: bool = True
+    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+
+class UserProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    job: Optional[str] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
+    ui_language: Optional[str] = None
+    default_draft_language: Optional[str] = None
+    default_writing_style: Optional[str] = None
+    notification_time: Optional[str] = None
+    notifications_enabled: Optional[bool] = None
+
+# --- Contact Model (Updated with new fields) ---
+class Contact(BaseModel):
+    user_id: str  # Owner of this contact
+    name: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    job: Optional[str] = None  # Job Title
+    location: Optional[str] = None
+    academic_degree: Optional[str] = None
     birthday: Optional[str] = None
-    last_met: Optional[str] = None
+    # Personal details
+    hobbies: Optional[str] = None
     favorite_food: Optional[str] = None
-    notes: Optional[str] = None
-    tags: List[str] = []
-    groups: List[str] = []  # Groups like "University", "Work", "Tennis Club"
+    how_we_met: Optional[str] = None  # Kennengelernt
+    # Pipeline & Groups
     pipeline_stage: str = "Monthly"  # Weekly, Bi-Weekly, Monthly, Quarterly, Annually
+    groups: List[str] = []  # List of group IDs
+    # Communication preferences
+    language: str = "English"
+    tone: str = "Casual"  # Casual, Professional, Friendly
+    example_message: Optional[str] = None  # Individual AI tone override
+    # Notes
+    notes: Optional[str] = None
+    # Calculated fields
     last_contact_date: Optional[str] = None
     next_due: Optional[str] = None
     target_interval_days: int = 30
-    phone: Optional[str] = None
-    email: Optional[str] = None
+    # Profile picture
     profile_picture: Optional[str] = None  # base64 image
-    language: Optional[str] = "English"  # Communication language
-    tone: Optional[str] = "Casual"  # Communication tone: Casual, Professional, Friendly
-    device_contact_id: Optional[str] = None  # ID from phone contacts for syncing
+    device_contact_id: Optional[str] = None
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
 class ContactUpdate(BaseModel):
     name: Optional[str] = None
-    job: Optional[str] = None
-    birthday: Optional[str] = None
-    last_met: Optional[str] = None
-    favorite_food: Optional[str] = None
-    notes: Optional[str] = None
-    tags: Optional[List[str]] = None
-    groups: Optional[List[str]] = None
-    pipeline_stage: Optional[str] = None
-    last_contact_date: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
-    profile_picture: Optional[str] = None
+    job: Optional[str] = None
+    location: Optional[str] = None
+    academic_degree: Optional[str] = None
+    birthday: Optional[str] = None
+    hobbies: Optional[str] = None
+    favorite_food: Optional[str] = None
+    how_we_met: Optional[str] = None
+    pipeline_stage: Optional[str] = None
+    groups: Optional[List[str]] = None
     language: Optional[str] = None
     tone: Optional[str] = None
+    example_message: Optional[str] = None
+    notes: Optional[str] = None
+    last_contact_date: Optional[str] = None
+    profile_picture: Optional[str] = None
     device_contact_id: Optional[str] = None
 
 class MovePipelineRequest(BaseModel):
     pipeline_stage: str
 
+class MoveToGroupRequest(BaseModel):
+    group_ids: List[str]
+
+# --- Interaction History Model ---
+class InteractionType:
+    PERSONAL_MEETING = "Personal Meeting"
+    PHONE_CALL = "Phone Call"
+    EMAIL = "Email"
+    WHATSAPP = "WhatsApp"
+    OTHER = "Other"
+
+class Interaction(BaseModel):
+    contact_id: str
+    user_id: str
+    interaction_type: str  # Personal Meeting, Phone Call, Email, WhatsApp, Other
+    date: str
+    notes: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+
+class InteractionCreate(BaseModel):
+    interaction_type: str
+    date: str
+    notes: Optional[str] = None
+
+# --- Group Model ---
+class Group(BaseModel):
+    user_id: str
+    name: str
+    description: Optional[str] = None
+    color: Optional[str] = "#6366F1"  # Default indigo color
+    profile_picture: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+
+class GroupUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = None
+    profile_picture: Optional[str] = None
+
+# --- Draft Model ---
 class Draft(BaseModel):
+    user_id: str
     contact_id: str
     contact_name: str
     draft_message: str
     status: str = "pending"  # pending, sent, dismissed
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
-
-class Settings(BaseModel):
-    writing_style_sample: str = "Hey! How have you been? Just wanted to catch up and see what you've been up to lately."
-    notification_time: str = "09:00"
-
-# ============ Integration Models ============
-class GoogleConnection(BaseModel):
-    user_id: str
-    google_email: str
-    google_name: str
-    google_picture: Optional[str] = None
-    access_token: str
-    refresh_token: Optional[str] = None
-    token_expiry: Optional[str] = None
-    scopes: List[str] = []
-    connected_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
-
-class TelegramConnection(BaseModel):
-    user_id: str
-    telegram_chat_id: str
-    telegram_username: Optional[str] = None
-    telegram_first_name: Optional[str] = None
-    bot_token: Optional[str] = None  # User's own bot token if they want to use their own
-    connected_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
-
-class TelegramWebhookUpdate(BaseModel):
-    update_id: int
-    message: Optional[dict] = None
-
-class GoogleOAuthCallback(BaseModel):
-    session_id: str
-
-class ConnectTelegramRequest(BaseModel):
-    chat_id: str
-    username: Optional[str] = None
-    first_name: Optional[str] = None
 
 # ============ Utility Functions ============
 def calculate_target_interval(pipeline_stage: str) -> int:
@@ -147,7 +195,6 @@ def calculate_target_interval(pipeline_stage: str) -> int:
 def calculate_next_due_with_random_factor(last_contact_date_str: str, target_interval_days: int) -> str:
     """Calculate next due date with random factor (-5 to +5 days)"""
     if not last_contact_date_str:
-        # If no last contact, use today as base
         last_contact_date_str = datetime.utcnow().isoformat()
     
     try:
@@ -159,42 +206,79 @@ def calculate_next_due_with_random_factor(last_contact_date_str: str, target_int
     next_due = last_contact + timedelta(days=target_interval_days + random_factor)
     return next_due.isoformat()
 
-async def generate_ai_draft(contact: dict, writing_style: str) -> str:
-    """Generate personalized message draft using AI"""
+async def generate_ai_draft(contact: dict, user_settings: dict, interaction_history: list) -> str:
+    """Generate personalized message draft using AI with full context"""
     try:
         chat = LlmChat(
             api_key=os.environ['EMERGENT_LLM_KEY'],
             session_id=f"draft_{contact.get('id', 'unknown')}",
             system_message="You are helping write reconnection messages. Write casual, warm messages that sound natural and personal."
-        ).with_model("openai", "gpt-5.1")
+        ).with_model("openai", "gpt-4.1")
         
+        # Build comprehensive context
         context_parts = []
+        
+        # Basic info
         if contact.get('name'):
-            context_parts.append(f"Contact: {contact['name']}")
+            context_parts.append(f"Contact Name: {contact['name']}")
         if contact.get('job'):
             context_parts.append(f"Job: {contact['job']}")
+        if contact.get('location'):
+            context_parts.append(f"Location: {contact['location']}")
+        if contact.get('academic_degree'):
+            context_parts.append(f"Education: {contact['academic_degree']}")
+        
+        # Personal details
+        if contact.get('hobbies'):
+            context_parts.append(f"Hobbies: {contact['hobbies']}")
         if contact.get('favorite_food'):
             context_parts.append(f"Favorite Food: {contact['favorite_food']}")
+        if contact.get('how_we_met'):
+            context_parts.append(f"How we met: {contact['how_we_met']}")
+        if contact.get('birthday'):
+            context_parts.append(f"Birthday: {contact['birthday']}")
+        
+        # Notes
         if contact.get('notes'):
             context_parts.append(f"Notes: {contact['notes']}")
-        if contact.get('last_met'):
-            context_parts.append(f"Last Met: {contact['last_met']}")
+        
+        # Interaction history (last 5 interactions)
+        if interaction_history:
+            history_str = "\n".join([
+                f"  - {h.get('date', 'Unknown date')}: {h.get('interaction_type', 'Unknown')} - {h.get('notes', 'No notes')}"
+                for h in interaction_history[:5]
+            ])
+            context_parts.append(f"Recent Interactions:\n{history_str}")
         
         context = "\n".join(context_parts)
         
+        # Determine writing style - contact's example_message takes priority
+        writing_style = contact.get('example_message') or user_settings.get('default_writing_style', "Hey! How have you been?")
+        
+        # Determine language
+        draft_language = contact.get('language') or user_settings.get('default_draft_language', 'English')
+        
+        # Determine tone
+        tone = contact.get('tone', 'Casual')
+        
         prompt = f"""Write a brief, warm reconnection message to {contact.get('name', 'this person')}.
 
-Context:
+Contact Context:
 {context}
 
-User's writing style example:
+Communication Preferences:
+- Language: {draft_language}
+- Tone: {tone}
+
+Example of the writing style to mimic:
 "{writing_style}"
 
-Write a short, casual message (2-3 sentences) that:
-- Feels natural and personal
-- References something from the context if available
-- Mimics the user's writing style
-- Suggests catching up
+Write a short message (2-3 sentences) that:
+- Is written in {draft_language}
+- Feels natural and personal with a {tone.lower()} tone
+- References something specific from the context if available
+- Mimics the provided writing style
+- Suggests catching up or connecting
 
 Just write the message, no extra explanation."""
         
@@ -204,99 +288,37 @@ Just write the message, no extra explanation."""
         return response.strip()
     except Exception as e:
         logging.error(f"Error generating AI draft: {str(e)}")
-        # Fallback message
         return f"Hey {contact.get('name', 'there')}! It's been a while - would love to catch up soon. How have you been?"
+
+# ============ Auth Helpers ============
+from auth import create_access_token, get_current_user
+
+# ============ Google OAuth Config ============
+EMERGENT_AUTH_URL = "https://auth.emergentagent.com"
+EMERGENT_SESSION_API = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
 
 # ============ API Routes ============
 
-from auth import hash_password, verify_password, create_access_token, get_current_user
+@api_router.get("/")
+async def root():
+    return {"message": "SynchroConnectr API", "version": "2.0.0"}
 
-# Auth Models
-class UserSignup(BaseModel):
-    email: EmailStr
-    password: str
-    name: str
+# ============ Auth Routes (Google-only) ============
 
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
+class GoogleAuthRequest(BaseModel):
+    session_id: str
 
 class Token(BaseModel):
     access_token: str
     token_type: str
     user: dict
 
-@api_router.get("/")
-async def root():
-    return {"message": "SynchroConnectr API", "version": "1.0.0"}
-
-# Auth Routes
-@api_router.post("/auth/signup", response_model=Token)
-async def signup(user_data: UserSignup):
-    # Check if user exists
-    existing_user = await db.users.find_one({"email": user_data.email})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    # Create user
-    hashed_password = hash_password(user_data.password)
-    user_dict = {
-        "email": user_data.email,
-        "name": user_data.name,
-        "password": hashed_password,
-        "created_at": datetime.utcnow().isoformat(),
-        "has_imported_contacts": False
-    }
-    
-    result = await db.users.insert_one(user_dict)
-    user_id = str(result.inserted_id)
-    
-    # Create token
-    access_token = create_access_token(data={"user_id": user_id, "email": user_data.email})
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {"id": user_id, "email": user_data.email, "name": user_data.name, "has_imported_contacts": False}
-    }
-
-@api_router.post("/auth/login", response_model=Token)
-async def login(user_data: UserLogin):
-    # Find user
-    user = await db.users.find_one({"email": user_data.email})
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    
-    # Verify password
-    if not verify_password(user_data.password, user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    
-    user_id = str(user["_id"])
-    
-    # Create token
-    access_token = create_access_token(data={"user_id": user_id, "email": user["email"]})
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user_id,
-            "email": user["email"],
-            "name": user.get("name", ""),
-            "has_imported_contacts": user.get("has_imported_contacts", False)
-        }
-    }
-
-class GoogleAuthRequest(BaseModel):
-    session_id: str
-
 @api_router.post("/auth/google", response_model=Token)
 async def google_auth(auth_data: GoogleAuthRequest):
-    """Sign in or sign up with Google"""
+    """Sign in or sign up with Google (only auth method)"""
     try:
-        # Exchange session_id for session data from Emergent Auth
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
+        async with httpx.AsyncClient() as http_client:
+            response = await http_client.get(
                 EMERGENT_SESSION_API,
                 headers={"X-Session-ID": auth_data.session_id}
             )
@@ -317,16 +339,13 @@ async def google_auth(auth_data: GoogleAuthRequest):
         user = await db.users.find_one({"email": google_email})
         
         if user:
-            # User exists - log them in
             user_id = str(user["_id"])
-            
-            # Update their Google info if needed
+            # Update Google picture if changed
             await db.users.update_one(
                 {"_id": user["_id"]},
                 {"$set": {
-                    "google_connected": True,
                     "google_picture": google_picture,
-                    "name": user.get("name") or google_name  # Only update if not set
+                    "updated_at": datetime.utcnow().isoformat()
                 }}
             )
         else:
@@ -334,34 +353,24 @@ async def google_auth(auth_data: GoogleAuthRequest):
             user_dict = {
                 "email": google_email,
                 "name": google_name,
-                "google_connected": True,
                 "google_picture": google_picture,
-                "password": None,  # No password for Google users
+                "ui_language": "en",
+                "default_draft_language": "English",
+                "default_writing_style": "Hey! How have you been? Just wanted to catch up and see what you've been up to lately.",
+                "notification_time": "09:00",
+                "notifications_enabled": True,
                 "created_at": datetime.utcnow().isoformat(),
-                "has_imported_contacts": False
+                "updated_at": datetime.utcnow().isoformat()
             }
             
             result = await db.users.insert_one(user_dict)
             user_id = str(result.inserted_id)
         
-        # Store Google connection
-        google_connection = {
-            "user_id": user_id,
-            "google_email": google_email,
-            "google_name": google_name,
-            "google_picture": google_picture,
-            "session_token": session_data.get("session_token"),
-            "connected_at": datetime.utcnow().isoformat()
-        }
-        
-        await db.google_connections.update_one(
-            {"user_id": user_id},
-            {"$set": google_connection},
-            upsert=True
-        )
-        
         # Create token
         access_token = create_access_token(data={"user_id": user_id, "email": google_email})
+        
+        # Get updated user data
+        updated_user = await db.users.find_one({"_id": ObjectId(user_id)})
         
         return {
             "access_token": access_token,
@@ -369,9 +378,10 @@ async def google_auth(auth_data: GoogleAuthRequest):
             "user": {
                 "id": user_id,
                 "email": google_email,
-                "name": google_name,
-                "picture": google_picture,
-                "has_imported_contacts": False if not user else user.get("has_imported_contacts", False)
+                "name": updated_user.get("name", google_name),
+                "picture": updated_user.get("google_picture", google_picture),
+                "ui_language": updated_user.get("ui_language", "en"),
+                "default_draft_language": updated_user.get("default_draft_language", "English")
             }
         }
         
@@ -387,25 +397,38 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    return {
-        "id": str(user["_id"]),
-        "email": user["email"],
-        "name": user.get("name", ""),
-        "has_imported_contacts": user.get("has_imported_contacts", False)
-    }
+    return serialize_doc(user)
 
-@api_router.put("/auth/update-import-status")
-async def update_import_status(current_user: dict = Depends(get_current_user)):
+# ============ User Profile Routes ============
+
+@api_router.get("/profile")
+async def get_profile(current_user: dict = Depends(get_current_user)):
+    """Get current user's profile"""
+    user = await db.users.find_one({"_id": ObjectId(current_user["user_id"])})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return serialize_doc(user)
+
+@api_router.put("/profile")
+async def update_profile(profile_update: UserProfileUpdate, current_user: dict = Depends(get_current_user)):
+    """Update current user's profile"""
+    update_data = {k: v for k, v in profile_update.dict().items() if v is not None}
+    update_data['updated_at'] = datetime.utcnow().isoformat()
+    
     await db.users.update_one(
         {"_id": ObjectId(current_user["user_id"])},
-        {"$set": {"has_imported_contacts": True}}
+        {"$set": update_data}
     )
-    return {"message": "Import status updated"}
+    
+    updated_user = await db.users.find_one({"_id": ObjectId(current_user["user_id"])})
+    return serialize_doc(updated_user)
 
-# Contact Routes
+# ============ Contact Routes ============
+
 @api_router.post("/contacts", response_model=dict)
-async def create_contact(contact: Contact):
+async def create_contact(contact: Contact, current_user: dict = Depends(get_current_user)):
     contact_dict = contact.dict()
+    contact_dict['user_id'] = current_user["user_id"]
     
     # Calculate initial next_due
     if not contact_dict.get('last_contact_date'):
@@ -419,19 +442,23 @@ async def create_contact(contact: Contact):
     
     result = await db.contacts.insert_one(contact_dict)
     contact_dict['id'] = str(result.inserted_id)
-    del contact_dict['_id']
+    if '_id' in contact_dict:
+        del contact_dict['_id']
     
     return contact_dict
 
 @api_router.get("/contacts", response_model=List[dict])
-async def get_contacts():
-    contacts = await db.contacts.find().to_list(1000)
+async def get_contacts(current_user: dict = Depends(get_current_user)):
+    contacts = await db.contacts.find({"user_id": current_user["user_id"]}).to_list(1000)
     return [serialize_doc(c) for c in contacts]
 
 @api_router.get("/contacts/{contact_id}", response_model=dict)
-async def get_contact(contact_id: str):
+async def get_contact(contact_id: str, current_user: dict = Depends(get_current_user)):
     try:
-        contact = await db.contacts.find_one({"_id": ObjectId(contact_id)})
+        contact = await db.contacts.find_one({
+            "_id": ObjectId(contact_id),
+            "user_id": current_user["user_id"]
+        })
         if not contact:
             raise HTTPException(status_code=404, detail="Contact not found")
         return serialize_doc(contact)
@@ -439,14 +466,17 @@ async def get_contact(contact_id: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.put("/contacts/{contact_id}", response_model=dict)
-async def update_contact(contact_id: str, contact_update: ContactUpdate):
+async def update_contact(contact_id: str, contact_update: ContactUpdate, current_user: dict = Depends(get_current_user)):
     try:
         update_data = {k: v for k, v in contact_update.dict().items() if v is not None}
         update_data['updated_at'] = datetime.utcnow().isoformat()
         
         # Recalculate next_due if pipeline_stage or last_contact_date changed
         if 'pipeline_stage' in update_data or 'last_contact_date' in update_data:
-            existing = await db.contacts.find_one({"_id": ObjectId(contact_id)})
+            existing = await db.contacts.find_one({
+                "_id": ObjectId(contact_id),
+                "user_id": current_user["user_id"]
+            })
             if existing:
                 pipeline_stage = update_data.get('pipeline_stage', existing.get('pipeline_stage', 'Monthly'))
                 last_contact = update_data.get('last_contact_date', existing.get('last_contact_date'))
@@ -456,7 +486,7 @@ async def update_contact(contact_id: str, contact_update: ContactUpdate):
                 update_data['next_due'] = calculate_next_due_with_random_factor(last_contact, target_interval)
         
         result = await db.contacts.update_one(
-            {"_id": ObjectId(contact_id)},
+            {"_id": ObjectId(contact_id), "user_id": current_user["user_id"]},
             {"$set": update_data}
         )
         
@@ -469,29 +499,31 @@ async def update_contact(contact_id: str, contact_update: ContactUpdate):
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.delete("/contacts/{contact_id}")
-async def delete_contact(contact_id: str):
+async def delete_contact(contact_id: str, current_user: dict = Depends(get_current_user)):
     try:
-        result = await db.contacts.delete_one({"_id": ObjectId(contact_id)})
+        # Also delete related interactions
+        await db.interactions.delete_many({"contact_id": contact_id})
+        # Also delete related drafts
+        await db.drafts.delete_many({"contact_id": contact_id})
+        
+        result = await db.contacts.delete_one({
+            "_id": ObjectId(contact_id),
+            "user_id": current_user["user_id"]
+        })
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Contact not found")
         return {"message": "Contact deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@api_router.delete("/contacts")
-async def delete_all_contacts():
-    """Delete all contacts - use with caution!"""
-    try:
-        result = await db.contacts.delete_many({})
-        return {"message": f"Deleted {result.deleted_count} contacts successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
 @api_router.post("/contacts/{contact_id}/move-pipeline")
-async def move_pipeline(contact_id: str, request: MovePipelineRequest):
+async def move_pipeline(contact_id: str, request: MovePipelineRequest, current_user: dict = Depends(get_current_user)):
     """Move contact to different pipeline stage and recalculate next_due"""
     try:
-        existing = await db.contacts.find_one({"_id": ObjectId(contact_id)})
+        existing = await db.contacts.find_one({
+            "_id": ObjectId(contact_id),
+            "user_id": current_user["user_id"]
+        })
         if not existing:
             raise HTTPException(status_code=404, detail="Contact not found")
         
@@ -516,33 +548,238 @@ async def move_pipeline(contact_id: str, request: MovePipelineRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# Morning Briefing Route
-@api_router.get("/morning-briefing", response_model=List[dict])
-async def get_morning_briefing():
-    """Get contacts due today or overdue"""
-    today = datetime.utcnow().isoformat()
-    contacts = await db.contacts.find({"next_due": {"$lte": today}}).to_list(100)
-    return [serialize_doc(c) for c in contacts]
-
-# Draft Routes
-@api_router.post("/drafts/generate/{contact_id}", response_model=dict)
-async def generate_draft(contact_id: str):
-    """Generate AI-powered message draft for a contact"""
+@api_router.post("/contacts/{contact_id}/move-to-groups")
+async def move_to_groups(contact_id: str, request: MoveToGroupRequest, current_user: dict = Depends(get_current_user)):
+    """Update contact's group assignments"""
     try:
-        contact = await db.contacts.find_one({"_id": ObjectId(contact_id)})
+        existing = await db.contacts.find_one({
+            "_id": ObjectId(contact_id),
+            "user_id": current_user["user_id"]
+        })
+        if not existing:
+            raise HTTPException(status_code=404, detail="Contact not found")
+        
+        await db.contacts.update_one(
+            {"_id": ObjectId(contact_id)},
+            {"$set": {
+                "groups": request.group_ids,
+                "updated_at": datetime.utcnow().isoformat()
+            }}
+        )
+        
+        updated_contact = await db.contacts.find_one({"_id": ObjectId(contact_id)})
+        return serialize_doc(updated_contact)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ============ Interaction History Routes ============
+
+@api_router.post("/contacts/{contact_id}/interactions", response_model=dict)
+async def log_interaction(contact_id: str, interaction: InteractionCreate, current_user: dict = Depends(get_current_user)):
+    """Log a new interaction with a contact"""
+    try:
+        # Verify contact exists and belongs to user
+        contact = await db.contacts.find_one({
+            "_id": ObjectId(contact_id),
+            "user_id": current_user["user_id"]
+        })
         if not contact:
             raise HTTPException(status_code=404, detail="Contact not found")
         
-        # Get writing style from settings
-        settings = await db.settings.find_one({})
-        writing_style = settings.get('writing_style_sample', '') if settings else "Hey! How have you been?"
+        interaction_dict = {
+            "contact_id": contact_id,
+            "user_id": current_user["user_id"],
+            "interaction_type": interaction.interaction_type,
+            "date": interaction.date,
+            "notes": interaction.notes,
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        result = await db.interactions.insert_one(interaction_dict)
+        interaction_dict['id'] = str(result.inserted_id)
+        if '_id' in interaction_dict:
+            del interaction_dict['_id']
+        
+        # Update contact's last_contact_date and recalculate next_due
+        target_interval = contact.get('target_interval_days', 30)
+        next_due = calculate_next_due_with_random_factor(interaction.date, target_interval)
+        
+        await db.contacts.update_one(
+            {"_id": ObjectId(contact_id)},
+            {"$set": {
+                "last_contact_date": interaction.date,
+                "next_due": next_due,
+                "updated_at": datetime.utcnow().isoformat()
+            }}
+        )
+        
+        return interaction_dict
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.get("/contacts/{contact_id}/interactions", response_model=List[dict])
+async def get_interactions(contact_id: str, current_user: dict = Depends(get_current_user)):
+    """Get all interactions for a contact (sorted by date descending)"""
+    try:
+        # Verify contact exists and belongs to user
+        contact = await db.contacts.find_one({
+            "_id": ObjectId(contact_id),
+            "user_id": current_user["user_id"]
+        })
+        if not contact:
+            raise HTTPException(status_code=404, detail="Contact not found")
+        
+        interactions = await db.interactions.find({
+            "contact_id": contact_id,
+            "user_id": current_user["user_id"]
+        }).sort("date", -1).to_list(100)
+        
+        return [serialize_doc(i) for i in interactions]
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.delete("/interactions/{interaction_id}")
+async def delete_interaction(interaction_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete an interaction"""
+    try:
+        result = await db.interactions.delete_one({
+            "_id": ObjectId(interaction_id),
+            "user_id": current_user["user_id"]
+        })
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Interaction not found")
+        return {"message": "Interaction deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ============ Group Routes ============
+
+@api_router.post("/groups", response_model=dict)
+async def create_group(group: Group, current_user: dict = Depends(get_current_user)):
+    """Create a new group"""
+    group_dict = group.dict()
+    group_dict['user_id'] = current_user["user_id"]
+    
+    result = await db.groups.insert_one(group_dict)
+    group_dict['id'] = str(result.inserted_id)
+    if '_id' in group_dict:
+        del group_dict['_id']
+    return group_dict
+
+@api_router.get("/groups", response_model=List[dict])
+async def get_groups(current_user: dict = Depends(get_current_user)):
+    """Get all groups for the current user"""
+    groups = await db.groups.find({"user_id": current_user["user_id"]}).to_list(1000)
+    
+    # For each group, get the count of contacts
+    result = []
+    for g in groups:
+        group_data = serialize_doc(g)
+        contact_count = await db.contacts.count_documents({
+            "user_id": current_user["user_id"],
+            "groups": group_data["id"]
+        })
+        group_data["contact_count"] = contact_count
+        result.append(group_data)
+    
+    return result
+
+@api_router.get("/groups/{group_id}", response_model=dict)
+async def get_group(group_id: str, current_user: dict = Depends(get_current_user)):
+    try:
+        group = await db.groups.find_one({
+            "_id": ObjectId(group_id),
+            "user_id": current_user["user_id"]
+        })
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+        
+        group_data = serialize_doc(group)
+        
+        # Get contacts in this group
+        contacts = await db.contacts.find({
+            "user_id": current_user["user_id"],
+            "groups": group_id
+        }).to_list(1000)
+        
+        group_data["contacts"] = [serialize_doc(c) for c in contacts]
+        group_data["contact_count"] = len(contacts)
+        
+        return group_data
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.put("/groups/{group_id}", response_model=dict)
+async def update_group(group_id: str, group_update: GroupUpdate, current_user: dict = Depends(get_current_user)):
+    try:
+        update_data = {k: v for k, v in group_update.dict().items() if v is not None}
+        update_data['updated_at'] = datetime.utcnow().isoformat()
+        
+        result = await db.groups.update_one(
+            {"_id": ObjectId(group_id), "user_id": current_user["user_id"]},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Group not found")
+        
+        updated_group = await db.groups.find_one({"_id": ObjectId(group_id)})
+        return serialize_doc(updated_group)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.delete("/groups/{group_id}")
+async def delete_group(group_id: str, current_user: dict = Depends(get_current_user)):
+    try:
+        # Remove this group from all contacts
+        await db.contacts.update_many(
+            {"user_id": current_user["user_id"], "groups": group_id},
+            {"$pull": {"groups": group_id}}
+        )
+        
+        result = await db.groups.delete_one({
+            "_id": ObjectId(group_id),
+            "user_id": current_user["user_id"]
+        })
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Group not found")
+        return {"message": "Group deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ============ Draft Routes ============
+
+@api_router.post("/drafts/generate/{contact_id}", response_model=dict)
+async def generate_draft(contact_id: str, current_user: dict = Depends(get_current_user)):
+    """Generate AI-powered message draft for a contact"""
+    try:
+        contact = await db.contacts.find_one({
+            "_id": ObjectId(contact_id),
+            "user_id": current_user["user_id"]
+        })
+        if not contact:
+            raise HTTPException(status_code=404, detail="Contact not found")
+        
+        # Get user settings
+        user = await db.users.find_one({"_id": ObjectId(current_user["user_id"])})
+        user_settings = {
+            "default_writing_style": user.get("default_writing_style", "Hey! How have you been?"),
+            "default_draft_language": user.get("default_draft_language", "English")
+        }
+        
+        # Get interaction history
+        interactions = await db.interactions.find({
+            "contact_id": contact_id,
+            "user_id": current_user["user_id"]
+        }).sort("date", -1).to_list(5)
         
         # Generate draft
         contact_serialized = serialize_doc(contact)
-        draft_message = await generate_ai_draft(contact_serialized, writing_style)
+        draft_message = await generate_ai_draft(contact_serialized, user_settings, interactions)
         
         # Save draft
         draft_dict = {
+            'user_id': current_user["user_id"],
             'contact_id': contact_id,
             'contact_name': contact.get('name', 'Unknown'),
             'draft_message': draft_message,
@@ -552,24 +789,29 @@ async def generate_draft(contact_id: str):
         
         result = await db.drafts.insert_one(draft_dict)
         draft_dict['id'] = str(result.inserted_id)
-        del draft_dict['_id']
+        if '_id' in draft_dict:
+            del draft_dict['_id']
         
         return draft_dict
     except Exception as e:
+        logging.error(f"Error generating draft: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.get("/drafts", response_model=List[dict])
-async def get_drafts():
+async def get_drafts(current_user: dict = Depends(get_current_user)):
     """Get all pending drafts"""
-    drafts = await db.drafts.find({"status": "pending"}).to_list(100)
+    drafts = await db.drafts.find({
+        "user_id": current_user["user_id"],
+        "status": "pending"
+    }).to_list(100)
     return [serialize_doc(d) for d in drafts]
 
 @api_router.put("/drafts/{draft_id}/dismiss")
-async def dismiss_draft(draft_id: str):
+async def dismiss_draft(draft_id: str, current_user: dict = Depends(get_current_user)):
     """Dismiss a draft"""
     try:
         result = await db.drafts.update_one(
-            {"_id": ObjectId(draft_id)},
+            {"_id": ObjectId(draft_id), "user_id": current_user["user_id"]},
             {"$set": {"status": "dismissed"}}
         )
         if result.matched_count == 0:
@@ -579,10 +821,13 @@ async def dismiss_draft(draft_id: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.put("/drafts/{draft_id}/sent")
-async def mark_draft_sent(draft_id: str):
+async def mark_draft_sent(draft_id: str, current_user: dict = Depends(get_current_user)):
     """Mark draft as sent and update contact's last_contact_date"""
     try:
-        draft = await db.drafts.find_one({"_id": ObjectId(draft_id)})
+        draft = await db.drafts.find_one({
+            "_id": ObjectId(draft_id),
+            "user_id": current_user["user_id"]
+        })
         if not draft:
             raise HTTPException(status_code=404, detail="Draft not found")
         
@@ -613,322 +858,20 @@ async def mark_draft_sent(draft_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# Group Model
-class Group(BaseModel):
-    name: str
-    description: Optional[str] = None
-    profile_picture: Optional[str] = None  # base64 image
-    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
-    updated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+# ============ Morning Briefing Route ============
 
-class GroupUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    profile_picture: Optional[str] = None
+@api_router.get("/morning-briefing", response_model=List[dict])
+async def get_morning_briefing(current_user: dict = Depends(get_current_user)):
+    """Get contacts due today or overdue"""
+    today = datetime.utcnow().isoformat()
+    contacts = await db.contacts.find({
+        "user_id": current_user["user_id"],
+        "next_due": {"$lte": today}
+    }).to_list(100)
+    return [serialize_doc(c) for c in contacts]
 
-# Groups Routes
-@api_router.post("/groups", response_model=dict)
-async def create_group(group: Group):
-    """Create a new group"""
-    group_dict = group.dict()
-    result = await db.groups.insert_one(group_dict)
-    group_dict['id'] = str(result.inserted_id)
-    del group_dict['_id']
-    return group_dict
+# ============ Include Router & Middleware ============
 
-@api_router.get("/groups", response_model=List[dict])
-async def get_groups():
-    """Get all groups"""
-    groups = await db.groups.find().to_list(1000)
-    return [serialize_doc(g) for g in groups]
-
-@api_router.get("/groups/{group_id}", response_model=dict)
-async def get_group(group_id: str):
-    try:
-        group = await db.groups.find_one({"_id": ObjectId(group_id)})
-        if not group:
-            raise HTTPException(status_code=404, detail="Group not found")
-        return serialize_doc(group)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@api_router.put("/groups/{group_id}", response_model=dict)
-async def update_group(group_id: str, group_update: GroupUpdate):
-    try:
-        update_data = {k: v for k, v in group_update.dict().items() if v is not None}
-        update_data['updated_at'] = datetime.utcnow().isoformat()
-        
-        result = await db.groups.update_one(
-            {"_id": ObjectId(group_id)},
-            {"$set": update_data}
-        )
-        
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Group not found")
-        
-        updated_group = await db.groups.find_one({"_id": ObjectId(group_id)})
-        return serialize_doc(updated_group)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@api_router.delete("/groups/{group_id}")
-async def delete_group(group_id: str):
-    try:
-        result = await db.groups.delete_one({"_id": ObjectId(group_id)})
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Group not found")
-        return {"message": "Group deleted successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-# Settings Routes
-@api_router.get("/settings", response_model=Settings)
-async def get_settings():
-    """Get user settings"""
-    settings = await db.settings.find_one({})
-    if not settings:
-        # Create default settings
-        default_settings = Settings().dict()
-        await db.settings.insert_one(default_settings)
-        return Settings()
-    return Settings(**settings)
-
-@api_router.put("/settings", response_model=Settings)
-async def update_settings(settings: Settings):
-    """Update user settings"""
-    settings_dict = settings.dict()
-    await db.settings.update_one(
-        {},
-        {"$set": settings_dict},
-        upsert=True
-    )
-    return settings
-
-# ============ Google OAuth Integration ============
-EMERGENT_AUTH_URL = "https://auth.emergentagent.com"
-EMERGENT_SESSION_API = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
-
-@api_router.get("/integrations/google/auth-url")
-async def get_google_auth_url(redirect_url: str):
-    """Get the Google OAuth URL for authentication"""
-    # The redirect_url should be your app's callback page
-    auth_url = f"{EMERGENT_AUTH_URL}/?redirect={redirect_url}"
-    return {"auth_url": auth_url}
-
-@api_router.post("/integrations/google/callback")
-async def google_oauth_callback(callback: GoogleOAuthCallback, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Process Google OAuth callback and store connection"""
-    try:
-        # Verify the user's JWT token
-        token = credentials.credentials
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get('user_id')
-        
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        
-        # Exchange session_id for session data from Emergent Auth
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                EMERGENT_SESSION_API,
-                headers={"X-Session-ID": callback.session_id}
-            )
-            
-            if response.status_code != 200:
-                raise HTTPException(status_code=400, detail="Failed to validate Google session")
-            
-            session_data = response.json()
-        
-        # Store the Google connection
-        google_connection = {
-            "user_id": user_id,
-            "google_email": session_data.get("email"),
-            "google_name": session_data.get("name"),
-            "google_picture": session_data.get("picture"),
-            "session_token": session_data.get("session_token"),
-            "connected_at": datetime.utcnow().isoformat()
-        }
-        
-        # Upsert - update if exists, insert if not
-        await db.google_connections.update_one(
-            {"user_id": user_id},
-            {"$set": google_connection},
-            upsert=True
-        )
-        
-        return {
-            "status": "connected",
-            "email": session_data.get("email"),
-            "name": session_data.get("name"),
-            "picture": session_data.get("picture")
-        }
-        
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@api_router.get("/integrations/google/status")
-async def get_google_connection_status(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Check if user has connected their Google account"""
-    try:
-        token = credentials.credentials
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get('user_id')
-        
-        connection = await db.google_connections.find_one({"user_id": user_id})
-        
-        if connection:
-            return {
-                "connected": True,
-                "email": connection.get("google_email"),
-                "name": connection.get("google_name"),
-                "picture": connection.get("google_picture"),
-                "connected_at": connection.get("connected_at")
-            }
-        return {"connected": False}
-        
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
-
-@api_router.delete("/integrations/google/disconnect")
-async def disconnect_google(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Disconnect Google account"""
-    try:
-        token = credentials.credentials
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get('user_id')
-        
-        await db.google_connections.delete_one({"user_id": user_id})
-        return {"status": "disconnected"}
-        
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
-
-# ============ Telegram Bot Integration ============
-# Users will create their own bot via @BotFather and provide the chat_id
-
-@api_router.post("/integrations/telegram/connect")
-async def connect_telegram(request: ConnectTelegramRequest, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Connect Telegram account by providing chat_id from the bot"""
-    try:
-        token = credentials.credentials
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get('user_id')
-        
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        
-        telegram_connection = {
-            "user_id": user_id,
-            "telegram_chat_id": request.chat_id,
-            "telegram_username": request.username,
-            "telegram_first_name": request.first_name,
-            "connected_at": datetime.utcnow().isoformat()
-        }
-        
-        await db.telegram_connections.update_one(
-            {"user_id": user_id},
-            {"$set": telegram_connection},
-            upsert=True
-        )
-        
-        return {
-            "status": "connected",
-            "chat_id": request.chat_id,
-            "username": request.username
-        }
-        
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-@api_router.get("/integrations/telegram/status")
-async def get_telegram_connection_status(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Check if user has connected their Telegram account"""
-    try:
-        token = credentials.credentials
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get('user_id')
-        
-        connection = await db.telegram_connections.find_one({"user_id": user_id})
-        
-        if connection:
-            return {
-                "connected": True,
-                "chat_id": connection.get("telegram_chat_id"),
-                "username": connection.get("telegram_username"),
-                "first_name": connection.get("telegram_first_name"),
-                "connected_at": connection.get("connected_at")
-            }
-        return {"connected": False}
-        
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
-
-@api_router.delete("/integrations/telegram/disconnect")
-async def disconnect_telegram(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Disconnect Telegram account"""
-    try:
-        token = credentials.credentials
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get('user_id')
-        
-        await db.telegram_connections.delete_one({"user_id": user_id})
-        return {"status": "disconnected"}
-        
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
-
-@api_router.get("/integrations/telegram/bot-instructions")
-async def get_telegram_bot_instructions():
-    """Get instructions for setting up Telegram bot"""
-    return {
-        "steps": [
-            "1. Open Telegram and search for @BotFather",
-            "2. Send /newbot command",
-            "3. Follow the instructions to create your bot",
-            "4. Copy the bot token (you'll need this later)",
-            "5. Start a chat with your new bot",
-            "6. Send any message to the bot",
-            "7. Visit: https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates",
-            "8. Find your chat_id in the response",
-            "9. Enter the chat_id in the app to connect"
-        ],
-        "note": "Your chat_id is needed so the app can send you notifications via your bot"
-    }
-
-@api_router.get("/integrations/status")
-async def get_all_integrations_status(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Get status of all integrations for the user"""
-    try:
-        token = credentials.credentials
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get('user_id')
-        
-        google_conn = await db.google_connections.find_one({"user_id": user_id})
-        telegram_conn = await db.telegram_connections.find_one({"user_id": user_id})
-        
-        return {
-            "google": {
-                "connected": google_conn is not None,
-                "email": google_conn.get("google_email") if google_conn else None,
-                "name": google_conn.get("google_name") if google_conn else None
-            },
-            "telegram": {
-                "connected": telegram_conn is not None,
-                "username": telegram_conn.get("telegram_username") if telegram_conn else None,
-                "chat_id": telegram_conn.get("telegram_chat_id") if telegram_conn else None
-            }
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
-
-# Include the router in the main app
 app.include_router(api_router)
 
 app.add_middleware(
