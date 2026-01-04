@@ -152,6 +152,43 @@ export const TRANSLATIONS: { [lang: string]: { [key: string]: string } } = {
     noContactsDue: 'No contacts due today',
     addContact: 'Add Contact',
     interactions: 'Interactions',
+    
+    // Drafts tab
+    noAIDraftsYet: 'No AI Drafts Yet',
+    generateDraftsFromContacts: 'Generate drafts from contacts',
+    deleteAll: 'Delete All',
+    
+    // Groups tab
+    createGroup: 'Create Group',
+    groupName: 'Group Name',
+    groupDescription: 'Description (optional)',
+    addContacts: 'Add Contacts',
+    noGroups: 'No groups yet',
+    createFirstGroup: 'Create your first group to organize contacts',
+    searchGroups: 'Search groups...',
+    
+    // Profile tab
+    editProfile: 'Edit Profile',
+    importContacts: 'Import Contacts',
+    deleteAllContacts: 'Delete All Contacts',
+    deleteAllContactsConfirm: 'This will permanently delete all your contacts. Are you sure?',
+    
+    // Contact import
+    importFromDevice: 'Import from Device',
+    searchDeviceContacts: 'Search device contacts...',
+    noContactsFound: 'No contacts found',
+    import: 'Import',
+    
+    // Screenshots
+    conversationScreenshots: 'Conversation Screenshots',
+    screenshotHint: 'Upload up to 3 screenshots of your chats - this is the #1 way AI learns your style!',
+    priority: 'Priority',
+    noScreenshotsUploaded: 'No screenshots uploaded',
+    aiWillLearnFrom: 'AI will learn style from',
+    screenshots: 'screenshots',
+    exampleText: 'example text',
+    toneFallback: 'Tone (Fallback)',
+    toneFallbackHint: 'Used when no screenshots or example text provided',
   },
   de: {
     // Navigation
