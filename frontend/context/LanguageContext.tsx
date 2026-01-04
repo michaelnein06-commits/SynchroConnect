@@ -339,6 +339,43 @@ export const TRANSLATIONS: { [lang: string]: { [key: string]: string } } = {
     noContactsDue: 'Heute keine Kontakte fällig',
     addContact: 'Kontakt hinzufügen',
     interactions: 'Interaktionen',
+    
+    // Drafts tab
+    noAIDraftsYet: 'Noch keine KI-Entwürfe',
+    generateDraftsFromContacts: 'Entwürfe aus Kontakten generieren',
+    deleteAll: 'Alle löschen',
+    
+    // Groups tab
+    createGroup: 'Gruppe erstellen',
+    groupName: 'Gruppenname',
+    groupDescription: 'Beschreibung (optional)',
+    addContacts: 'Kontakte hinzufügen',
+    noGroups: 'Noch keine Gruppen',
+    createFirstGroup: 'Erstelle deine erste Gruppe um Kontakte zu organisieren',
+    searchGroups: 'Gruppen suchen...',
+    
+    // Profile tab
+    editProfile: 'Profil bearbeiten',
+    importContacts: 'Kontakte importieren',
+    deleteAllContacts: 'Alle Kontakte löschen',
+    deleteAllContactsConfirm: 'Dies wird alle deine Kontakte dauerhaft löschen. Bist du sicher?',
+    
+    // Contact import
+    importFromDevice: 'Vom Gerät importieren',
+    searchDeviceContacts: 'Gerätekontakte suchen...',
+    noContactsFound: 'Keine Kontakte gefunden',
+    import: 'Importieren',
+    
+    // Screenshots
+    conversationScreenshots: 'Gesprächs-Screenshots',
+    screenshotHint: 'Lade bis zu 3 Screenshots deiner Chats hoch - so lernt die KI deinen Stil am besten!',
+    priority: 'Priorität',
+    noScreenshotsUploaded: 'Keine Screenshots hochgeladen',
+    aiWillLearnFrom: 'KI lernt Stil aus',
+    screenshots: 'Screenshots',
+    exampleText: 'Beispieltext',
+    toneFallback: 'Ton (Fallback)',
+    toneFallbackHint: 'Wird verwendet wenn keine Screenshots oder Beispieltext vorhanden',
   },
 };
 
