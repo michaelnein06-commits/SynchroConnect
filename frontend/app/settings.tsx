@@ -114,6 +114,7 @@ const DRAFT_LANGUAGES = [
 export default function Settings() {
   const router = useRouter();
   const { token, updateUser } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
