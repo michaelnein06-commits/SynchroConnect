@@ -549,6 +549,27 @@ async def delete_contact(contact_id: str, current_user: dict = Depends(get_curre
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@api_router.delete("/contacts")
+async def delete_all_contacts(current_user: dict = Depends(get_current_user)):
+    """Delete all contacts for the current user"""
+    try:
+        # Get all contact IDs for this user
+        contacts = await db.contacts.find({"user_id": current_user["user_id"]}).to_list(10000)
+        contact_ids = [str(c["_id"]) for c in contacts]
+        
+        # Delete all related interactions
+        await db.interactions.delete_many({"user_id": current_user["user_id"]})
+        
+        # Delete all related drafts
+        await db.drafts.delete_many({"user_id": current_user["user_id"]})
+        
+        # Delete all contacts
+        result = await db.contacts.delete_many({"user_id": current_user["user_id"]})
+        
+        return {"message": f"Deleted {result.deleted_count} contacts", "deleted_count": result.deleted_count}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @api_router.post("/contacts/{contact_id}/move-pipeline")
 async def move_pipeline(contact_id: str, request: MovePipelineRequest, current_user: dict = Depends(get_current_user)):
     """Move contact to different pipeline stage and recalculate next_due"""
