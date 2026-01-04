@@ -127,6 +127,7 @@ class Contact(BaseModel):
     language: str = "English"
     tone: str = "Casual"  # Casual, Professional, Friendly
     example_message: Optional[str] = None  # Individual AI tone override
+    conversation_screenshots: List[str] = []  # Up to 3 base64 screenshots for AI style learning
     # Notes
     notes: Optional[str] = None
     # Calculated fields
