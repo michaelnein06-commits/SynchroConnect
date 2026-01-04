@@ -383,7 +383,7 @@ export default function Index() {
     try {
       await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${contact.id}/move-pipeline`, {
         pipeline_stage: newStage
-      });
+      }, getAuthHeaders());
       triggerHaptic('success');
       fetchContacts();
     } catch (error) {
