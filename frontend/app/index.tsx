@@ -110,7 +110,7 @@ interface Group {
 
 export default function Index() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>('pipeline');
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -122,18 +122,28 @@ export default function Index() {
   const [selectedStage, setSelectedStage] = useState('Monthly');
   const [showImportPrompt, setShowImportPrompt] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [groupSearchQuery, setGroupSearchQuery] = useState('');
   const [newGroupName, setNewGroupName] = useState('');
   // Move modal state
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  // Add contacts to group modal
+  const [showAddContactsModal, setShowAddContactsModal] = useState(false);
+  const [selectedGroupForContacts, setSelectedGroupForContacts] = useState<Group | null>(null);
+  const [selectedContactsForGroup, setSelectedContactsForGroup] = useState<string[]>([]);
+
+  // API headers with auth token
+  const getAuthHeaders = () => ({
+    headers: { Authorization: `Bearer ${token}` }
+  });
 
   const fetchContacts = async () => {
+    if (!token) return;
     try {
-      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts`);
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts`, getAuthHeaders());
       setContacts(response.data);
     } catch (error) {
       console.error('Error fetching contacts:', error);
-      Alert.alert('Error', 'Failed to load contacts');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -141,8 +151,9 @@ export default function Index() {
   };
 
   const fetchDrafts = async () => {
+    if (!token) return;
     try {
-      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/drafts`);
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/drafts`, getAuthHeaders());
       setDrafts(response.data);
     } catch (error) {
       console.error('Error fetching drafts:', error);
@@ -150,9 +161,9 @@ export default function Index() {
   };
 
   const fetchGroups = async () => {
+    if (!token) return;
     try {
-      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/groups`);
-      // Backend returns array directly, not { groups: [...] }
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/groups`, getAuthHeaders());
       setGroups(response.data || []);
     } catch (error) {
       console.error('Error fetching groups:', error);
@@ -160,10 +171,12 @@ export default function Index() {
   };
 
   useEffect(() => {
-    fetchContacts();
-    fetchDrafts();
-    fetchGroups();
-  }, [user]);
+    if (token) {
+      fetchContacts();
+      fetchDrafts();
+      fetchGroups();
+    }
+  }, [token]);
 
   const onRefresh = () => {
     setRefreshing(true);
