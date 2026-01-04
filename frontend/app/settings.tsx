@@ -9,39 +9,110 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
+// Premium Color Palette
 const COLORS = {
+  primaryStart: '#6366F1',
+  primaryEnd: '#8B5CF6',
   primary: '#6366F1',
+  primaryLight: '#A5B4FC',
   accent: '#F43F5E',
-  background: '#F1F5F9',
+  background: '#F8FAFC',
   surface: '#FFFFFF',
   text: '#0F172A',
-  textLight: '#64748B',
+  textSecondary: '#475569',
+  textLight: '#94A3B8',
   border: '#E2E8F0',
   success: '#10B981',
+  warning: '#F59E0B',
+};
+
+// Translations
+const TRANSLATIONS: { [key: string]: { [key: string]: string } } = {
+  en: {
+    settings: 'Settings',
+    save: 'Save',
+    localization: 'Localization',
+    appLanguage: 'App Language',
+    defaultDraftLanguage: 'Default Draft Language',
+    aiMessageDrafting: 'AI Message Drafting',
+    defaultWritingStyle: 'Default Writing Style',
+    writingStyleHint: 'This example helps AI learn your general writing style. Can be overridden per contact.',
+    writingStylePlaceholder: 'e.g., Hey! How have you been? Just wanted to catch up...',
+    notifications: 'Notifications',
+    enableNotifications: 'Enable Notifications',
+    morningBriefingTime: 'Morning Briefing Time',
+    about: 'About',
+    appVersion: 'App Version',
+    cancel: 'Cancel',
+    selectLanguage: 'Select App Language',
+    selectDraftLanguage: 'Default Draft Language',
+    settingsSaved: 'Settings saved successfully',
+    error: 'Error',
+    failedToSave: 'Failed to save settings',
+    on: 'On',
+    off: 'Off',
+  },
+  de: {
+    settings: 'Einstellungen',
+    save: 'Speichern',
+    localization: 'Sprache',
+    appLanguage: 'App-Sprache',
+    defaultDraftLanguage: 'Standard Entwurfssprache',
+    aiMessageDrafting: 'KI-Nachrichtenentwürfe',
+    defaultWritingStyle: 'Standard Schreibstil',
+    writingStyleHint: 'Dieses Beispiel hilft der KI, deinen allgemeinen Schreibstil zu lernen. Kann pro Kontakt überschrieben werden.',
+    writingStylePlaceholder: 'z.B., Hey! Wie gehts dir? Wollte mal nachfragen...',
+    notifications: 'Benachrichtigungen',
+    enableNotifications: 'Benachrichtigungen aktivieren',
+    morningBriefingTime: 'Morgenbriefing Zeit',
+    about: 'Über',
+    appVersion: 'App-Version',
+    cancel: 'Abbrechen',
+    selectLanguage: 'App-Sprache wählen',
+    selectDraftLanguage: 'Standard Entwurfssprache',
+    settingsSaved: 'Einstellungen erfolgreich gespeichert',
+    error: 'Fehler',
+    failedToSave: 'Einstellungen konnten nicht gespeichert werden',
+    on: 'An',
+    off: 'Aus',
+  },
 };
 
 const UI_LANGUAGES = [
-  { code: 'en', name: 'English' },
-  { code: 'de', name: 'Deutsch' },
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
 ];
 
 const DRAFT_LANGUAGES = [
-  'English', 'German', 'Spanish', 'French', 'Italian', 
-  'Portuguese', 'Dutch', 'Russian', 'Chinese', 'Japanese'
+  { name: 'English', flag: '🇬🇧' },
+  { name: 'German', flag: '🇩🇪' },
+  { name: 'Spanish', flag: '🇪🇸' },
+  { name: 'French', flag: '🇫🇷' },
+  { name: 'Italian', flag: '🇮🇹' },
+  { name: 'Portuguese', flag: '🇵🇹' },
+  { name: 'Dutch', flag: '🇳🇱' },
+  { name: 'Russian', flag: '🇷🇺' },
+  { name: 'Chinese', flag: '🇨🇳' },
+  { name: 'Japanese', flag: '🇯🇵' },
 ];
 
 export default function Settings() {
   const router = useRouter();
-  const { token, user, updateUser } = useAuth();
+  const { token, updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
@@ -55,6 +126,11 @@ export default function Settings() {
 
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showDraftLanguageModal, setShowDraftLanguageModal] = useState(false);
+
+  // Get translation based on current language
+  const t = (key: string) => {
+    return TRANSLATIONS[settings.ui_language]?.[key] || TRANSLATIONS['en'][key] || key;
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -81,195 +157,241 @@ export default function Settings() {
   };
 
   const saveSettings = async () => {
+    Keyboard.dismiss();
     setSaving(true);
     try {
       await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/profile`, settings, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      Alert.alert('Success', 'Settings saved successfully');
+      // Update user context with new language
+      await updateUser({ ui_language: settings.ui_language } as any);
+      Alert.alert('✓', t('settingsSaved'));
     } catch (error) {
-      Alert.alert('Error', 'Failed to save settings');
+      Alert.alert(t('error'), t('failedToSave'));
     } finally {
       setSaving(false);
     }
   };
 
-  const getLanguageName = (code: string) => {
-    return UI_LANGUAGES.find(l => l.code === code)?.name || code;
+  const getLanguageInfo = (code: string) => {
+    return UI_LANGUAGES.find(l => l.code === code) || UI_LANGUAGES[0];
+  };
+
+  const getDraftLanguageFlag = (name: string) => {
+    return DRAFT_LANGUAGES.find(l => l.name === name)?.flag || '🌐';
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </SafeAreaView>
+      <View style={styles.loadingContainer}>
+        <LinearGradient colors={[COLORS.primaryStart, COLORS.primaryEnd]} style={styles.loadingGradient}>
+          <ActivityIndicator size="large" color={COLORS.surface} />
+        </LinearGradient>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <TouchableOpacity onPress={saveSettings} disabled={saving} style={styles.saveButton}>
-          {saving ? (
-            <ActivityIndicator color={COLORS.primary} size="small" />
-          ) : (
-            <Text style={styles.saveButtonText}>Save</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content}>
-        {/* Localization Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Localization</Text>
-          
-          {/* App UI Language */}
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => setShowLanguageModal(true)}
-          >
-            <View style={styles.settingIcon}>
-              <Ionicons name="globe-outline" size={22} color={COLORS.primary} />
-            </View>
-            <View style={styles.settingContent}>
-              <Text style={styles.settingLabel}>App Language</Text>
-              <Text style={styles.settingValue}>{getLanguageName(settings.ui_language)}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
-          </TouchableOpacity>
-
-          {/* Default Draft Language */}
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => setShowDraftLanguageModal(true)}
-          >
-            <View style={styles.settingIcon}>
-              <Ionicons name="chatbubble-outline" size={22} color={COLORS.primary} />
-            </View>
-            <View style={styles.settingContent}>
-              <Text style={styles.settingLabel}>Default Draft Language</Text>
-              <Text style={styles.settingValue}>{settings.default_draft_language}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
-          </TouchableOpacity>
-        </View>
-
-        {/* AI Settings Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>AI Message Drafting</Text>
-          
-          <View style={styles.settingItemColumn}>
-            <View style={styles.settingLabelRow}>
-              <Ionicons name="sparkles-outline" size={22} color={COLORS.primary} />
-              <Text style={styles.settingLabel}>Default Writing Style</Text>
-            </View>
-            <Text style={styles.settingHint}>
-              This example helps AI learn your general writing style. Can be overridden per contact.
-            </Text>
-            <TextInput
-              style={styles.textArea}
-              value={settings.default_writing_style}
-              onChangeText={(text) => setSettings({ ...settings, default_writing_style: text })}
-              placeholder="e.g., Hey! How have you been? Just wanted to catch up..."
-              placeholderTextColor={COLORS.textLight}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
+    <View style={styles.container}>
+      {/* Header with Gradient */}
+      <LinearGradient colors={[COLORS.primaryStart, COLORS.primaryEnd]} style={styles.headerGradient}>
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={28} color={COLORS.surface} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{t('settings')}</Text>
+            <TouchableOpacity onPress={saveSettings} disabled={saving} style={styles.saveButton}>
+              {saving ? (
+                <ActivityIndicator color={COLORS.surface} size="small" />
+              ) : (
+                <View style={styles.savePill}>
+                  <Ionicons name="checkmark" size={18} color={COLORS.surface} />
+                  <Text style={styles.savePillText}>{t('save')}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
-        </View>
+        </SafeAreaView>
+      </LinearGradient>
 
-        {/* Notifications Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
-          
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => setSettings({ ...settings, notifications_enabled: !settings.notifications_enabled })}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={{ flex: 1 }}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView 
+            style={styles.content}
+            contentContainerStyle={styles.contentContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <View style={styles.settingIcon}>
-              <Ionicons name="notifications-outline" size={22} color={COLORS.primary} />
-            </View>
-            <View style={styles.settingContent}>
-              <Text style={styles.settingLabel}>Enable Notifications</Text>
-              <Text style={styles.settingValue}>
-                {settings.notifications_enabled ? 'On' : 'Off'}
-              </Text>
-            </View>
-            <View style={[styles.toggle, settings.notifications_enabled && styles.toggleActive]}>
-              <View style={[styles.toggleThumb, settings.notifications_enabled && styles.toggleThumbActive]} />
-            </View>
-          </TouchableOpacity>
+            {/* Localization Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionIconWrapper}>
+                  <Ionicons name="globe-outline" size={18} color={COLORS.primary} />
+                </View>
+                <Text style={styles.sectionTitle}>{t('localization')}</Text>
+              </View>
+              
+              {/* App UI Language */}
+              <TouchableOpacity 
+                style={styles.settingCard}
+                onPress={() => setShowLanguageModal(true)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.settingCardContent}>
+                  <Text style={styles.settingLabel}>{t('appLanguage')}</Text>
+                  <View style={styles.languageValue}>
+                    <Text style={styles.languageFlag}>{getLanguageInfo(settings.ui_language).flag}</Text>
+                    <Text style={styles.languageText}>{getLanguageInfo(settings.ui_language).name}</Text>
+                    <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
+                  </View>
+                </View>
+              </TouchableOpacity>
 
-          <View style={styles.settingItem}>
-            <View style={styles.settingIcon}>
-              <Ionicons name="time-outline" size={22} color={COLORS.primary} />
+              {/* Default Draft Language */}
+              <TouchableOpacity 
+                style={styles.settingCard}
+                onPress={() => setShowDraftLanguageModal(true)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.settingCardContent}>
+                  <Text style={styles.settingLabel}>{t('defaultDraftLanguage')}</Text>
+                  <View style={styles.languageValue}>
+                    <Text style={styles.languageFlag}>{getDraftLanguageFlag(settings.default_draft_language)}</Text>
+                    <Text style={styles.languageText}>{settings.default_draft_language}</Text>
+                    <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
+                  </View>
+                </View>
+              </TouchableOpacity>
             </View>
-            <View style={styles.settingContent}>
-              <Text style={styles.settingLabel}>Morning Briefing Time</Text>
-              <TextInput
-                style={styles.timeInput}
-                value={settings.notification_time}
-                onChangeText={(text) => setSettings({ ...settings, notification_time: text })}
-                placeholder="09:00"
-                placeholderTextColor={COLORS.textLight}
-              />
-            </View>
-          </View>
-        </View>
 
-        {/* About Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          
-          <View style={styles.settingItem}>
-            <View style={styles.settingIcon}>
-              <Ionicons name="information-circle-outline" size={22} color={COLORS.primary} />
+            {/* AI Settings Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={[styles.sectionIconWrapper, { backgroundColor: COLORS.warning + '20' }]}>
+                  <Ionicons name="sparkles-outline" size={18} color={COLORS.warning} />
+                </View>
+                <Text style={styles.sectionTitle}>{t('aiMessageDrafting')}</Text>
+              </View>
+              
+              <View style={styles.settingCardLarge}>
+                <Text style={styles.settingLabel}>{t('defaultWritingStyle')}</Text>
+                <Text style={styles.settingHint}>{t('writingStyleHint')}</Text>
+                <TextInput
+                  style={styles.textArea}
+                  value={settings.default_writing_style}
+                  onChangeText={(text) => setSettings({ ...settings, default_writing_style: text })}
+                  placeholder={t('writingStylePlaceholder')}
+                  placeholderTextColor={COLORS.textLight}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+              </View>
             </View>
-            <View style={styles.settingContent}>
-              <Text style={styles.settingLabel}>App Version</Text>
-              <Text style={styles.settingValue}>2.0.0</Text>
-            </View>
-          </View>
-        </View>
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+            {/* Notifications Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={[styles.sectionIconWrapper, { backgroundColor: COLORS.accent + '20' }]}>
+                  <Ionicons name="notifications-outline" size={18} color={COLORS.accent} />
+                </View>
+                <Text style={styles.sectionTitle}>{t('notifications')}</Text>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.settingCard}
+                onPress={() => setSettings({ ...settings, notifications_enabled: !settings.notifications_enabled })}
+                activeOpacity={0.7}
+              >
+                <View style={styles.settingCardContent}>
+                  <View>
+                    <Text style={styles.settingLabel}>{t('enableNotifications')}</Text>
+                    <Text style={styles.settingValue}>
+                      {settings.notifications_enabled ? t('on') : t('off')}
+                    </Text>
+                  </View>
+                  <View style={[styles.toggle, settings.notifications_enabled && styles.toggleActive]}>
+                    <View style={[styles.toggleThumb, settings.notifications_enabled && styles.toggleThumbActive]} />
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.settingCard}>
+                <View style={styles.settingCardContent}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.settingLabel}>{t('morningBriefingTime')}</Text>
+                    <TextInput
+                      style={styles.timeInput}
+                      value={settings.notification_time}
+                      onChangeText={(text) => setSettings({ ...settings, notification_time: text })}
+                      placeholder="09:00"
+                      placeholderTextColor={COLORS.textLight}
+                    />
+                  </View>
+                  <Ionicons name="time-outline" size={24} color={COLORS.textLight} />
+                </View>
+              </View>
+            </View>
+
+            {/* About Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={[styles.sectionIconWrapper, { backgroundColor: COLORS.success + '20' }]}>
+                  <Ionicons name="information-circle-outline" size={18} color={COLORS.success} />
+                </View>
+                <Text style={styles.sectionTitle}>{t('about')}</Text>
+              </View>
+              
+              <View style={styles.settingCard}>
+                <View style={styles.settingCardContent}>
+                  <Text style={styles.settingLabel}>{t('appVersion')}</Text>
+                  <View style={styles.versionBadge}>
+                    <Text style={styles.versionText}>2.0.0</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
 
       {/* UI Language Modal */}
       <Modal visible={showLanguageModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Select App Language</Text>
+            <Text style={styles.modalTitle}>{t('selectLanguage')}</Text>
             
-            {UI_LANGUAGES.map((lang) => (
-              <TouchableOpacity
-                key={lang.code}
-                style={[styles.modalOption, settings.ui_language === lang.code && styles.modalOptionActive]}
-                onPress={() => {
-                  setSettings({ ...settings, ui_language: lang.code });
-                  setShowLanguageModal(false);
-                }}
-              >
-                <Text style={[styles.modalOptionText, settings.ui_language === lang.code && styles.modalOptionTextActive]}>
-                  {lang.name}
-                </Text>
-                {settings.ui_language === lang.code && (
-                  <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
+            {UI_LANGUAGES.map((lang) => {
+              const isSelected = settings.ui_language === lang.code;
+              return (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[styles.languageOption, isSelected && styles.languageOptionSelected]}
+                  onPress={() => {
+                    setSettings({ ...settings, ui_language: lang.code });
+                    setShowLanguageModal(false);
+                  }}
+                >
+                  <Text style={styles.optionFlag}>{lang.flag}</Text>
+                  <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                    {lang.name}
+                  </Text>
+                  {isSelected && (
+                    <Ionicons name="checkmark-circle" size={24} color={COLORS.success} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
 
             <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowLanguageModal(false)}>
-              <Text style={styles.modalCloseText}>Cancel</Text>
+              <Text style={styles.modalCloseText}>{t('cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -280,158 +402,150 @@ export default function Settings() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Default Draft Language</Text>
+            <Text style={styles.modalTitle}>{t('selectDraftLanguage')}</Text>
             
-            <ScrollView style={{ maxHeight: 400 }}>
-              {DRAFT_LANGUAGES.map((lang) => (
-                <TouchableOpacity
-                  key={lang}
-                  style={[styles.modalOption, settings.default_draft_language === lang && styles.modalOptionActive]}
-                  onPress={() => {
-                    setSettings({ ...settings, default_draft_language: lang });
-                    setShowDraftLanguageModal(false);
-                  }}
-                >
-                  <Text style={[styles.modalOptionText, settings.default_draft_language === lang && styles.modalOptionTextActive]}>
-                    {lang}
-                  </Text>
-                  {settings.default_draft_language === lang && (
-                    <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
-                  )}
-                </TouchableOpacity>
-              ))}
+            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
+              {DRAFT_LANGUAGES.map((lang) => {
+                const isSelected = settings.default_draft_language === lang.name;
+                return (
+                  <TouchableOpacity
+                    key={lang.name}
+                    style={[styles.languageOption, isSelected && styles.languageOptionSelected]}
+                    onPress={() => {
+                      setSettings({ ...settings, default_draft_language: lang.name });
+                      setShowDraftLanguageModal(false);
+                    }}
+                  >
+                    <Text style={styles.optionFlag}>{lang.flag}</Text>
+                    <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                      {lang.name}
+                    </Text>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={24} color={COLORS.success} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
 
             <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowDraftLanguageModal(false)}>
-              <Text style={styles.modalCloseText}>Cancel</Text>
+              <Text style={styles.modalCloseText}>{t('cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  loadingContainer: { flex: 1 },
+  loadingGradient: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  
+  // Header
+  headerGradient: { paddingBottom: 20 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    paddingTop: 8,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  saveButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  content: {
-    flex: 1,
-  },
-  section: {
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.textLight,
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  settingItem: {
+  backButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: COLORS.surface },
+  saveButton: { width: 80, alignItems: 'flex-end' },
+  savePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  settingItemColumn: {
-    backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  settingIcon: {
-    width: 40,
-    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 20,
+    gap: 4,
+  },
+  savePillText: { fontSize: 14, fontWeight: '600', color: COLORS.surface },
+  
+  // Content
+  content: { flex: 1 },
+  contentContainer: { paddingTop: 8 },
+  
+  // Section
+  section: { marginTop: 24, paddingHorizontal: 16 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
+  sectionIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     backgroundColor: COLORS.primary + '15',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
-  settingContent: {
-    flex: 1,
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text },
+  
+  // Setting Cards
+  settingCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: COLORS.text,
+  settingCardLarge: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  settingValue: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    marginTop: 2,
+  settingCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
+  settingLabel: { fontSize: 16, fontWeight: '600', color: COLORS.text },
+  settingValue: { fontSize: 14, color: COLORS.textLight, marginTop: 2 },
   settingHint: {
     fontSize: 13,
     color: COLORS.textLight,
-    marginTop: 8,
+    marginTop: 6,
     marginBottom: 12,
     lineHeight: 18,
   },
-  settingLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
+  
+  // Language Value
+  languageValue: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  languageFlag: { fontSize: 22 },
+  languageText: { fontSize: 15, color: COLORS.textSecondary },
+  
+  // Text Area
   textArea: {
     backgroundColor: COLORS.background,
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
     fontSize: 15,
     color: COLORS.text,
     minHeight: 100,
     textAlignVertical: 'top',
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
+  
+  // Time Input
   timeInput: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.text,
     marginTop: 4,
     paddingVertical: 4,
   },
+  
+  // Toggle
   toggle: {
     width: 52,
     height: 32,
@@ -440,9 +554,7 @@ const styles = StyleSheet.create({
     padding: 2,
     justifyContent: 'center',
   },
-  toggleActive: {
-    backgroundColor: COLORS.success,
-  },
+  toggleActive: { backgroundColor: COLORS.success },
   toggleThumb: {
     width: 28,
     height: 28,
@@ -454,18 +566,23 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  toggleThumbActive: {
-    alignSelf: 'flex-end',
+  toggleThumbActive: { alignSelf: 'flex-end' },
+  
+  // Version Badge
+  versionBadge: {
+    backgroundColor: COLORS.primary + '15',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
+  versionText: { fontSize: 14, fontWeight: '600', color: COLORS.primary },
+  
+  // Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: {
     backgroundColor: COLORS.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     padding: 20,
     paddingBottom: 40,
   },
@@ -475,45 +592,34 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.text,
-    marginBottom: 20,
     textAlign: 'center',
+    marginBottom: 20,
   },
-  modalOption: {
+  languageOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     marginBottom: 8,
     backgroundColor: COLORS.background,
+    gap: 12,
   },
-  modalOptionActive: {
-    backgroundColor: COLORS.primary + '15',
-  },
-  modalOptionText: {
-    fontSize: 16,
-    color: COLORS.text,
-  },
-  modalOptionTextActive: {
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
+  languageOptionSelected: { backgroundColor: COLORS.success + '15' },
+  optionFlag: { fontSize: 26 },
+  optionText: { flex: 1, fontSize: 17, color: COLORS.text },
+  optionTextSelected: { fontWeight: '600', color: COLORS.success },
   modalCloseButton: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
     backgroundColor: COLORS.background,
     marginTop: 8,
   },
-  modalCloseText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textLight,
-  },
+  modalCloseText: { fontSize: 16, fontWeight: '600', color: COLORS.textLight },
 });
