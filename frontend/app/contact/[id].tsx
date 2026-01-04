@@ -894,6 +894,52 @@ export default function ContactDetail() {
                   <Text style={styles.fieldValue}>{formData.example_message || '-'}</Text>
                 )}
               </View>
+
+              {/* Conversation Screenshots - Priority 1 for AI Style Learning */}
+              <View style={styles.field}>
+                <View style={styles.screenshotHeader}>
+                  <View>
+                    <Text style={styles.fieldLabel}>Conversation Screenshots</Text>
+                    <Text style={styles.fieldHint}>
+                      Upload up to 3 screenshots of your chats - this is the #1 way AI learns your style!
+                    </Text>
+                  </View>
+                  <View style={styles.priorityBadge}>
+                    <Ionicons name="star" size={12} color={COLORS.warning} />
+                    <Text style={styles.priorityText}>Priority 1</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.screenshotGrid}>
+                  {formData.conversation_screenshots.map((screenshot, index) => (
+                    <View key={index} style={styles.screenshotItem}>
+                      <Image source={{ uri: screenshot }} style={styles.screenshotImage} />
+                      {isEditing && (
+                        <TouchableOpacity 
+                          style={styles.removeScreenshotBtn}
+                          onPress={() => removeConversationScreenshot(index)}
+                        >
+                          <Ionicons name="close-circle" size={24} color={COLORS.accent} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))}
+                  
+                  {isEditing && formData.conversation_screenshots.length < 3 && (
+                    <TouchableOpacity 
+                      style={styles.addScreenshotBtn}
+                      onPress={pickConversationScreenshot}
+                    >
+                      <Ionicons name="add-circle-outline" size={32} color={COLORS.primary} />
+                      <Text style={styles.addScreenshotText}>Add</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                
+                {formData.conversation_screenshots.length === 0 && !isEditing && (
+                  <Text style={styles.emptyText}>No screenshots uploaded</Text>
+                )}
+              </View>
             </View>
           </View>
 
