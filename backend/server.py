@@ -250,20 +250,22 @@ async def generate_ai_draft(contact: dict, user_settings: dict, interaction_hist
     """Generate personalized message draft using AI with full context and priority-based style learning
     
     Style Priority:
-    1. Conversation screenshots (if available) - highest priority
+    1. Conversation screenshots (if available) - highest priority, AI visually analyzes them
     2. Example message text
-    3. Tone setting (casual/professional/friendly)
+    3. Tone setting (casual/professional/friendly) - ONLY if no screenshots AND no example text
     
     Context Priority:
     1. Interaction history
     2. Personal details (hobbies, food, how we met)
     """
     try:
-        chat = LlmChat(
+        import base64
+        from openai import AsyncOpenAI
+        
+        client = AsyncOpenAI(
             api_key=os.environ['EMERGENT_LLM_KEY'],
-            session_id=f"draft_{contact.get('id', 'unknown')}",
-            system_message="You are helping write reconnection messages. Write casual, warm messages that sound natural and personal."
-        ).with_model("openai", "gpt-4.1")
+            base_url="https://llm.emergentmethods.ai/v1"
+        )
         
         # Build comprehensive context
         context_parts = []
@@ -305,47 +307,105 @@ async def generate_ai_draft(contact: dict, user_settings: dict, interaction_hist
         # Determine language
         draft_language = contact.get('language') or user_settings.get('default_draft_language', 'English')
         
-        # Determine tone (Priority 3 - fallback)
-        tone = contact.get('tone', 'Casual')
-        
-        # Build style instructions based on priority
-        style_instructions = []
+        # Get style sources
         conversation_screenshots = contact.get('conversation_screenshots', [])
         example_message = contact.get('example_message')
+        tone = contact.get('tone', 'Casual')
         
-        # Priority 1: Screenshots analysis (if available)
+        # Determine if we have custom style references
+        has_custom_style = bool(conversation_screenshots) or bool(example_message)
+        
+        # Build the message content
+        messages_content = []
+        
+        # Add screenshots as images if available (Priority 1)
         if conversation_screenshots and len(conversation_screenshots) > 0:
-            style_instructions.append(f"""
-STYLE PRIORITY 1 - CONVERSATION SCREENSHOTS:
-The user has provided {len(conversation_screenshots)} screenshot(s) of actual conversations with this contact.
-These screenshots show the real communication style, nicknames used, greeting patterns, and overall tone.
-IMPORTANT: Carefully analyze the visual communication patterns, emojis used, how they address each other, 
-the length of messages, and overall vibe. This is the MOST IMPORTANT reference for the writing style.
-Mimic the exact style you see in the screenshots - if they use informal language, slang, nicknames, 
-or specific greeting patterns, use them in your draft.""")
+            for i, screenshot in enumerate(conversation_screenshots[:3]):
+                # Screenshot is base64 with data:image/... prefix
+                messages_content.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": screenshot,
+                        "detail": "high"
+                    }
+                })
         
-        # Priority 2: Example message text
-        if example_message:
-            style_instructions.append(f"""
-STYLE PRIORITY 2 - EXAMPLE MESSAGE:
-The user provided this example of how they typically write to this contact:
+        # Build the text prompt
+        style_instruction = ""
+        if conversation_screenshots:
+            style_instruction = """
+CRITICAL STYLE INSTRUCTION - ANALYZE THE SCREENSHOTS ABOVE:
+Look at the conversation screenshots I provided. Pay close attention to:
+1. How I address this person (nicknames like "babe", "honey", "dude", etc.)
+2. The greeting style I use
+3. The level of formality/informality
+4. Emojis or special characters I use
+5. The length and structure of my messages
+
+YOU MUST USE THE SAME NICKNAMES AND STYLE I USE IN THE SCREENSHOTS.
+If I call them "babe" in the screenshots, call them "babe" in the draft.
+If I use casual language, use casual language. Mimic my exact communication style."""
+        elif example_message:
+            style_instruction = f"""
+CRITICAL STYLE INSTRUCTION - USE THIS EXAMPLE:
+Here's how I typically write to this person:
 "{example_message}"
-{"(Use this as secondary reference since screenshots were also provided)" if conversation_screenshots else "(This is the PRIMARY style reference - mimic this writing style closely)"}""")
+
+YOU MUST mimic this exact writing style - the greeting, the tone, any nicknames used, the formality level.
+Copy my communication pattern exactly."""
+        else:
+            # Only use tone setting if NO screenshots AND NO example text
+            style_instruction = f"""
+STYLE INSTRUCTION:
+Use a {tone.lower()} tone for this message.
+- Casual: Relaxed, friendly, informal ("Hey!", "What's up?")
+- Professional: Polite, business-appropriate ("Hello", "I hope this finds you well")
+- Friendly: Warm, personal, enthusiastic ("Hi there!", warm greetings)"""
         
-        # Priority 3: Tone setting (fallback)
-        if not conversation_screenshots and not example_message:
-            style_instructions.append(f"""
-STYLE PRIORITY 3 - TONE SETTING:
-No screenshots or example messages provided. Use the tone setting: {tone}
-- Casual: Relaxed, friendly, informal language
-- Professional: Polite, business-appropriate, formal
-- Friendly: Warm, personal, enthusiastic""")
-        elif tone:
-            style_instructions.append(f"Additional tone hint: {tone}")
+        text_prompt = f"""Write a brief reconnection message to {contact.get('name', 'this person')}.
+
+CONTACT INFO:
+{context}
+
+{style_instruction}
+
+REQUIREMENTS:
+- Write in {draft_language}
+- Keep it to 2-3 sentences maximum
+- Make it feel natural and personal
+- If there's interaction history, reference something from it
+- Focus on reconnecting/catching up
+
+IMPORTANT: Just write the message itself, nothing else. No quotes, no explanation."""
         
-        style_guidance = "\n".join(style_instructions)
+        messages_content.append({
+            "type": "text",
+            "text": text_prompt
+        })
         
-        prompt = f"""Write a brief, warm reconnection message to {contact.get('name', 'this person')}.
+        # Use GPT-4 Vision if we have screenshots, otherwise regular GPT-4
+        model = "gpt-4.1" if not conversation_screenshots else "gpt-4.1"
+        
+        response = await client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant that writes personal messages. You carefully analyze any images provided and mimic the communication style shown in them."
+                },
+                {
+                    "role": "user",
+                    "content": messages_content
+                }
+            ],
+            max_tokens=300,
+            temperature=0.7
+        )
+        
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logging.error(f"Error generating AI draft: {str(e)}")
+        return f"Hey {contact.get('name', 'there')}! It's been a while - would love to catch up soon. How have you been?"
 
 CONTACT CONTEXT:
 {context}
