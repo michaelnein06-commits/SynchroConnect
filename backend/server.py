@@ -60,6 +60,8 @@ class User(BaseModel):
     default_writing_style: str = "Hey! How have you been? Just wanted to catch up and see what you've been up to lately."
     notification_time: str = "09:00"
     notifications_enabled: bool = True
+    bio: Optional[str] = None
+    profile_picture: Optional[str] = None  # base64 image
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
@@ -73,6 +75,8 @@ class UserProfileUpdate(BaseModel):
     default_writing_style: Optional[str] = None
     notification_time: Optional[str] = None
     notifications_enabled: Optional[bool] = None
+    bio: Optional[str] = None
+    profile_picture: Optional[str] = None
 
 # --- Contact Model (Updated with new fields) ---
 class ContactCreate(BaseModel):
