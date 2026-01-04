@@ -851,27 +851,39 @@ export default function ContactDetail() {
                 )}
               </View>
 
-              {/* Tone */}
-              <View style={styles.field}>
-                <Text style={styles.fieldLabel}>Tone</Text>
-                {isEditing ? (
-                  <View style={styles.toneGrid}>
-                    {TONES.map((tone) => (
-                      <TouchableOpacity
-                        key={tone}
-                        style={[styles.tonePill, formData.tone === tone && styles.tonePillSelected]}
-                        onPress={() => setFormData({ ...formData, tone: tone })}
-                      >
-                        <Text style={[styles.tonePillText, formData.tone === tone && styles.tonePillTextSelected]}>
-                          {tone}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                ) : (
-                  <Text style={styles.fieldValue}>{formData.tone}</Text>
-                )}
-              </View>
+              {/* Tone - Only show if NO screenshots AND NO example text */}
+              {(!formData.conversation_screenshots || formData.conversation_screenshots.length === 0) && !formData.example_message ? (
+                <View style={styles.field}>
+                  <Text style={styles.fieldLabel}>Tone (Fallback)</Text>
+                  <Text style={styles.fieldHint}>
+                    Used when no screenshots or example text provided
+                  </Text>
+                  {isEditing ? (
+                    <View style={styles.toneGrid}>
+                      {TONES.map((tone) => (
+                        <TouchableOpacity
+                          key={tone}
+                          style={[styles.tonePill, formData.tone === tone && styles.tonePillSelected]}
+                          onPress={() => setFormData({ ...formData, tone: tone })}
+                        >
+                          <Text style={[styles.tonePillText, formData.tone === tone && styles.tonePillTextSelected]}>
+                            {tone}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={styles.fieldValue}>{formData.tone}</Text>
+                  )}
+                </View>
+              ) : (
+                <View style={styles.toneDisabledNotice}>
+                  <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
+                  <Text style={styles.toneDisabledText}>
+                    AI will learn style from {formData.conversation_screenshots?.length > 0 ? 'screenshots' : 'example text'}
+                  </Text>
+                </View>
+              )}
 
               {/* Example Message */}
               <View style={styles.field}>
