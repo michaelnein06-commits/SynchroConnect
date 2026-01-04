@@ -20,7 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, SUPPORTED_LANGUAGES } from '../context/LanguageContext';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -41,13 +41,11 @@ const COLORS = {
   warning: '#F59E0B',
 };
 
-const UI_LANGUAGES = [
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-];
+// Use supported languages from context
+const UI_LANGUAGES = SUPPORTED_LANGUAGES;
 
 const DRAFT_LANGUAGES = [
-  { name: 'English', flag: '🇬🇧' },
+  { name: 'English', flag: '🇬🇧', code: 'en' },
   { name: 'German', flag: '🇩🇪' },
   { name: 'Spanish', flag: '🇪🇸' },
   { name: 'French', flag: '🇫🇷' },
