@@ -164,6 +164,7 @@ export default function ContactDetail() {
     language: 'English',
     tone: 'Casual',
     example_message: '',
+    conversation_screenshots: [] as string[],  // Up to 3 screenshots for AI style learning
     notes: '',
     profile_picture: '',
     last_contact_date: '',
