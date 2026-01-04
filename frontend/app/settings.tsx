@@ -532,6 +532,23 @@ const styles = StyleSheet.create({
   },
   versionText: { fontSize: 14, fontWeight: '600', color: COLORS.primary },
   
+  // Info Badge
+  infoBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aiHintText: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    marginTop: 8,
+    lineHeight: 18,
+    paddingHorizontal: 4,
+  },
+  
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: {
