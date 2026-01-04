@@ -230,20 +230,22 @@ export default function Settings() {
                 <Text style={styles.sectionTitle}>{t('aiMessageDrafting')}</Text>
               </View>
               
-              <View style={styles.settingCardLarge}>
-                <Text style={styles.settingLabel}>{t('defaultWritingStyle')}</Text>
-                <Text style={styles.settingHint}>{t('writingStyleHint')}</Text>
-                <TextInput
-                  style={styles.textArea}
-                  value={settings.default_writing_style}
-                  onChangeText={(text) => setSettings({ ...settings, default_writing_style: text })}
-                  placeholder={t('writingStylePlaceholder')}
-                  placeholderTextColor={COLORS.textLight}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                />
+              <View style={styles.settingCard}>
+                <View style={styles.settingCardContent}>
+                  <View>
+                    <Text style={styles.settingLabel}>AI Style Learning</Text>
+                    <Text style={styles.settingValue}>
+                      Per-contact screenshots & examples
+                    </Text>
+                  </View>
+                  <View style={styles.infoBadge}>
+                    <Ionicons name="information-circle" size={20} color={COLORS.primary} />
+                  </View>
+                </View>
               </View>
+              <Text style={styles.aiHintText}>
+                Upload conversation screenshots on each contact card. The AI learns your communication style from screenshots (priority 1), example messages (priority 2), or tone settings (priority 3).
+              </Text>
             </View>
 
             {/* Notifications Section */}
