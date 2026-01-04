@@ -1363,6 +1363,17 @@ const styles = StyleSheet.create({
   tonePill: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: COLORS.background },
   tonePillSelected: { backgroundColor: COLORS.primary },
   tonePillText: { fontSize: 14, fontWeight: '500', color: COLORS.textSecondary },
+
+  // Conversation Screenshots
+  screenshotHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  priorityBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.warning + '20', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, gap: 4 },
+  priorityText: { fontSize: 11, fontWeight: '600', color: COLORS.warning },
+  screenshotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  screenshotItem: { position: 'relative', width: 90, height: 160, borderRadius: 12, overflow: 'hidden', backgroundColor: COLORS.background },
+  screenshotImage: { width: '100%', height: '100%', borderRadius: 12 },
+  removeScreenshotBtn: { position: 'absolute', top: -6, right: -6, backgroundColor: COLORS.surface, borderRadius: 12 },
+  addScreenshotBtn: { width: 90, height: 160, borderRadius: 12, borderWidth: 2, borderColor: COLORS.primary, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.primary + '05' },
+  addScreenshotText: { fontSize: 12, fontWeight: '600', color: COLORS.primary, marginTop: 4 },
   tonePillTextSelected: { color: COLORS.surface },
   
   // History
