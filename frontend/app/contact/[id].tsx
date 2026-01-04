@@ -282,6 +282,35 @@ export default function ContactDetail() {
     }
   };
 
+  const pickConversationScreenshot = async () => {
+    if (formData.conversation_screenshots.length >= 3) {
+      Alert.alert('Limit Reached', 'You can only add up to 3 screenshots. Remove one to add a new one.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 0.4,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setFormData({ 
+        ...formData, 
+        conversation_screenshots: [...formData.conversation_screenshots, base64Image] 
+      });
+      triggerHaptic('light');
+    }
+  };
+
+  const removeConversationScreenshot = (index: number) => {
+    const newScreenshots = formData.conversation_screenshots.filter((_, i) => i !== index);
+    setFormData({ ...formData, conversation_screenshots: newScreenshots });
+    triggerHaptic('light');
+  };
+
   const handleSave = async () => {
     if (!formData.name.trim()) {
       Alert.alert('Error', 'Name is required');
