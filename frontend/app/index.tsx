@@ -698,7 +698,7 @@ export default function Index() {
             size={24}
             color={activeTab === 'pipeline' ? COLORS.primary : COLORS.textLight}
           />
-          <Text style={[styles.tabLabel, activeTab === 'pipeline' && styles.tabLabelActive]}>Pipeline</Text>
+          <Text style={[styles.tabLabel, activeTab === 'pipeline' && styles.tabLabelActive]}>{t('pipeline')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('groups')}>
@@ -707,7 +707,7 @@ export default function Index() {
             size={24}
             color={activeTab === 'groups' ? COLORS.primary : COLORS.textLight}
           />
-          <Text style={[styles.tabLabel, activeTab === 'groups' && styles.tabLabelActive]}>Groups</Text>
+          <Text style={[styles.tabLabel, activeTab === 'groups' && styles.tabLabelActive]}>{t('groups')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('contacts')}>
@@ -716,7 +716,7 @@ export default function Index() {
             size={24}
             color={activeTab === 'contacts' ? COLORS.primary : COLORS.textLight}
           />
-          <Text style={[styles.tabLabel, activeTab === 'contacts' && styles.tabLabelActive]}>Contacts</Text>
+          <Text style={[styles.tabLabel, activeTab === 'contacts' && styles.tabLabelActive]}>{t('contacts')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('drafts')}>
@@ -725,7 +725,7 @@ export default function Index() {
             size={24}
             color={activeTab === 'drafts' ? COLORS.primary : COLORS.textLight}
           />
-          <Text style={[styles.tabLabel, activeTab === 'drafts' && styles.tabLabelActive]}>Drafts</Text>
+          <Text style={[styles.tabLabel, activeTab === 'drafts' && styles.tabLabelActive]}>{t('drafts')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('profile')}>
@@ -734,7 +734,7 @@ export default function Index() {
             size={24}
             color={activeTab === 'profile' ? COLORS.primary : COLORS.textLight}
           />
-          <Text style={[styles.tabLabel, activeTab === 'profile' && styles.tabLabelActive]}>Profile</Text>
+          <Text style={[styles.tabLabel, activeTab === 'profile' && styles.tabLabelActive]}>{t('profile')}</Text>
         </TouchableOpacity>
       </View>
 
