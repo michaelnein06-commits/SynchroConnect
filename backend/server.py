@@ -247,7 +247,17 @@ def calculate_next_due_with_random_factor(last_contact_date_str: str, target_int
     return next_due.isoformat()
 
 async def generate_ai_draft(contact: dict, user_settings: dict, interaction_history: list) -> str:
-    """Generate personalized message draft using AI with full context"""
+    """Generate personalized message draft using AI with full context and priority-based style learning
+    
+    Style Priority:
+    1. Conversation screenshots (if available) - highest priority
+    2. Example message text
+    3. Tone setting (casual/professional/friendly)
+    
+    Context Priority:
+    1. Interaction history
+    2. Personal details (hobbies, food, how we met)
+    """
     try:
         chat = LlmChat(
             api_key=os.environ['EMERGENT_LLM_KEY'],
@@ -268,7 +278,7 @@ async def generate_ai_draft(contact: dict, user_settings: dict, interaction_hist
         if contact.get('academic_degree'):
             context_parts.append(f"Education: {contact['academic_degree']}")
         
-        # Personal details
+        # Personal details (Secondary priority for context)
         if contact.get('hobbies'):
             context_parts.append(f"Hobbies: {contact['hobbies']}")
         if contact.get('favorite_food'):
@@ -282,45 +292,75 @@ async def generate_ai_draft(contact: dict, user_settings: dict, interaction_hist
         if contact.get('notes'):
             context_parts.append(f"Notes: {contact['notes']}")
         
-        # Interaction history (last 5 interactions)
+        # Interaction history (Primary priority for context - last 5 interactions)
         if interaction_history:
             history_str = "\n".join([
                 f"  - {h.get('date', 'Unknown date')}: {h.get('interaction_type', 'Unknown')} - {h.get('notes', 'No notes')}"
                 for h in interaction_history[:5]
             ])
-            context_parts.append(f"Recent Interactions:\n{history_str}")
+            context_parts.append(f"Recent Interactions (IMPORTANT - use this for context):\n{history_str}")
         
         context = "\n".join(context_parts)
-        
-        # Determine writing style - contact's example_message takes priority
-        writing_style = contact.get('example_message') or user_settings.get('default_writing_style', "Hey! How have you been?")
         
         # Determine language
         draft_language = contact.get('language') or user_settings.get('default_draft_language', 'English')
         
-        # Determine tone
+        # Determine tone (Priority 3 - fallback)
         tone = contact.get('tone', 'Casual')
+        
+        # Build style instructions based on priority
+        style_instructions = []
+        conversation_screenshots = contact.get('conversation_screenshots', [])
+        example_message = contact.get('example_message')
+        
+        # Priority 1: Screenshots analysis (if available)
+        if conversation_screenshots and len(conversation_screenshots) > 0:
+            style_instructions.append(f"""
+STYLE PRIORITY 1 - CONVERSATION SCREENSHOTS:
+The user has provided {len(conversation_screenshots)} screenshot(s) of actual conversations with this contact.
+These screenshots show the real communication style, nicknames used, greeting patterns, and overall tone.
+IMPORTANT: Carefully analyze the visual communication patterns, emojis used, how they address each other, 
+the length of messages, and overall vibe. This is the MOST IMPORTANT reference for the writing style.
+Mimic the exact style you see in the screenshots - if they use informal language, slang, nicknames, 
+or specific greeting patterns, use them in your draft.""")
+        
+        # Priority 2: Example message text
+        if example_message:
+            style_instructions.append(f"""
+STYLE PRIORITY 2 - EXAMPLE MESSAGE:
+The user provided this example of how they typically write to this contact:
+"{example_message}"
+{"(Use this as secondary reference since screenshots were also provided)" if conversation_screenshots else "(This is the PRIMARY style reference - mimic this writing style closely)"}""")
+        
+        # Priority 3: Tone setting (fallback)
+        if not conversation_screenshots and not example_message:
+            style_instructions.append(f"""
+STYLE PRIORITY 3 - TONE SETTING:
+No screenshots or example messages provided. Use the tone setting: {tone}
+- Casual: Relaxed, friendly, informal language
+- Professional: Polite, business-appropriate, formal
+- Friendly: Warm, personal, enthusiastic""")
+        elif tone:
+            style_instructions.append(f"Additional tone hint: {tone}")
+        
+        style_guidance = "\n".join(style_instructions)
         
         prompt = f"""Write a brief, warm reconnection message to {contact.get('name', 'this person')}.
 
-Contact Context:
+CONTACT CONTEXT:
 {context}
 
-Communication Preferences:
+{style_guidance}
+
+REQUIREMENTS:
 - Language: {draft_language}
-- Tone: {tone}
+- Write 2-3 sentences maximum
+- Feel natural and personal
+- If there's recent interaction history, reference something from it
+- Focus on reconnecting/catching up
+- Match the communication style from the highest priority source available
 
-Example of the writing style to mimic:
-"{writing_style}"
-
-Write a short message (2-3 sentences) that:
-- Is written in {draft_language}
-- Feels natural and personal with a {tone.lower()} tone
-- References something specific from the context if available
-- Mimics the provided writing style
-- Suggests catching up or connecting
-
-Just write the message, no extra explanation."""
+Just write the message, no extra explanation or quotes around it."""
         
         user_message = UserMessage(text=prompt)
         response = await chat.send_message(user_message)
