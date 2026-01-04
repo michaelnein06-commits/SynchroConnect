@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import ContactImportPrompt from '../components/ContactImportPrompt';
 import * as ImagePicker from 'expo-image-picker';
 
