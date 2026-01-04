@@ -67,7 +67,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   
   const [settings, setSettings] = useState({
-    ui_language: 'en',
+    ui_language: language,
     default_draft_language: 'English',
     default_writing_style: 'Hey! How have you been? Just wanted to catch up and see what you\'ve been up to lately.',
     notification_time: '09:00',
@@ -77,10 +77,10 @@ export default function Settings() {
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showDraftLanguageModal, setShowDraftLanguageModal] = useState(false);
 
-  // Get translation based on current language
-  const t = (key: string) => {
-    return TRANSLATIONS[settings.ui_language]?.[key] || TRANSLATIONS['en'][key] || key;
-  };
+  useEffect(() => {
+    // Sync settings with global language on mount
+    setSettings(prev => ({ ...prev, ui_language: language }));
+  }, [language]);
 
   useEffect(() => {
     fetchProfile();
