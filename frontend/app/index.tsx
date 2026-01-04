@@ -899,6 +899,82 @@ export default function Index() {
           </View>
         </Pressable>
       </Modal>
+
+      {/* Add Contacts to Group Modal */}
+      <Modal
+        visible={showAddContactsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAddContactsModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowAddContactsModal(false)}>
+          <View style={[styles.modalContent, { maxHeight: '80%' }]}>
+            <View style={styles.modalHandle} />
+            
+            {selectedGroupForContacts && (
+              <>
+                <Text style={styles.modalTitle}>
+                  {t('add')} {t('contacts')} to "{selectedGroupForContacts.name}"
+                </Text>
+                
+                <FlatList
+                  data={contacts}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item: contact }) => {
+                    const isSelected = selectedContactsForGroup.includes(contact.id);
+                    return (
+                      <TouchableOpacity
+                        style={[styles.modalContactOption, isSelected && styles.modalContactOptionSelected]}
+                        onPress={() => {
+                          setSelectedContactsForGroup(
+                            isSelected
+                              ? selectedContactsForGroup.filter(id => id !== contact.id)
+                              : [...selectedContactsForGroup, contact.id]
+                          );
+                        }}
+                      >
+                        {contact.profile_picture ? (
+                          <Image source={{ uri: contact.profile_picture }} style={styles.modalContactAvatar} />
+                        ) : (
+                          <View style={styles.modalContactAvatarPlaceholder}>
+                            <Text style={styles.modalContactAvatarText}>{contact.name.charAt(0).toUpperCase()}</Text>
+                          </View>
+                        )}
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                          <Text style={styles.modalContactName}>{contact.name}</Text>
+                          {contact.job && <Text style={styles.modalContactJob}>{contact.job}</Text>}
+                        </View>
+                        <View style={[styles.checkboxCircle, isSelected && styles.checkboxCircleSelected]}>
+                          {isSelected && <Ionicons name="checkmark" size={16} color={COLORS.surface} />}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  }}
+                  style={{ maxHeight: 400 }}
+                />
+
+                {/* Save Button */}
+                <TouchableOpacity 
+                  style={styles.modalSaveButton}
+                  onPress={handleAddContactsToGroup}
+                >
+                  <Ionicons name="checkmark-circle" size={20} color={COLORS.surface} />
+                  <Text style={styles.modalSaveButtonText}>
+                    {t('save')} ({selectedContactsForGroup.length} {t('contacts').toLowerCase()})
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.modalCloseButton}
+                  onPress={() => setShowAddContactsModal(false)}
+                >
+                  <Text style={styles.modalCloseButtonText}>{t('cancel')}</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
