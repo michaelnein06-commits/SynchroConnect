@@ -651,8 +651,60 @@ export default function Index() {
     );
   };
 
+  // Delete draft function
+  const handleDeleteDraft = async (draftId: string) => {
+    try {
+      await axios.delete(`${EXPO_PUBLIC_BACKEND_URL}/api/drafts/${draftId}`, getAuthHeaders());
+      setDrafts(drafts.filter(d => d.id !== draftId));
+    } catch (error) {
+      console.error('Error deleting draft:', error);
+      Alert.alert(t('error'), 'Failed to delete draft');
+    }
+  };
+
+  // Delete all drafts function
+  const handleDeleteAllDrafts = () => {
+    if (drafts.length === 0) return;
+    
+    Alert.alert(
+      t('deleteAll'),
+      'Are you sure you want to delete all drafts?',
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`${EXPO_PUBLIC_BACKEND_URL}/api/drafts`, getAuthHeaders());
+              setDrafts([]);
+              Alert.alert('✓', 'All drafts deleted');
+            } catch (error) {
+              console.error('Error deleting all drafts:', error);
+              Alert.alert(t('error'), 'Failed to delete drafts');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const copyDraftToClipboard = async (message: string) => {
+    // @ts-ignore
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      await navigator.clipboard.writeText(message);
+    }
+    Alert.alert('✓', 'Copied to clipboard');
+  };
+
   const renderDrafts = () => (
     <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+      {drafts.length > 0 && (
+        <TouchableOpacity style={styles.deleteAllDraftsBtn} onPress={handleDeleteAllDrafts}>
+          <Ionicons name="trash-outline" size={18} color={COLORS.accent} />
+          <Text style={styles.deleteAllDraftsText}>{t('deleteAll')}</Text>
+        </TouchableOpacity>
+      )}
       {drafts.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="mail-open-outline" size={64} color={COLORS.textLight} />
@@ -662,13 +714,24 @@ export default function Index() {
       ) : (
         drafts.map((draft) => (
           <View key={draft.id} style={styles.draftCard}>
-            <Text style={styles.draftContactName}>{draft.contact_name}</Text>
+            <View style={styles.draftHeader}>
+              <Text style={styles.draftContactName}>{draft.contact_name}</Text>
+              <TouchableOpacity 
+                style={styles.deleteDraftBtn}
+                onPress={() => handleDeleteDraft(draft.id)}
+              >
+                <Ionicons name="trash-outline" size={18} color={COLORS.accent} />
+              </TouchableOpacity>
+            </View>
             <View style={styles.draftMessageContainer}>
               <Ionicons name="sparkles" size={16} color={COLORS.primary} />
               <Text style={styles.draftMessage}>{draft.draft_message}</Text>
             </View>
             <View style={styles.draftActions}>
-              <TouchableOpacity style={styles.copyButton}>
+              <TouchableOpacity 
+                style={styles.copyButton}
+                onPress={() => copyDraftToClipboard(draft.draft_message)}
+              >
                 <Ionicons name="copy-outline" size={18} color={COLORS.primary} />
                 <Text style={styles.copyButtonText}>Copy</Text>
               </TouchableOpacity>
