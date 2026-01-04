@@ -207,6 +207,7 @@ export default function ContactDetail() {
         language: contact.language || 'English',
         tone: contact.tone || 'Casual',
         example_message: contact.example_message || '',
+        conversation_screenshots: contact.conversation_screenshots || [],
         notes: contact.notes || '',
         profile_picture: contact.profile_picture || '',
         last_contact_date: contact.last_contact_date || '',
