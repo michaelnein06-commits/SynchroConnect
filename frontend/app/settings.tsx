@@ -110,6 +110,9 @@ export default function Settings() {
     Keyboard.dismiss();
     setSaving(true);
     try {
+      // Update global language context first
+      await setLanguage(settings.ui_language);
+      
       await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/profile`, settings, {
         headers: { Authorization: `Bearer ${token}` }
       });
