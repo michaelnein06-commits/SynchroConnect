@@ -313,7 +313,7 @@ export default function Index() {
 
   const generateDraft = async (contactId: string, contactName: string) => {
     try {
-      await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/drafts/generate/${contactId}`);
+      await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/drafts/generate/${contactId}`, {}, getAuthHeaders());
       Alert.alert('Success', `AI draft generated for ${contactName}!`);
       fetchDrafts();
       setActiveTab('drafts');
