@@ -196,7 +196,7 @@ export default function Index() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await axios.delete(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts`);
+              await axios.delete(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts`, getAuthHeaders());
               Alert.alert('Success', 'All contacts deleted');
               fetchContacts();
             } catch (error) {
@@ -209,10 +209,10 @@ export default function Index() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('logout'), t('logoutConfirm'), [
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'Logout',
+        text: t('logout'),
         style: 'destructive',
         onPress: async () => {
           await logout();
@@ -235,7 +235,7 @@ export default function Index() {
     try {
       await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${selectedContact.id}/move-pipeline`, {
         pipeline_stage: stage
-      });
+      }, getAuthHeaders());
       triggerHaptic('success');
       setShowMoveModal(false);
       setSelectedContact(null);
@@ -258,7 +258,7 @@ export default function Index() {
       
       await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${selectedContact.id}`, {
         groups: updatedGroups
-      });
+      }, getAuthHeaders());
       
       triggerHaptic('light');
       // Update local state
@@ -269,6 +269,37 @@ export default function Index() {
     } catch (error) {
       console.error('Error updating contact group:', error);
       Alert.alert('Error', 'Failed to update group');
+    }
+  };
+
+  // Add contacts to a group
+  const handleAddContactsToGroup = async () => {
+    if (!selectedGroupForContacts || selectedContactsForGroup.length === 0) return;
+    try {
+      // Update each selected contact to add this group
+      for (const contactId of selectedContactsForGroup) {
+        const contact = contacts.find(c => c.id === contactId);
+        if (contact) {
+          const updatedGroups = contact.groups?.includes(selectedGroupForContacts.id)
+            ? contact.groups
+            : [...(contact.groups || []), selectedGroupForContacts.id];
+          
+          await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${contactId}`, {
+            groups: updatedGroups
+          }, getAuthHeaders());
+        }
+      }
+      
+      triggerHaptic('success');
+      setShowAddContactsModal(false);
+      setSelectedGroupForContacts(null);
+      setSelectedContactsForGroup([]);
+      fetchContacts();
+      fetchGroups();
+      Alert.alert('✓', `Added ${selectedContactsForGroup.length} contacts to ${selectedGroupForContacts.name}`);
+    } catch (error) {
+      console.error('Error adding contacts to group:', error);
+      Alert.alert('Error', 'Failed to add contacts to group');
     }
   };
 
