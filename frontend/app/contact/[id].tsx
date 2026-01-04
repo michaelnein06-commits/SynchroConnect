@@ -306,6 +306,7 @@ export default function ContactDetail() {
         language: formData.language,
         tone: formData.tone,
         example_message: formData.example_message || null,
+        conversation_screenshots: formData.conversation_screenshots || [],
         notes: formData.notes || null,
         profile_picture: formData.profile_picture || null,
       };
