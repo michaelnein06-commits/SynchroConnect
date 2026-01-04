@@ -259,15 +259,14 @@ async def generate_ai_draft(contact: dict, user_settings: dict, interaction_hist
     2. Personal details (hobbies, food, how we met)
     """
     try:
-        import base64
-        from openai import AsyncOpenAI
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
         
-        client = AsyncOpenAI(
-            api_key=os.environ['EMERGENT_LLM_KEY'],
-            base_url="https://llm.emergentmethods.ai/v1"
-        )
+        # Get style sources
+        conversation_screenshots = contact.get('conversation_screenshots', [])
+        example_message = contact.get('example_message')
+        tone = contact.get('tone', 'Casual')
         
-        # Build comprehensive context
+        # Build comprehensive context from contact card
         context_parts = []
         
         # Basic info
@@ -279,6 +278,135 @@ async def generate_ai_draft(contact: dict, user_settings: dict, interaction_hist
             context_parts.append(f"Location: {contact['location']}")
         if contact.get('academic_degree'):
             context_parts.append(f"Education: {contact['academic_degree']}")
+        
+        # Personal details - IMPORTANT for context
+        if contact.get('hobbies'):
+            context_parts.append(f"Hobbies/Interests: {contact['hobbies']}")
+        if contact.get('favorite_food'):
+            context_parts.append(f"Favorite Food: {contact['favorite_food']}")
+        if contact.get('how_we_met'):
+            context_parts.append(f"How we met: {contact['how_we_met']}")
+        if contact.get('birthday'):
+            context_parts.append(f"Birthday: {contact['birthday']}")
+        
+        # Notes - can contain important context
+        if contact.get('notes'):
+            context_parts.append(f"Personal Notes: {contact['notes']}")
+        
+        # Interaction history - PRIMARY context source
+        if interaction_history:
+            history_str = "\n".join([
+                f"  - {h.get('date', 'Unknown')}: {h.get('interaction_type', 'Unknown')} - {h.get('notes', 'No notes')}"
+                for h in interaction_history[:5]
+            ])
+            context_parts.append(f"RECENT INTERACTION HISTORY (very important!):\n{history_str}")
+        
+        context = "\n".join(context_parts)
+        
+        # Determine language
+        draft_language = contact.get('language') or user_settings.get('default_draft_language', 'English')
+        
+        # Determine if we have custom style references
+        has_screenshots = bool(conversation_screenshots) and len(conversation_screenshots) > 0
+        has_example = bool(example_message) and len(example_message.strip()) > 0
+        
+        # Build the prompt based on what we have
+        if has_screenshots:
+            # Priority 1: Use screenshots - AI will analyze them
+            style_instruction = """
+CRITICAL - ANALYZE THE SCREENSHOT(S) I PROVIDED:
+Look carefully at the conversation screenshot(s). Pay attention to:
+1. HOW I ADDRESS THIS PERSON - Look for nicknames like "babe", "honey", "dude", "Schatz", etc.
+2. The greeting style (casual "hey", formal "Hello", etc.)
+3. The language used (formal/informal, slang, etc.)
+4. Emojis or special characters
+5. Message length and structure
+
+YOU MUST USE THE EXACT SAME NICKNAMES AND STYLE FROM THE SCREENSHOTS.
+If I call them "babe" → you call them "babe"
+If I use casual German slang → you use casual German slang
+COPY MY COMMUNICATION PATTERN EXACTLY."""
+        elif has_example:
+            # Priority 2: Use example text
+            style_instruction = f"""
+CRITICAL - MIMIC THIS EXAMPLE MESSAGE STYLE:
+Here is exactly how I write to this person:
+"{example_message}"
+
+YOU MUST copy this style exactly:
+- Same greeting pattern
+- Same level of formality
+- Same nicknames if any
+- Same language/slang style
+Write as if I wrote it myself."""
+        else:
+            # Priority 3: Use tone setting only
+            style_instruction = f"""
+STYLE SETTING: {tone}
+- Casual: Relaxed, friendly ("Hey!", "What's up?", informal)
+- Professional: Polite, business-appropriate ("Hello", formal)
+- Friendly: Warm, personal, enthusiastic"""
+        
+        # Build the full prompt
+        prompt = f"""Write a personalized reconnection message to {contact.get('name', 'this person')}.
+
+===== CONTACT INFORMATION (use this for context) =====
+{context}
+
+===== WRITING STYLE INSTRUCTIONS =====
+{style_instruction}
+
+===== REQUIREMENTS =====
+- Language: {draft_language}
+- Length: 2-3 sentences maximum
+- Make it personal - reference specific things from the contact info or interaction history
+- The message should feel like a natural continuation of our relationship
+- If there's recent interaction history, reference something from it
+
+IMPORTANT: Write ONLY the message. No quotes, no explanation, no "Here's a message:" - just the message itself as if I'm typing it to send."""
+        
+        # Initialize chat
+        chat = LlmChat(
+            api_key=os.environ.get('EMERGENT_LLM_KEY', ''),
+            session_id=f"draft_{contact.get('_id', 'unknown')}_{datetime.utcnow().timestamp()}",
+            system_message="You are an expert at writing personal messages. You carefully analyze images and text to mimic the exact communication style shown. You write natural, authentic messages that sound like they came from the user, not an AI."
+        ).with_model("openai", "gpt-4.1")
+        
+        # Prepare file contents if we have screenshots
+        file_contents = []
+        if has_screenshots:
+            for screenshot in conversation_screenshots[:3]:
+                # Remove the data:image/...;base64, prefix if present
+                if screenshot.startswith('data:'):
+                    # Extract just the base64 part
+                    base64_data = screenshot.split(',')[1] if ',' in screenshot else screenshot
+                else:
+                    base64_data = screenshot
+                
+                file_contents.append(ImageContent(image_base64=base64_data))
+        
+        # Send message with or without images
+        if file_contents:
+            user_message = UserMessage(text=prompt, file_contents=file_contents)
+        else:
+            user_message = UserMessage(text=prompt)
+        
+        response = await chat.send_message(user_message)
+        
+        # Clean up the response
+        result = response.strip()
+        # Remove any quotes that might have been added
+        if result.startswith('"') and result.endswith('"'):
+            result = result[1:-1]
+        if result.startswith("'") and result.endswith("'"):
+            result = result[1:-1]
+        
+        return result
+    except Exception as e:
+        logging.error(f"Error generating AI draft: {str(e)}")
+        import traceback
+        logging.error(traceback.format_exc())
+        return f"Hey {contact.get('name', 'there')}! It's been a while - would love to catch up soon. How have you been?"
         
         # Personal details (Secondary priority for context)
         if contact.get('hobbies'):
