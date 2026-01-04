@@ -156,6 +156,7 @@ class ContactUpdate(BaseModel):
     language: Optional[str] = None
     tone: Optional[str] = None
     example_message: Optional[str] = None
+    conversation_screenshots: Optional[List[str]] = None  # Up to 3 base64 screenshots
     notes: Optional[str] = None
     last_contact_date: Optional[str] = None
     profile_picture: Optional[str] = None
