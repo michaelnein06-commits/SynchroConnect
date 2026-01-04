@@ -793,12 +793,18 @@ async def generate_draft(contact_id: str, current_user: dict = Depends(get_curre
         if not contact:
             raise HTTPException(status_code=404, detail="Contact not found")
         
-        # Get user settings
+        # Get user settings (handle case where user might not exist)
         user = await db.users.find_one({"_id": ObjectId(current_user["user_id"])})
-        user_settings = {
-            "default_writing_style": user.get("default_writing_style", "Hey! How have you been?"),
-            "default_draft_language": user.get("default_draft_language", "English")
-        }
+        if user:
+            user_settings = {
+                "default_writing_style": user.get("default_writing_style", "Hey! How have you been?"),
+                "default_draft_language": user.get("default_draft_language", "English")
+            }
+        else:
+            user_settings = {
+                "default_writing_style": "Hey! How have you been?",
+                "default_draft_language": "English"
+            }
         
         # Get interaction history
         interactions = await db.interactions.find({
