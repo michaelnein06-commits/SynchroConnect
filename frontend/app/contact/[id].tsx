@@ -1386,6 +1386,10 @@ const styles = StyleSheet.create({
   removeScreenshotBtn: { position: 'absolute', top: -6, right: -6, backgroundColor: COLORS.surface, borderRadius: 12 },
   addScreenshotBtn: { width: 90, height: 160, borderRadius: 12, borderWidth: 2, borderColor: COLORS.primary, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.primary + '05' },
   addScreenshotText: { fontSize: 12, fontWeight: '600', color: COLORS.primary, marginTop: 4 },
+  
+  // Tone disabled notice
+  toneDisabledNotice: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.success + '15', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, gap: 10, marginBottom: 16 },
+  toneDisabledText: { fontSize: 14, color: COLORS.success, fontWeight: '500', flex: 1 },
   tonePillTextSelected: { color: COLORS.surface },
   
   // History
