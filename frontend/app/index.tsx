@@ -111,6 +111,7 @@ interface Group {
 export default function Index() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>('pipeline');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
