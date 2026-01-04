@@ -570,52 +570,84 @@ export default function Index() {
   );
 
   const renderGroups = () => {
+    // Filter groups by search query
+    const filteredGroups = groups.filter(g => 
+      g.name.toLowerCase().includes(groupSearchQuery.toLowerCase()) ||
+      (g.description && g.description.toLowerCase().includes(groupSearchQuery.toLowerCase()))
+    );
+    
     return (
-      <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-        {groups.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="albums-outline" size={64} color={COLORS.textLight} />
-            <Text style={styles.emptyText}>No Groups Yet</Text>
-            <Text style={styles.emptySubtext}>Tap + to create your first group</Text>
-          </View>
-        ) : (
-          groups.map((group) => {
-            const groupContacts = contacts.filter(c => c.groups?.includes(group.name));
-            return (
-              <TouchableOpacity
-                key={group.id}
-                style={styles.groupCard}
-                onPress={() => router.push(`/group/${group.id}`)}
-              >
-                <View style={styles.groupCardHeader}>
-                  {group.profile_picture ? (
-                    <Image source={{ uri: group.profile_picture }} style={styles.groupAvatar} />
-                  ) : (
-                    <View style={styles.groupAvatarPlaceholder}>
-                      <Ionicons name="people" size={24} color={COLORS.primary} />
-                    </View>
-                  )}
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={styles.groupName}>{group.name}</Text>
-                    {group.description && (
-                      <Text style={styles.groupDescription} numberOfLines={1}>
-                        {group.description}
-                      </Text>
+      <View style={{ flex: 1 }}>
+        {/* Search bar for groups */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={COLORS.textLight} style={{ marginRight: 8 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('search') + ' ' + t('groups').toLowerCase() + '...'}
+            placeholderTextColor={COLORS.textLight}
+            value={groupSearchQuery}
+            onChangeText={setGroupSearchQuery}
+          />
+        </View>
+        
+        <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+          {filteredGroups.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="albums-outline" size={64} color={COLORS.textLight} />
+              <Text style={styles.emptyText}>{t('noGroupsCreated')}</Text>
+              <Text style={styles.emptySubtext}>Tap + to create your first group</Text>
+            </View>
+          ) : (
+            filteredGroups.map((group) => {
+              const groupContacts = contacts.filter(c => c.groups?.includes(group.id));
+              return (
+                <View key={group.id} style={styles.groupCard}>
+                  <TouchableOpacity
+                    style={styles.groupCardHeader}
+                    onPress={() => router.push(`/group/${group.id}`)}
+                  >
+                    {group.profile_picture ? (
+                      <Image source={{ uri: group.profile_picture }} style={styles.groupAvatar} />
+                    ) : (
+                      <View style={[styles.groupAvatarPlaceholder, { backgroundColor: (group.color || COLORS.primary) + '20' }]}>
+                        <Ionicons name="people" size={24} color={group.color || COLORS.primary} />
+                      </View>
                     )}
-                    <View style={styles.groupStats}>
-                      <Ionicons name="people-outline" size={14} color={COLORS.textLight} />
-                      <Text style={styles.groupContactCount}>
-                        {groupContacts.length} {groupContacts.length === 1 ? 'contact' : 'contacts'}
-                      </Text>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={styles.groupName}>{group.name}</Text>
+                      {group.description && (
+                        <Text style={styles.groupDescription} numberOfLines={1}>
+                          {group.description}
+                        </Text>
+                      )}
+                      <View style={styles.groupStats}>
+                        <Ionicons name="people-outline" size={14} color={COLORS.textLight} />
+                        <Text style={styles.groupContactCount}>
+                          {groupContacts.length} {groupContacts.length === 1 ? 'contact' : 'contacts'}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
+                  </TouchableOpacity>
+                  
+                  {/* Add Contacts Button */}
+                  <TouchableOpacity
+                    style={styles.addContactsToGroupButton}
+                    onPress={() => {
+                      setSelectedGroupForContacts(group);
+                      setSelectedContactsForGroup(groupContacts.map(c => c.id));
+                      setShowAddContactsModal(true);
+                    }}
+                  >
+                    <Ionicons name="person-add-outline" size={18} color={COLORS.primary} />
+                    <Text style={styles.addContactsButtonText}>{t('add')} {t('contacts')}</Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
-            );
-          })
-        )}
-      </ScrollView>
+              );
+            })
+          )}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </View>
     );
   };
 
