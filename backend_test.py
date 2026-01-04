@@ -11,7 +11,7 @@ import time
 import sys
 
 # Use the production URL from frontend/.env
-BASE_URL = "https://synchnotes.preview.emergentagent.com/api"
+BASE_URL = "https://syncro-refactor.preview.emergentagent.com/api"
 
 class SynchroConnectrTester:
     def __init__(self):

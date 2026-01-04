@@ -90,7 +90,7 @@ index 0000000..2dbf87c
 +import jwt
 +
 +# Use the production URL from frontend/.env
-+BASE_URL = "https://synchnotes.preview.emergentagent.com/api"
++BASE_URL = "https://syncro-refactor.preview.emergentagent.com/api"
 +
 +# MongoDB connection for creating test user
 +MONGO_URL = "mongodb://localhost:27017"
@@ -1401,7 +1401,7 @@ index 61aa6b1..8acdcfb 100644
 ----+from datetime import datetime
 ----+import time
 ----+
-----+BASE_URL = "https://synchnotes.preview.emergentagent.com/api"
+----+BASE_URL = "https://syncro-refactor.preview.emergentagent.com/api"
 ----+
 ----+def test_draft_sent_functionality():
 ----+    session = requests.Session()
