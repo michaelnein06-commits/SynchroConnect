@@ -407,29 +407,6 @@ IMPORTANT: Just write the message itself, nothing else. No quotes, no explanatio
         logging.error(f"Error generating AI draft: {str(e)}")
         return f"Hey {contact.get('name', 'there')}! It's been a while - would love to catch up soon. How have you been?"
 
-CONTACT CONTEXT:
-{context}
-
-{style_guidance}
-
-REQUIREMENTS:
-- Language: {draft_language}
-- Write 2-3 sentences maximum
-- Feel natural and personal
-- If there's recent interaction history, reference something from it
-- Focus on reconnecting/catching up
-- Match the communication style from the highest priority source available
-
-Just write the message, no extra explanation or quotes around it."""
-        
-        user_message = UserMessage(text=prompt)
-        response = await chat.send_message(user_message)
-        
-        return response.strip()
-    except Exception as e:
-        logging.error(f"Error generating AI draft: {str(e)}")
-        return f"Hey {contact.get('name', 'there')}! It's been a while - would love to catch up soon. How have you been?"
-
 # ============ Auth Helpers ============
 from auth import create_access_token, get_current_user
 
