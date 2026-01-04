@@ -409,34 +409,6 @@ IMPORTANT: Write ONLY the message. No quotes, no explanation, no "Here's a messa
         return f"Hey {contact.get('name', 'there')}! It's been a while - would love to catch up soon. How have you been?"
 
 # ============ Auth Helpers ============
-            "text": text_prompt
-        })
-        
-        # Use GPT-4 Vision if we have screenshots, otherwise regular GPT-4
-        model = "gpt-4.1" if not conversation_screenshots else "gpt-4.1"
-        
-        response = await client.chat.completions.create(
-            model=model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant that writes personal messages. You carefully analyze any images provided and mimic the communication style shown in them."
-                },
-                {
-                    "role": "user",
-                    "content": messages_content
-                }
-            ],
-            max_tokens=300,
-            temperature=0.7
-        )
-        
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        logging.error(f"Error generating AI draft: {str(e)}")
-        return f"Hey {contact.get('name', 'there')}! It's been a while - would love to catch up soon. How have you been?"
-
-# ============ Auth Helpers ============
 from auth import create_access_token, get_current_user
 
 # ============ Google OAuth Config ============
