@@ -965,6 +965,29 @@ async def mark_draft_sent(draft_id: str, current_user: dict = Depends(get_curren
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@api_router.delete("/drafts/{draft_id}")
+async def delete_draft(draft_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a single draft"""
+    try:
+        result = await db.drafts.delete_one({
+            "_id": ObjectId(draft_id),
+            "user_id": current_user["user_id"]
+        })
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        return {"message": "Draft deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.delete("/drafts")
+async def delete_all_drafts(current_user: dict = Depends(get_current_user)):
+    """Delete all drafts for the current user"""
+    try:
+        result = await db.drafts.delete_many({"user_id": current_user["user_id"]})
+        return {"message": f"Deleted {result.deleted_count} drafts", "deleted_count": result.deleted_count}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # ============ Morning Briefing Route ============
 
 @api_router.get("/morning-briefing", response_model=List[dict])
