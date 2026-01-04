@@ -680,39 +680,52 @@ export default function Index() {
   );
 
   const renderProfile = () => (
-    <ScrollView style={styles.content}>
+    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.profileCard}>
-        <Ionicons name="person-circle-outline" size={80} color={COLORS.primary} />
+        {user?.picture ? (
+          <Image source={{ uri: user.picture }} style={styles.profileImage} />
+        ) : (
+          <Ionicons name="person-circle-outline" size={80} color={COLORS.primary} />
+        )}
         <Text style={styles.profileName}>{user?.name}</Text>
         <Text style={styles.profileEmail}>{user?.email}</Text>
+        
+        {/* Edit Profile Button */}
+        <TouchableOpacity 
+          style={styles.editProfileButton}
+          onPress={() => router.push('/profile/edit')}
+        >
+          <Ionicons name="create-outline" size={18} color={COLORS.primary} />
+          <Text style={styles.editProfileButtonText}>{t('edit')} {t('profile')}</Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/settings')}>
         <Ionicons name="settings-outline" size={24} color={COLORS.text} />
-        <Text style={styles.menuText}>Settings</Text>
+        <Text style={styles.menuText}>{t('settings')}</Text>
         <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/morning-briefing')}>
         <Ionicons name="sunny-outline" size={24} color={COLORS.text} />
-        <Text style={styles.menuText}>Morning Briefing</Text>
+        <Text style={styles.menuText}>{t('morningBriefing')}</Text>
         <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/import-contacts')}>
         <Ionicons name="download-outline" size={24} color={COLORS.text} />
-        <Text style={styles.menuText}>Import Contacts</Text>
+        <Text style={styles.menuText}>Import {t('contacts')}</Text>
         <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
       </TouchableOpacity>
 
       <TouchableOpacity style={[styles.menuItem, { backgroundColor: COLORS.accent + '20' }]} onPress={handleDeleteAllContacts}>
         <Ionicons name="trash-outline" size={24} color={COLORS.accent} />
-        <Text style={[styles.menuText, { color: COLORS.accent }]}>Delete All Contacts</Text>
+        <Text style={[styles.menuText, { color: COLORS.accent }]}>{t('delete')} All {t('contacts')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={24} color={COLORS.accent} />
-        <Text style={[styles.menuText, styles.logoutText]}>Logout</Text>
+        <Text style={[styles.menuText, styles.logoutText]}>{t('logout')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
