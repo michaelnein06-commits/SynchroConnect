@@ -389,11 +389,12 @@ export default function Index() {
   const renderContactCard = (contact: Contact, showDraftButton = true, isDraggable = false) => {
     const daysUntil = getDaysUntilDue(contact.next_due);
     const isOverdue = daysUntil !== null && daysUntil < 0;
+    const isNewContact = contact.pipeline_stage === 'New';
 
     return (
       <TouchableOpacity
         key={contact.id}
-        style={[styles.contactCard, isOverdue && styles.contactCardOverdue]}
+        style={[styles.contactCard, isOverdue && !isNewContact && styles.contactCardOverdue]}
         onPress={() => router.push(`/contact/${contact.id}`)}
         onLongPress={() => handleLongPressContact(contact)}
         delayLongPress={300}
@@ -424,11 +425,18 @@ export default function Index() {
             </TouchableOpacity>
           )}
         </View>
-        {daysUntil !== null && activeTab === 'pipeline' && (
+        {/* Don't show countdown for "New" stage contacts */}
+        {daysUntil !== null && activeTab === 'pipeline' && !isNewContact && (
           <View style={styles.dueBadge}>
             <Text style={styles.dueText}>
               {isOverdue ? `${Math.abs(daysUntil)}d overdue` : `Due in ${daysUntil}d`}
             </Text>
+          </View>
+        )}
+        {/* Show "New" badge instead */}
+        {isNewContact && activeTab === 'pipeline' && (
+          <View style={[styles.dueBadge, { backgroundColor: COLORS.new + '20' }]}>
+            <Text style={[styles.dueText, { color: COLORS.new }]}>New - Assign to pipeline</Text>
           </View>
         )}
       </TouchableOpacity>
