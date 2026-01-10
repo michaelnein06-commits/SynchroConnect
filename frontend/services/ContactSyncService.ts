@@ -192,52 +192,89 @@ export class ContactSyncService {
 
   /**
    * Find a device contact by ID, phone, email, or name
+   * Uses flexible matching to handle different formats
    */
   async findDeviceContact(appContact: AppContact, deviceContacts: Contacts.Contact[]): Promise<Contacts.Contact | null> {
-    this.log(`Finding device contact for: ${appContact.name} (phone: ${appContact.phone}, email: ${appContact.email})`);
-    
     // First try by stored device_contact_id
     if (appContact.device_contact_id) {
       const byId = deviceContacts.find(dc => dc.id === appContact.device_contact_id);
       if (byId) {
-        this.log(`Found by ID: ${byId.name}`);
         return byId;
       }
-      this.log(`ID ${appContact.device_contact_id} not found, trying other methods...`);
     }
 
-    // Then try by phone number
+    // Then try by phone number - flexible matching
     if (appContact.phone) {
-      const normalizedPhone = this.normalizePhone(appContact.phone);
-      if (normalizedPhone) {
-        const byPhone = deviceContacts.find(dc => {
-          return dc.phoneNumbers?.some(p => this.normalizePhone(p.number) === normalizedPhone);
-        });
-        if (byPhone) {
-          this.log(`Found by phone: ${byPhone.name}`);
-          return byPhone;
+      const appPhoneDigits = appContact.phone.replace(/\D/g, '');
+      // Try matching last 7-10 digits (handles different country codes)
+      for (const dc of deviceContacts) {
+        if (dc.phoneNumbers && dc.phoneNumbers.length > 0) {
+          for (const phoneObj of dc.phoneNumbers) {
+            if (phoneObj.number) {
+              const dcPhoneDigits = phoneObj.number.replace(/\D/g, '');
+              // Match if last 7+ digits are the same
+              const minLen = Math.min(appPhoneDigits.length, dcPhoneDigits.length, 7);
+              const appSuffix = appPhoneDigits.slice(-minLen);
+              const dcSuffix = dcPhoneDigits.slice(-minLen);
+              if (appSuffix.length >= 7 && appSuffix === dcSuffix) {
+                this.log(`Found by phone: ${dc.name || dc.firstName}`);
+                return dc;
+              }
+            }
+          }
         }
       }
     }
 
-    // Then try by email
+    // Then try by email - case insensitive
     if (appContact.email) {
-      const lowerEmail = appContact.email.toLowerCase();
-      const byEmail = deviceContacts.find(dc => {
-        return dc.emails?.some(e => e.email?.toLowerCase() === lowerEmail);
-      });
-      if (byEmail) {
-        this.log(`Found by email: ${byEmail.name}`);
-        return byEmail;
+      const appEmail = appContact.email.toLowerCase().trim();
+      for (const dc of deviceContacts) {
+        if (dc.emails && dc.emails.length > 0) {
+          for (const emailObj of dc.emails) {
+            if (emailObj.email && emailObj.email.toLowerCase().trim() === appEmail) {
+              this.log(`Found by email: ${dc.name || dc.firstName}`);
+              return dc;
+            }
+          }
+        }
       }
     }
 
-    // Finally try by name
+    // Finally try by name - flexible matching
     if (appContact.name) {
-      const lowerName = appContact.name.toLowerCase();
-      const byName = deviceContacts.find(dc => {
-        const dcName = dc.name || `${dc.firstName || ''} ${dc.lastName || ''}`.trim();
-        return dcName.toLowerCase() === lowerName;
+      const appName = this.normalizeName(appContact.name);
+      for (const dc of deviceContacts) {
+        const dcFullName = this.normalizeName(dc.name || `${dc.firstName || ''} ${dc.lastName || ''}`);
+        const dcFirstName = this.normalizeName(dc.firstName);
+        const dcLastName = this.normalizeName(dc.lastName);
+        
+        // Exact full name match
+        if (dcFullName && dcFullName === appName) {
+          this.log(`Found by full name: ${dc.name || dc.firstName}`);
+          return dc;
+        }
+        
+        // First name only match (if app contact has single name)
+        if (!appName.includes(' ') && dcFirstName === appName) {
+          this.log(`Found by first name: ${dc.name || dc.firstName}`);
+          return dc;
+        }
+        
+        // App name contains device first+last or vice versa
+        if (dcFirstName && dcLastName) {
+          const combined = `${dcFirstName} ${dcLastName}`;
+          if (appName === combined || combined === appName) {
+            this.log(`Found by combined name: ${dc.name || dc.firstName}`);
+            return dc;
+          }
+        }
+      }
+    }
+
+    this.log(`No match found for: ${appContact.name}`);
+    return null;
+  }
       });
       if (byName) {
         this.log(`Found by name: ${byName.name}`);
