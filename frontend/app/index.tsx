@@ -913,27 +913,6 @@ export default function Index() {
       <View style={styles.syncSection}>
         <Text style={styles.syncSectionTitle}>Contact Sync</Text>
         
-        {/* Full Two-Way Sync - Main Button */}
-        <TouchableOpacity 
-          style={[styles.menuItem, styles.syncItemMain]} 
-          onPress={performFullSync}
-          disabled={isSyncing}
-        >
-          <Ionicons 
-            name="sync" 
-            size={24} 
-            color={isSyncing ? COLORS.textLight : COLORS.surface} 
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.menuText, { color: isSyncing ? COLORS.textLight : COLORS.surface }]}>
-              {isSyncing ? 'Syncing...' : 'Full Two-Way Sync'}
-            </Text>
-            <Text style={[styles.syncHintText, { color: isSyncing ? COLORS.textLight : 'rgba(255,255,255,0.8)' }]}>
-              Sync all changes between App ↔ iPhone
-            </Text>
-          </View>
-        </TouchableOpacity>
-
         {/* Sync App → Device */}
         <TouchableOpacity 
           style={[styles.menuItem, styles.syncItem]} 
@@ -947,7 +926,7 @@ export default function Index() {
           />
           <View style={{ flex: 1 }}>
             <Text style={[styles.menuText, { color: isSyncing ? COLORS.textLight : COLORS.primary }]}>
-              App → iPhone
+              {isSyncing ? 'Syncing...' : 'App → iPhone'}
             </Text>
             <Text style={styles.syncHintText}>
               Push app changes to iPhone contacts
@@ -968,31 +947,10 @@ export default function Index() {
           />
           <View style={{ flex: 1 }}>
             <Text style={[styles.menuText, { color: isSyncing ? COLORS.textLight : COLORS.success }]}>
-              iPhone → App
+              {isSyncing ? 'Syncing...' : 'iPhone → App'}
             </Text>
             <Text style={styles.syncHintText}>
               Pull iPhone changes to app
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Link Contacts */}
-        <TouchableOpacity 
-          style={styles.menuItem} 
-          onPress={linkContacts}
-          disabled={isSyncing}
-        >
-          <Ionicons 
-            name="link-outline" 
-            size={24} 
-            color={isSyncing ? COLORS.textLight : COLORS.text} 
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.menuText, { color: isSyncing ? COLORS.textLight : COLORS.text }]}>
-              Re-Link Contacts
-            </Text>
-            <Text style={styles.syncHintText}>
-              Reconnect app contacts with iPhone by name/phone/email
             </Text>
           </View>
         </TouchableOpacity>
