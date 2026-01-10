@@ -549,15 +549,22 @@ async def create_contact(contact: ContactCreate, current_user: dict = Depends(ge
     contact_dict = contact.dict()
     contact_dict['user_id'] = current_user["user_id"]
     
-    # Calculate initial next_due
-    if not contact_dict.get('last_contact_date'):
-        contact_dict['last_contact_date'] = datetime.utcnow().isoformat()
-    
-    contact_dict['target_interval_days'] = calculate_target_interval(contact_dict['pipeline_stage'])
-    contact_dict['next_due'] = calculate_next_due_with_random_factor(
-        contact_dict['last_contact_date'],
-        contact_dict['target_interval_days']
-    )
+    # For "New" pipeline stage, don't set last_contact_date or next_due
+    # This ensures new contacts have no countdown until they're assigned to a real pipeline
+    if contact_dict['pipeline_stage'] == 'New':
+        contact_dict['target_interval_days'] = 0
+        contact_dict['next_due'] = None
+        contact_dict['last_contact_date'] = None
+    else:
+        # Calculate initial next_due for non-New contacts
+        if not contact_dict.get('last_contact_date'):
+            contact_dict['last_contact_date'] = datetime.utcnow().isoformat()
+        
+        contact_dict['target_interval_days'] = calculate_target_interval(contact_dict['pipeline_stage'])
+        contact_dict['next_due'] = calculate_next_due_with_random_factor(
+            contact_dict['last_contact_date'],
+            contact_dict['target_interval_days']
+        )
     
     result = await db.contacts.insert_one(contact_dict)
     contact_dict['id'] = str(result.inserted_id)
