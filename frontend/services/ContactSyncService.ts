@@ -70,8 +70,9 @@ export class ContactSyncService {
    */
   async getAppContacts(): Promise<AppContact[]> {
     try {
+      const backendUrl = getBackendUrl();
       const response = await axios.get(
-        `${EXPO_PUBLIC_BACKEND_URL}/api/contacts`,
+        `${backendUrl}/api/contacts`,
         this.getAuthHeaders()
       );
       return response.data || [];
