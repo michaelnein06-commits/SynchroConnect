@@ -191,7 +191,7 @@ export default function ImportContacts() {
             <Ionicons name="git-branch-outline" size={24} color={COLORS.warning} />
           </View>
           <Text style={styles.featureTitle}>Auto Pipeline</Text>
-          <Text style={styles.featureDesc}>Organized in Monthly by default</Text>
+          <Text style={styles.featureDesc}>Organized in "New" by default</Text>
         </View>
       </View>
 
