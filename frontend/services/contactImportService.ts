@@ -73,16 +73,36 @@ export function showFullAccessAlert() {
 
 export async function importPhoneContacts(): Promise<ImportedContact[]> {
   try {
-    const hasPermission = await requestContactsPermission();
-    
-    if (!hasPermission) {
-      throw new Error('Contacts permission not granted');
-    }
-
     // Check platform - contacts not available on web
     if (Platform.OS === 'web') {
       console.log('Contacts not available on web');
       return [];
+    }
+
+    // Request permission first
+    console.log('Requesting contacts permission...');
+    const { status: existingStatus } = await Contacts.getPermissionsAsync();
+    console.log('Current permission status:', existingStatus);
+    
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      console.log('Requesting new permission...');
+      const { status } = await Contacts.requestPermissionsAsync();
+      finalStatus = status;
+      console.log('New permission status:', finalStatus);
+    }
+    
+    if (finalStatus !== 'granted') {
+      // Show alert to user
+      Alert.alert(
+        'Permission Required',
+        'Please grant contact access in Settings to import contacts.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => Linking.openSettings() },
+        ]
+      );
+      throw new Error('Contacts permission not granted');
     }
 
     console.log('Starting contact import...');
