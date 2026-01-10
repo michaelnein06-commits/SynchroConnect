@@ -601,20 +601,24 @@ export class ContactSyncService {
         this.log('Failed to get device contacts');
       }
 
-      // Create device contact lookup by name/phone/email
-      const deviceByName = new Map<string, string>();
-      const deviceByPhone = new Map<string, string>();
-      const deviceByEmail = new Map<string, string>();
+      // Create device contact lookup by ID, name, phone, email
+      const deviceById = new Map<string, ImportedContact>();
+      const deviceByName = new Map<string, ImportedContact>();
+      const deviceByPhone = new Map<string, ImportedContact>();
+      const deviceByEmail = new Map<string, ImportedContact>();
 
       for (const dc of deviceContacts) {
-        if (dc.id && dc.name) {
-          deviceByName.set(dc.name.toLowerCase(), dc.id);
+        if (dc.id) {
+          deviceById.set(dc.id, dc);
         }
-        if (dc.id && dc.phoneNumbers?.[0]) {
-          deviceByPhone.set(this.normalizePhone(dc.phoneNumbers[0]), dc.id);
+        if (dc.name) {
+          deviceByName.set(dc.name.toLowerCase(), dc);
         }
-        if (dc.id && dc.emails?.[0]) {
-          deviceByEmail.set(dc.emails[0].toLowerCase(), dc.id);
+        if (dc.phoneNumbers?.[0]) {
+          deviceByPhone.set(this.normalizePhone(dc.phoneNumbers[0]), dc);
+        }
+        if (dc.emails?.[0]) {
+          deviceByEmail.set(dc.emails[0].toLowerCase(), dc);
         }
       }
 
@@ -623,26 +627,37 @@ export class ContactSyncService {
         if (!contactId) continue;
 
         let deviceContactId = appContact.device_contact_id;
+        let needsRelink = false;
 
-        // Try to find matching device contact if not linked
+        // Check if stored device_contact_id is still valid
+        if (deviceContactId && !deviceById.has(deviceContactId)) {
+          this.log(`Device contact ID stale for: ${appContact.name}, will re-link`);
+          deviceContactId = undefined;
+          needsRelink = true;
+        }
+
+        // Try to find matching device contact if not linked or stale
         if (!deviceContactId) {
           const name = appContact.name?.toLowerCase();
           const phone = this.normalizePhone(appContact.phone);
           const email = appContact.email?.toLowerCase();
 
+          let matchedDevice: ImportedContact | undefined;
+
           if (phone && deviceByPhone.has(phone)) {
-            deviceContactId = deviceByPhone.get(phone);
+            matchedDevice = deviceByPhone.get(phone);
           } else if (email && deviceByEmail.has(email)) {
-            deviceContactId = deviceByEmail.get(email);
+            matchedDevice = deviceByEmail.get(email);
           } else if (name && deviceByName.has(name)) {
-            deviceContactId = deviceByName.get(name);
+            matchedDevice = deviceByName.get(name);
           }
 
-          // Link if found
-          if (deviceContactId) {
+          if (matchedDevice?.id) {
+            deviceContactId = matchedDevice.id;
+            // Update the link in the backend
             await this.updateAppContact(contactId, { device_contact_id: deviceContactId });
             appContact.device_contact_id = deviceContactId;
-            this.log(`Linked: ${appContact.name}`);
+            this.log(`${needsRelink ? 'Re-linked' : 'Linked'}: ${appContact.name}`);
           }
         }
 
