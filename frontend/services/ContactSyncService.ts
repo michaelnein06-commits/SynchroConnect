@@ -275,16 +275,6 @@ export class ContactSyncService {
     this.log(`No match found for: ${appContact.name}`);
     return null;
   }
-      });
-      if (byName) {
-        this.log(`Found by name: ${byName.name}`);
-        return byName;
-      }
-    }
-
-    this.log(`No match found for: ${appContact.name}`);
-    return null;
-  }
 
   /**
    * Find an app contact that matches a device contact
