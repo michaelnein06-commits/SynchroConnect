@@ -29,6 +29,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Clipboard from 'expo-clipboard';
 import { useAuth } from '../../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import ContactSyncService from '../../services/ContactSyncService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
