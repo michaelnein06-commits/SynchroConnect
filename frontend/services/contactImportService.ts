@@ -109,6 +109,7 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
                 Contacts.Fields.Birthday,
                 Contacts.Fields.Image,
                 Contacts.Fields.ID,
+                Contacts.Fields.Note,
               ],
               pageSize: 10000,
               pageOffset: 0,
