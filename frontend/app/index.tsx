@@ -820,6 +820,32 @@ export default function Index() {
         </TouchableOpacity>
       </View>
 
+      {/* Sync with Apple Contacts */}
+      <TouchableOpacity 
+        style={[styles.menuItem, styles.syncItem]} 
+        onPress={() => performSync(true)}
+        disabled={isSyncing}
+      >
+        <Ionicons 
+          name="sync-outline" 
+          size={24} 
+          color={isSyncing ? COLORS.textLight : COLORS.primary} 
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.menuText, { color: isSyncing ? COLORS.textLight : COLORS.primary }]}>
+            {isSyncing ? 'Syncing...' : 'Sync with Apple Contacts'}
+          </Text>
+          {lastSyncResult && (
+            <Text style={styles.syncResultText}>{lastSyncResult}</Text>
+          )}
+        </View>
+        {isSyncing && (
+          <View style={styles.syncSpinner}>
+            <Ionicons name="refresh" size={18} color={COLORS.primary} />
+          </View>
+        )}
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/settings')}>
         <Ionicons name="settings-outline" size={24} color={COLORS.text} />
         <Text style={styles.menuText}>{t('settings')}</Text>
