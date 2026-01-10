@@ -43,6 +43,7 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       return [];
     }
 
+    // Get ALL contacts - use pageSize: 0 or a large number to get all
     const result = await Contacts.getContactsAsync({
       fields: [
         Contacts.Fields.Name,
@@ -54,6 +55,8 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         Contacts.Fields.Image,
         Contacts.Fields.ID,
       ],
+      pageSize: 10000, // Get up to 10,000 contacts
+      pageOffset: 0,
     });
 
     // Handle null/undefined result
@@ -62,7 +65,8 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       return [];
     }
 
-    const { data } = result;
+    const { data, total } = result;
+    console.log(`Total contacts on device: ${total}, Retrieved: ${data.length}`);
 
     const importedContacts: ImportedContact[] = data
       .filter((contact) => contact.name) // Only contacts with names
