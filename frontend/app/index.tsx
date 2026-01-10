@@ -547,7 +547,9 @@ export default function Index() {
   const renderPipeline = () => {
     const stageContacts = contacts.filter(c => c.pipeline_stage === selectedStage);
     const stageColor = getStageColor(selectedStage);
+    // Don't count "New" contacts as overdue
     const overdueCount = stageContacts.filter(c => {
+      if (c.pipeline_stage === 'New') return false;
       const days = getDaysUntilDue(c.next_due);
       return days !== null && days < 0;
     }).length;
