@@ -162,10 +162,16 @@ export class ContactSyncService {
    */
   async getDeviceContacts(): Promise<Contacts.Contact[]> {
     try {
-      if (Platform.OS === 'web') return [];
+      if (Platform.OS === 'web') {
+        this.log('Cannot get device contacts on web');
+        return [];
+      }
 
       const hasPermission = await requestContactsPermission();
-      if (!hasPermission) return [];
+      if (!hasPermission) {
+        this.log('No contacts permission');
+        return [];
+      }
 
       const result = await Contacts.getContactsAsync({
         fields: [
@@ -183,9 +189,21 @@ export class ContactSyncService {
         pageSize: 10000,
       });
 
-      return result.data || [];
+      const contacts = result.data || [];
+      this.log(`getDeviceContacts returned ${contacts.length} contacts`);
+      
+      // Log first few contacts for debugging
+      if (contacts.length > 0) {
+        const sample = contacts.slice(0, 3);
+        sample.forEach((c, i) => {
+          this.log(`Sample ${i}: name="${c.name}", firstName="${c.firstName}", phone="${c.phoneNumbers?.[0]?.number}"`);
+        });
+      }
+      
+      return contacts;
     } catch (error) {
       console.error('Error getting device contacts:', error);
+      this.log(`Error getting device contacts: ${error}`);
       return [];
     }
   }
