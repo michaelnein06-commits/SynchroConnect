@@ -231,8 +231,8 @@ export default function Index() {
       fetchContacts();
       fetchDrafts();
       fetchGroups();
-      // Perform quick sync on app launch (background)
-      quickSync();
+      // Don't auto-sync on startup - let user tap the sync button
+      // This avoids race conditions with the contacts API
     }
   }, [token]);
 
@@ -241,8 +241,7 @@ export default function Index() {
     fetchContacts();
     fetchDrafts();
     fetchGroups();
-    // Also sync on pull-to-refresh
-    quickSync();
+    // Don't auto-sync on refresh - user can tap sync button explicitly
   };
 
   const handleDeleteAllContacts = () => {
