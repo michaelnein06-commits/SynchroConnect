@@ -133,31 +133,47 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
     if (allContacts.length < 10) {
       console.log('Trying default contact fetch method...');
       
-      const result = await Contacts.getContactsAsync({
-        fields: [
-          Contacts.Fields.Name,
-          Contacts.Fields.FirstName,
-          Contacts.Fields.LastName,
-          Contacts.Fields.PhoneNumbers,
-          Contacts.Fields.Emails,
-          Contacts.Fields.Company,
-          Contacts.Fields.JobTitle,
-          Contacts.Fields.Birthday,
-          Contacts.Fields.Image,
-          Contacts.Fields.ID,
-          Contacts.Fields.Note,
-        ],
-        pageSize: 10000,
-        pageOffset: 0,
-      });
+      try {
+        const result = await Contacts.getContactsAsync({
+          fields: [
+            Contacts.Fields.Name,
+            Contacts.Fields.FirstName,
+            Contacts.Fields.LastName,
+            Contacts.Fields.PhoneNumbers,
+            Contacts.Fields.Emails,
+            Contacts.Fields.Company,
+            Contacts.Fields.JobTitle,
+            Contacts.Fields.Birthday,
+            Contacts.Fields.Image,
+            Contacts.Fields.ID,
+            Contacts.Fields.Note,
+          ],
+          pageSize: 10000,
+          pageOffset: 0,
+        });
 
-      if (result && result.data) {
-        console.log(`Default method: Total available: ${result.total}, Retrieved: ${result.data.length}`);
-        
-        // If default method returns more, use it
-        if (result.data.length > allContacts.length) {
+        if (result && result.data && result.data.length > 0) {
+          console.log(`Default method: Total available: ${result.total}, Retrieved: ${result.data.length}`);
           allContacts = result.data;
+        } else {
+          console.log('Default method returned no data, trying minimal fields...');
+          // Try with minimal fields
+          const minimalResult = await Contacts.getContactsAsync({
+            fields: [
+              Contacts.Fields.Name,
+              Contacts.Fields.PhoneNumbers,
+              Contacts.Fields.Emails,
+            ],
+            pageSize: 10000,
+          });
+          
+          if (minimalResult && minimalResult.data && minimalResult.data.length > 0) {
+            console.log(`Minimal method: Retrieved ${minimalResult.data.length} contacts`);
+            allContacts = minimalResult.data;
+          }
         }
+      } catch (fetchError) {
+        console.log('Error fetching contacts:', fetchError);
       }
     }
 
