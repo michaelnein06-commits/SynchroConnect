@@ -691,6 +691,7 @@ export class ContactSyncService {
   /**
    * Link existing app contacts with device contacts (without importing new ones)
    * Useful for reconnecting after contacts have been re-imported
+   * Also re-links contacts with stale device_contact_ids
    */
   async linkExistingContacts(): Promise<{ linked: number; errors: string[] }> {
     const result = { linked: 0, errors: [] as string[] };
@@ -722,12 +723,16 @@ export class ContactSyncService {
 
       this.log(`Found ${deviceContacts.length} device contacts, ${appContacts.length} app contacts`);
 
-      // Create device contact lookup
+      // Create device contact lookups
+      const deviceById = new Map<string, ImportedContact>();
       const deviceByPhone = new Map<string, ImportedContact>();
       const deviceByEmail = new Map<string, ImportedContact>();
       const deviceByName = new Map<string, ImportedContact>();
 
       for (const dc of deviceContacts) {
+        if (dc.id) {
+          deviceById.set(dc.id, dc);
+        }
         if (dc.phoneNumbers?.[0]) {
           deviceByPhone.set(this.normalizePhone(dc.phoneNumbers[0]), dc);
         }
@@ -739,12 +744,17 @@ export class ContactSyncService {
         }
       }
 
-      // Link app contacts that don't have device_contact_id yet
+      // Link app contacts that don't have device_contact_id OR have stale IDs
       for (const appContact of appContacts) {
-        if (appContact.device_contact_id) continue; // Already linked
-
         const contactId = appContact._id || appContact.id;
         if (!contactId) continue;
+
+        // Check if existing device_contact_id is valid
+        const existingDeviceId = appContact.device_contact_id;
+        const isStale = existingDeviceId && !deviceById.has(existingDeviceId);
+
+        // Skip if already linked and not stale
+        if (existingDeviceId && !isStale) continue;
 
         // Try to find matching device contact
         let matchedDevice: ImportedContact | undefined;
@@ -766,7 +776,13 @@ export class ContactSyncService {
             device_contact_id: matchedDevice.id,
           });
           result.linked++;
-          this.log(`Linked: ${appContact.name}`);
+          this.log(`${isStale ? 'Re-linked' : 'Linked'}: ${appContact.name}`);
+        } else if (isStale) {
+          // Clear the stale ID
+          await this.updateAppContact(contactId, {
+            device_contact_id: null,
+          });
+          this.log(`Cleared stale ID for: ${appContact.name}`);
         }
       }
 
