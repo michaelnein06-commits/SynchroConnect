@@ -132,11 +132,63 @@ export default function Index() {
   const [showAddContactsModal, setShowAddContactsModal] = useState(false);
   const [selectedGroupForContacts, setSelectedGroupForContacts] = useState<Group | null>(null);
   const [selectedContactsForGroup, setSelectedContactsForGroup] = useState<string[]>([]);
+  // Sync state
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncResult, setLastSyncResult] = useState<string | null>(null);
 
   // API headers with auth token
   const getAuthHeaders = () => ({
     headers: { Authorization: `Bearer ${token}` }
   });
+
+  // Contact Sync Service
+  const syncService = token ? new ContactSyncService(token) : null;
+
+  // Perform contact sync with device
+  const performSync = async (showAlert = true) => {
+    if (!syncService || isSyncing) return;
+    
+    setIsSyncing(true);
+    try {
+      const result = await syncService.performFullSync();
+      
+      // Refresh contacts after sync
+      await fetchContacts();
+      
+      const message = `Synced! ${result.imported} new contacts imported, ${result.syncedBack} synced back to device`;
+      setLastSyncResult(message);
+      
+      if (showAlert && (result.imported > 0 || result.syncedBack > 0)) {
+        Alert.alert('✓ Sync Complete', message);
+      }
+      
+      if (result.errors.length > 0) {
+        console.warn('Sync errors:', result.errors);
+      }
+    } catch (error) {
+      console.error('Sync error:', error);
+      if (showAlert) {
+        Alert.alert(t('error'), 'Failed to sync contacts');
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Quick sync on app launch (background)
+  const quickSync = async () => {
+    if (!syncService) return;
+    
+    try {
+      const result = await syncService.quickSync();
+      if (result.newContacts > 0) {
+        await fetchContacts();
+        setLastSyncResult(`${result.newContacts} new contacts found`);
+      }
+    } catch (error) {
+      console.error('Quick sync error:', error);
+    }
+  };
 
   const fetchContacts = async () => {
     if (!token) return;
