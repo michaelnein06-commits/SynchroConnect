@@ -206,6 +206,7 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
             ).toLocaleDateString() : undefined,
           image: contact.image,
           id: contact.id,
+          note: contact.note,
         };
       });
 
@@ -231,6 +232,6 @@ export function formatContactForCRM(importedContact: ImportedContact) {
     pipeline_stage: 'New',  // Imported contacts go to "New" stage
     language: 'English',
     tone: 'Casual',
-    notes: `Imported from phone contacts`,
+    notes: importedContact.note || '',  // Use the note from iPhone if available
   };
 }
