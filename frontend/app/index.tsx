@@ -1461,6 +1461,22 @@ const styles = StyleSheet.create({
   logoutText: {
     color: COLORS.accent,
   },
+  syncItem: {
+    backgroundColor: COLORS.primary + '10',
+    borderWidth: 1,
+    borderColor: COLORS.primary + '30',
+  },
+  syncResultText: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  syncSpinner: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
