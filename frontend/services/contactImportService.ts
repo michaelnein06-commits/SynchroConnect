@@ -37,7 +37,13 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       throw new Error('Contacts permission not granted');
     }
 
-    const { data } = await Contacts.getContactsAsync({
+    // Check platform - contacts not available on web
+    if (Platform.OS === 'web') {
+      console.log('Contacts not available on web');
+      return [];
+    }
+
+    const result = await Contacts.getContactsAsync({
       fields: [
         Contacts.Fields.Name,
         Contacts.Fields.PhoneNumbers,
@@ -49,6 +55,14 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         Contacts.Fields.ID,
       ],
     });
+
+    // Handle null/undefined result
+    if (!result || !result.data) {
+      console.log('No contacts data returned');
+      return [];
+    }
+
+    const { data } = result;
 
     const importedContacts: ImportedContact[] = data
       .filter((contact) => contact.name) // Only contacts with names
