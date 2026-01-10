@@ -233,6 +233,22 @@ export default function ImportContacts() {
 
   const renderSelectScreen = () => (
     <>
+      {/* Limited Access Warning */}
+      {showLimitedWarning && Platform.OS === 'ios' && (
+        <TouchableOpacity style={styles.limitedWarning} onPress={handleOpenSettings}>
+          <View style={styles.limitedWarningContent}>
+            <Ionicons name="warning" size={24} color={COLORS.warning} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.limitedWarningTitle}>Limited Contact Access</Text>
+              <Text style={styles.limitedWarningText}>
+                Only {importedContacts.length} contacts visible. Tap here to grant full access in Settings.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.warning} />
+          </View>
+        </TouchableOpacity>
+      )}
+
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color={COLORS.textLight} />
