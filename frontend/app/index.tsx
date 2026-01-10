@@ -75,7 +75,7 @@ const getStageGradient = (stage: string) => {
   }
 };
 
-const PIPELINE_STAGES = ['Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually'];
+const PIPELINE_STAGES = ['New', 'Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually'];
 
 type Tab = 'pipeline' | 'contacts' | 'groups' | 'drafts' | 'profile';
 
