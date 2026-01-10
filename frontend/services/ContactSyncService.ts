@@ -160,24 +160,60 @@ export class ContactSyncService {
    * Find a device contact by ID, phone, email, or name
    */
   async findDeviceContact(appContact: AppContact, deviceContacts: Contacts.Contact[]): Promise<Contacts.Contact | null> {
+    this.log(`Finding device contact for: ${appContact.name} (phone: ${appContact.phone}, email: ${appContact.email})`);
+    
     // First try by stored device_contact_id
     if (appContact.device_contact_id) {
       const byId = deviceContacts.find(dc => dc.id === appContact.device_contact_id);
-      if (byId) return byId;
+      if (byId) {
+        this.log(`Found by ID: ${byId.name}`);
+        return byId;
+      }
+      this.log(`ID ${appContact.device_contact_id} not found, trying other methods...`);
     }
 
     // Then try by phone number
     if (appContact.phone) {
       const normalizedPhone = this.normalizePhone(appContact.phone);
-      const byPhone = deviceContacts.find(dc => {
-        return dc.phoneNumbers?.some(p => this.normalizePhone(p.number) === normalizedPhone);
-      });
-      if (byPhone) return byPhone;
+      if (normalizedPhone) {
+        const byPhone = deviceContacts.find(dc => {
+          return dc.phoneNumbers?.some(p => this.normalizePhone(p.number) === normalizedPhone);
+        });
+        if (byPhone) {
+          this.log(`Found by phone: ${byPhone.name}`);
+          return byPhone;
+        }
+      }
     }
 
     // Then try by email
     if (appContact.email) {
       const lowerEmail = appContact.email.toLowerCase();
+      const byEmail = deviceContacts.find(dc => {
+        return dc.emails?.some(e => e.email?.toLowerCase() === lowerEmail);
+      });
+      if (byEmail) {
+        this.log(`Found by email: ${byEmail.name}`);
+        return byEmail;
+      }
+    }
+
+    // Finally try by name
+    if (appContact.name) {
+      const lowerName = appContact.name.toLowerCase();
+      const byName = deviceContacts.find(dc => {
+        const dcName = dc.name || `${dc.firstName || ''} ${dc.lastName || ''}`.trim();
+        return dcName.toLowerCase() === lowerName;
+      });
+      if (byName) {
+        this.log(`Found by name: ${byName.name}`);
+        return byName;
+      }
+    }
+
+    this.log(`No match found for: ${appContact.name}`);
+    return null;
+  }
       const byEmail = deviceContacts.find(dc => {
         return dc.emails?.some(e => e.email?.toLowerCase() === lowerEmail);
       });
