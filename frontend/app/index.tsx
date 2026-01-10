@@ -44,6 +44,7 @@ const COLORS = {
   warning: '#F59E0B',
   warningLight: '#FEF3C7',
   // Pipeline stage colors
+  new: '#3B82F6', // Blue for new contacts
   weekly: '#8B5CF6',
   biweekly: '#06B6D4',
   monthly: '#10B981',
@@ -54,6 +55,7 @@ const COLORS = {
 // Get color for pipeline stage
 const getStageColor = (stage: string) => {
   switch (stage) {
+    case 'New': return COLORS.new;
     case 'Weekly': return COLORS.weekly;
     case 'Bi-Weekly': return COLORS.biweekly;
     case 'Monthly': return COLORS.monthly;
@@ -66,6 +68,7 @@ const getStageColor = (stage: string) => {
 // Get gradient colors for stage
 const getStageGradient = (stage: string) => {
   switch (stage) {
+    case 'New': return ['#3B82F6', '#60A5FA'];
     case 'Weekly': return ['#8B5CF6', '#A78BFA'];
     case 'Bi-Weekly': return ['#06B6D4', '#22D3EE'];
     case 'Monthly': return ['#10B981', '#34D399'];
