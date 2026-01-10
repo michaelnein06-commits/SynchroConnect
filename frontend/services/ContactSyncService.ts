@@ -159,6 +159,7 @@ export class ContactSyncService {
 
   /**
    * Get ALL device contacts with full details
+   * Uses the importPhoneContacts function which already handles iOS 18+ permissions
    */
   async getDeviceContacts(): Promise<Contacts.Contact[]> {
     try {
@@ -173,34 +174,50 @@ export class ContactSyncService {
         return [];
       }
 
-      const result = await Contacts.getContactsAsync({
-        fields: [
-          Contacts.Fields.ID,
-          Contacts.Fields.Name,
-          Contacts.Fields.FirstName,
-          Contacts.Fields.LastName,
-          Contacts.Fields.PhoneNumbers,
-          Contacts.Fields.Emails,
-          Contacts.Fields.Birthday,
-          Contacts.Fields.JobTitle,
-          Contacts.Fields.Company,
-          Contacts.Fields.Note,
-        ],
-        pageSize: 10000,
-      });
-
-      const contacts = result.data || [];
-      this.log(`getDeviceContacts returned ${contacts.length} contacts`);
+      // Use importPhoneContacts which already handles iOS 18+ permission issues
+      // Then convert to Contacts.Contact format
+      const imported = await importPhoneContacts();
+      this.log(`importPhoneContacts returned ${imported.length} contacts`);
       
+      // Convert ImportedContact to Contacts.Contact format for matching
+      const deviceContacts: Contacts.Contact[] = imported.map(ic => ({
+        id: ic.id || '',
+        contactType: Contacts.ContactTypes.Person,
+        name: ic.name,
+        firstName: ic.name.split(' ')[0] || ic.name,
+        lastName: ic.name.split(' ').slice(1).join(' ') || '',
+        phoneNumbers: ic.phoneNumbers?.map(p => ({ 
+          number: p, 
+          label: 'mobile',
+          id: '',
+          isPrimary: false,
+          countryCode: '',
+          digits: p.replace(/\D/g, ''),
+        })) || [],
+        emails: ic.emails?.map(e => ({ 
+          email: e, 
+          label: 'home',
+          id: '',
+          isPrimary: false,
+        })) || [],
+        jobTitle: ic.jobTitle || '',
+        company: ic.company || '',
+        birthday: ic.birthday ? { 
+          year: parseInt(ic.birthday.split('/')[2] || '2000'),
+          month: parseInt(ic.birthday.split('/')[0] || '1') - 1,
+          day: parseInt(ic.birthday.split('/')[1] || '1'),
+        } : undefined,
+      }));
+
       // Log first few contacts for debugging
-      if (contacts.length > 0) {
-        const sample = contacts.slice(0, 3);
+      if (deviceContacts.length > 0) {
+        const sample = deviceContacts.slice(0, 3);
         sample.forEach((c, i) => {
           this.log(`Sample ${i}: name="${c.name}", firstName="${c.firstName}", phone="${c.phoneNumbers?.[0]?.number}"`);
         });
       }
       
-      return contacts;
+      return deviceContacts;
     } catch (error) {
       console.error('Error getting device contacts:', error);
       this.log(`Error getting device contacts: ${error}`);
