@@ -43,32 +43,86 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       return [];
     }
 
-    // Get ALL contacts - use pageSize: 0 or a large number to get all
-    const result = await Contacts.getContactsAsync({
-      fields: [
-        Contacts.Fields.Name,
-        Contacts.Fields.PhoneNumbers,
-        Contacts.Fields.Emails,
-        Contacts.Fields.Company,
-        Contacts.Fields.JobTitle,
-        Contacts.Fields.Birthday,
-        Contacts.Fields.Image,
-        Contacts.Fields.ID,
-      ],
-      pageSize: 10000, // Get up to 10,000 contacts
-      pageOffset: 0,
-    });
+    // Get ALL contacts from ALL containers
+    // First, try to get all containers
+    let allContacts: Contacts.Contact[] = [];
+    
+    try {
+      // Get contacts from all containers (iCloud, local, Exchange, etc.)
+      const containers = await Contacts.getContainersAsync({});
+      console.log(`Found ${containers.length} contact containers`);
+      
+      for (const container of containers) {
+        try {
+          const containerContacts = await Contacts.getContactsAsync({
+            containerId: container.id,
+            fields: [
+              Contacts.Fields.Name,
+              Contacts.Fields.PhoneNumbers,
+              Contacts.Fields.Emails,
+              Contacts.Fields.Company,
+              Contacts.Fields.JobTitle,
+              Contacts.Fields.Birthday,
+              Contacts.Fields.Image,
+              Contacts.Fields.ID,
+            ],
+            pageSize: 10000,
+            pageOffset: 0,
+          });
+          
+          if (containerContacts && containerContacts.data) {
+            console.log(`Container ${container.name || container.id}: ${containerContacts.data.length} contacts`);
+            allContacts = [...allContacts, ...containerContacts.data];
+          }
+        } catch (containerError) {
+          console.log(`Error reading container ${container.id}:`, containerError);
+        }
+      }
+    } catch (containerError) {
+      console.log('Container method not available, using default method');
+    }
+    
+    // If no contacts from containers, try the default method
+    if (allContacts.length === 0) {
+      const result = await Contacts.getContactsAsync({
+        fields: [
+          Contacts.Fields.Name,
+          Contacts.Fields.PhoneNumbers,
+          Contacts.Fields.Emails,
+          Contacts.Fields.Company,
+          Contacts.Fields.JobTitle,
+          Contacts.Fields.Birthday,
+          Contacts.Fields.Image,
+          Contacts.Fields.ID,
+        ],
+        pageSize: 10000,
+        pageOffset: 0,
+      });
 
-    // Handle null/undefined result
-    if (!result || !result.data) {
-      console.log('No contacts data returned');
-      return [];
+      if (result && result.data) {
+        console.log(`Default method: Total ${result.total}, Retrieved ${result.data.length}`);
+        allContacts = result.data;
+      }
     }
 
-    const { data, total } = result;
-    console.log(`Total contacts on device: ${total}, Retrieved: ${data.length}`);
+    // Remove duplicates by ID
+    const uniqueContactsMap = new Map<string, Contacts.Contact>();
+    for (const contact of allContacts) {
+      if (contact.id && contact.name) {
+        uniqueContactsMap.set(contact.id, contact);
+      } else if (contact.name) {
+        // For contacts without ID, use name as key
+        const key = contact.name.toLowerCase();
+        if (!uniqueContactsMap.has(key)) {
+          uniqueContactsMap.set(key, contact);
+        }
+      }
+    }
+    
+    const uniqueContacts = Array.from(uniqueContactsMap.values());
+    console.log(`Total unique contacts: ${uniqueContacts.length}`);
 
-    const importedContacts: ImportedContact[] = data
+    const importedContacts: ImportedContact[] = uniqueContacts
       .filter((contact) => contact.name) // Only contacts with names
       .map((contact) => ({
         name: contact.name || 'Unknown',
