@@ -214,24 +214,6 @@ export class ContactSyncService {
     this.log(`No match found for: ${appContact.name}`);
     return null;
   }
-      const byEmail = deviceContacts.find(dc => {
-        return dc.emails?.some(e => e.email?.toLowerCase() === lowerEmail);
-      });
-      if (byEmail) return byEmail;
-    }
-
-    // Finally try by name
-    if (appContact.name) {
-      const lowerName = appContact.name.toLowerCase();
-      const byName = deviceContacts.find(dc => {
-        const dcName = dc.name || `${dc.firstName || ''} ${dc.lastName || ''}`.trim();
-        return dcName.toLowerCase() === lowerName;
-      });
-      if (byName) return byName;
-    }
-
-    return null;
-  }
 
   /**
    * Find an app contact that matches a device contact
