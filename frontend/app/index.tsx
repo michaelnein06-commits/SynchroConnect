@@ -228,6 +228,8 @@ export default function Index() {
       fetchContacts();
       fetchDrafts();
       fetchGroups();
+      // Perform quick sync on app launch (background)
+      quickSync();
     }
   }, [token]);
 
@@ -236,6 +238,8 @@ export default function Index() {
     fetchContacts();
     fetchDrafts();
     fetchGroups();
+    // Also sync on pull-to-refresh
+    quickSync();
   };
 
   const handleDeleteAllContacts = () => {
