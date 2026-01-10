@@ -58,11 +58,45 @@ export class ContactSyncService {
   }
 
   /**
-   * Normalize phone number for comparison
+   * Normalize phone number for comparison - multiple formats
    */
   private normalizePhone(phone?: string): string {
     if (!phone) return '';
-    return phone.replace(/\D/g, '').slice(-10); // Last 10 digits
+    // Remove all non-digits
+    const digits = phone.replace(/\D/g, '');
+    // Return last 10 digits (handles +1 prefix)
+    return digits.slice(-10);
+  }
+
+  /**
+   * Normalize name for comparison
+   */
+  private normalizeName(name?: string): string {
+    if (!name) return '';
+    return name.toLowerCase().trim().replace(/\s+/g, ' ');
+  }
+
+  /**
+   * Check if two phone numbers match (flexible matching)
+   */
+  private phonesMatch(phone1?: string, phone2?: string): boolean {
+    if (!phone1 || !phone2) return false;
+    const norm1 = this.normalizePhone(phone1);
+    const norm2 = this.normalizePhone(phone2);
+    if (!norm1 || !norm2) return false;
+    // Check if either ends with the other (handles different prefixes)
+    return norm1 === norm2 || norm1.endsWith(norm2) || norm2.endsWith(norm1);
+  }
+
+  /**
+   * Check if two names match (flexible matching)
+   */
+  private namesMatch(name1?: string, name2?: string): boolean {
+    if (!name1 || !name2) return false;
+    const norm1 = this.normalizeName(name1);
+    const norm2 = this.normalizeName(name2);
+    if (!norm1 || !norm2) return false;
+    return norm1 === norm2;
   }
 
   /**
