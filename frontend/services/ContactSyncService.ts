@@ -255,6 +255,7 @@ export class ContactSyncService {
    */
   async importToApp(deviceContact: ImportedContact): Promise<AppContact | null> {
     try {
+      const backendUrl = getBackendUrl();
       const contactData = {
         name: deviceContact.name,
         phone: deviceContact.phoneNumbers?.[0] || '',
@@ -269,7 +270,7 @@ export class ContactSyncService {
       };
       
       const response = await axios.post(
-        `${EXPO_PUBLIC_BACKEND_URL}/api/contacts`,
+        `${backendUrl}/api/contacts`,
         contactData,
         this.getAuthHeaders()
       );
@@ -287,8 +288,9 @@ export class ContactSyncService {
    */
   async updateAppContact(contactId: string, data: Partial<AppContact>): Promise<boolean> {
     try {
+      const backendUrl = getBackendUrl();
       await axios.put(
-        `${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${contactId}`,
+        `${backendUrl}/api/contacts/${contactId}`,
         data,
         this.getAuthHeaders()
       );
