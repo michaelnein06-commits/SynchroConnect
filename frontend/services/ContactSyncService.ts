@@ -556,6 +556,204 @@ export class ContactSyncService {
       return false;
     }
   }
+
+  /**
+   * Sync all app contacts TO device (App → iPhone)
+   * This pushes changes made in the app to iPhone contacts
+   * Does NOT import new contacts from device
+   */
+  async syncAppToDevice(): Promise<{ syncedBack: number; errors: string[] }> {
+    const result = { syncedBack: 0, errors: [] as string[] };
+
+    try {
+      if (Platform.OS === 'web') {
+        result.errors.push('Sync not available on web');
+        return result;
+      }
+
+      const hasPermission = await requestContactsPermission();
+      if (!hasPermission) {
+        result.errors.push('Contact permission denied');
+        return result;
+      }
+
+      this.log('Syncing app → device...');
+
+      // Get app contacts
+      const appContacts = await this.getAppContacts();
+      this.log(`Found ${appContacts.length} app contacts to sync`);
+
+      // Get device contacts to find matches
+      let deviceContacts: ImportedContact[] = [];
+      try {
+        deviceContacts = await importPhoneContacts();
+      } catch (e) {
+        this.log('Failed to get device contacts');
+      }
+
+      // Create device contact lookup by name/phone/email
+      const deviceByName = new Map<string, string>();
+      const deviceByPhone = new Map<string, string>();
+      const deviceByEmail = new Map<string, string>();
+
+      for (const dc of deviceContacts) {
+        if (dc.id && dc.name) {
+          deviceByName.set(dc.name.toLowerCase(), dc.id);
+        }
+        if (dc.id && dc.phoneNumbers?.[0]) {
+          deviceByPhone.set(this.normalizePhone(dc.phoneNumbers[0]), dc.id);
+        }
+        if (dc.id && dc.emails?.[0]) {
+          deviceByEmail.set(dc.emails[0].toLowerCase(), dc.id);
+        }
+      }
+
+      for (const appContact of appContacts) {
+        const contactId = appContact._id || appContact.id;
+        if (!contactId) continue;
+
+        let deviceContactId = appContact.device_contact_id;
+
+        // Try to find matching device contact if not linked
+        if (!deviceContactId) {
+          const name = appContact.name?.toLowerCase();
+          const phone = this.normalizePhone(appContact.phone);
+          const email = appContact.email?.toLowerCase();
+
+          if (phone && deviceByPhone.has(phone)) {
+            deviceContactId = deviceByPhone.get(phone);
+          } else if (email && deviceByEmail.has(email)) {
+            deviceContactId = deviceByEmail.get(email);
+          } else if (name && deviceByName.has(name)) {
+            deviceContactId = deviceByName.get(name);
+          }
+
+          // Link if found
+          if (deviceContactId) {
+            await this.updateAppContact(contactId, { device_contact_id: deviceContactId });
+            appContact.device_contact_id = deviceContactId;
+            this.log(`Linked: ${appContact.name}`);
+          }
+        }
+
+        if (deviceContactId) {
+          // Update existing device contact
+          const success = await this.updateDeviceContact(deviceContactId, appContact);
+          if (success) {
+            result.syncedBack++;
+          }
+        } else {
+          // Create new device contact and link it
+          const newDeviceId = await this.createDeviceContact(appContact);
+          if (newDeviceId) {
+            await this.updateAppContact(contactId, { device_contact_id: newDeviceId });
+            result.syncedBack++;
+            this.log(`Created & linked: ${appContact.name}`);
+          }
+        }
+      }
+
+      this.log(`✓ Sync complete! ${result.syncedBack} contacts synced to device`);
+      return result;
+
+    } catch (error: any) {
+      result.errors.push(error?.message || 'Unknown error');
+      console.error('Sync to device error:', error);
+      return result;
+    }
+  }
+
+  /**
+   * Link existing app contacts with device contacts (without importing new ones)
+   * Useful for reconnecting after contacts have been re-imported
+   */
+  async linkExistingContacts(): Promise<{ linked: number; errors: string[] }> {
+    const result = { linked: 0, errors: [] as string[] };
+
+    try {
+      if (Platform.OS === 'web') {
+        result.errors.push('Not available on web');
+        return result;
+      }
+
+      const hasPermission = await requestContactsPermission();
+      if (!hasPermission) {
+        result.errors.push('Contact permission denied');
+        return result;
+      }
+
+      this.log('Linking contacts...');
+
+      // Get contacts from both sources
+      let deviceContacts: ImportedContact[] = [];
+      try {
+        deviceContacts = await importPhoneContacts();
+      } catch (e) {
+        result.errors.push('Failed to read device contacts');
+        return result;
+      }
+
+      const appContacts = await this.getAppContacts();
+
+      this.log(`Found ${deviceContacts.length} device contacts, ${appContacts.length} app contacts`);
+
+      // Create device contact lookup
+      const deviceByPhone = new Map<string, ImportedContact>();
+      const deviceByEmail = new Map<string, ImportedContact>();
+      const deviceByName = new Map<string, ImportedContact>();
+
+      for (const dc of deviceContacts) {
+        if (dc.phoneNumbers?.[0]) {
+          deviceByPhone.set(this.normalizePhone(dc.phoneNumbers[0]), dc);
+        }
+        if (dc.emails?.[0]) {
+          deviceByEmail.set(dc.emails[0].toLowerCase(), dc);
+        }
+        if (dc.name) {
+          deviceByName.set(dc.name.toLowerCase(), dc);
+        }
+      }
+
+      // Link app contacts that don't have device_contact_id yet
+      for (const appContact of appContacts) {
+        if (appContact.device_contact_id) continue; // Already linked
+
+        const contactId = appContact._id || appContact.id;
+        if (!contactId) continue;
+
+        // Try to find matching device contact
+        let matchedDevice: ImportedContact | undefined;
+
+        const phone = this.normalizePhone(appContact.phone);
+        const email = appContact.email?.toLowerCase();
+        const name = appContact.name?.toLowerCase();
+
+        if (phone && deviceByPhone.has(phone)) {
+          matchedDevice = deviceByPhone.get(phone);
+        } else if (email && deviceByEmail.has(email)) {
+          matchedDevice = deviceByEmail.get(email);
+        } else if (name && deviceByName.has(name)) {
+          matchedDevice = deviceByName.get(name);
+        }
+
+        if (matchedDevice && matchedDevice.id) {
+          await this.updateAppContact(contactId, {
+            device_contact_id: matchedDevice.id,
+          });
+          result.linked++;
+          this.log(`Linked: ${appContact.name}`);
+        }
+      }
+
+      this.log(`✓ Linking complete! ${result.linked} contacts linked`);
+      return result;
+
+    } catch (error: any) {
+      result.errors.push(error?.message || 'Unknown error');
+      console.error('Link contacts error:', error);
+      return result;
+    }
+  }
 }
 
 export default ContactSyncService;
