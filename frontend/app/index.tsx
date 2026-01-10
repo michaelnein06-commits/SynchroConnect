@@ -1617,6 +1617,11 @@ const styles = StyleSheet.create({
   logoutText: {
     color: COLORS.accent,
   },
+  syncItemMain: {
+    backgroundColor: COLORS.primary,
+    borderWidth: 0,
+    marginBottom: 8,
+  },
   syncItem: {
     backgroundColor: COLORS.primary + '10',
     borderWidth: 1,
