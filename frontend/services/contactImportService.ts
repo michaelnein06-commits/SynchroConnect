@@ -89,44 +89,73 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
     
     let allContacts: Contacts.Contact[] = [];
     
-    // Method 1: Try to get contacts from all containers (iCloud, local, Exchange, etc.)
+    // Method 1: Simple direct fetch (most reliable)
     try {
-      const containers = await Contacts.getContainersAsync({});
-      console.log(`Found ${containers.length} contact containers`);
+      console.log('Fetching contacts directly...');
+      const result = await Contacts.getContactsAsync({
+        fields: [
+          Contacts.Fields.Name,
+          Contacts.Fields.FirstName,
+          Contacts.Fields.LastName,
+          Contacts.Fields.PhoneNumbers,
+          Contacts.Fields.Emails,
+          Contacts.Fields.Company,
+          Contacts.Fields.JobTitle,
+          Contacts.Fields.Birthday,
+          Contacts.Fields.Image,
+          Contacts.Fields.ID,
+          Contacts.Fields.Note,
+        ],
+        pageSize: 10000,
+        pageOffset: 0,
+      });
       
-      if (containers.length > 0) {
-        for (const container of containers) {
-          try {
-            const containerContacts = await Contacts.getContactsAsync({
-              containerId: container.id,
-              fields: [
-                Contacts.Fields.Name,
-                Contacts.Fields.FirstName,
-                Contacts.Fields.LastName,
-                Contacts.Fields.PhoneNumbers,
-                Contacts.Fields.Emails,
-                Contacts.Fields.Company,
-                Contacts.Fields.JobTitle,
-                Contacts.Fields.Birthday,
-                Contacts.Fields.Image,
-                Contacts.Fields.ID,
-                Contacts.Fields.Note,
-              ],
-              pageSize: 10000,
-              pageOffset: 0,
-            });
-            
-            if (containerContacts && containerContacts.data) {
-              console.log(`Container ${container.name || container.id}: ${containerContacts.data.length} contacts`);
-              allContacts = [...allContacts, ...containerContacts.data];
+      console.log('Direct fetch result:', result ? `total=${result.total}, data=${result.data?.length}` : 'null');
+      
+      if (result && result.data && result.data.length > 0) {
+        allContacts = result.data;
+        console.log(`Direct method: Got ${allContacts.length} contacts`);
+      }
+    } catch (directError) {
+      console.log('Direct fetch error:', directError);
+    }
+    
+    // Method 2: Try containers if direct method failed
+    if (allContacts.length === 0) {
+      try {
+        const containers = await Contacts.getContainersAsync({});
+        console.log(`Found ${containers.length} contact containers`);
+        
+        if (containers.length > 0) {
+          for (const container of containers) {
+            try {
+              const containerContacts = await Contacts.getContactsAsync({
+                containerId: container.id,
+                fields: [
+                  Contacts.Fields.Name,
+                  Contacts.Fields.FirstName,
+                  Contacts.Fields.LastName,
+                  Contacts.Fields.PhoneNumbers,
+                  Contacts.Fields.Emails,
+                  Contacts.Fields.Image,
+                  Contacts.Fields.ID,
+                ],
+                pageSize: 10000,
+                pageOffset: 0,
+              });
+              
+              if (containerContacts && containerContacts.data) {
+                console.log(`Container ${container.name || container.id}: ${containerContacts.data.length} contacts`);
+                allContacts = [...allContacts, ...containerContacts.data];
+              }
+            } catch (containerError) {
+              console.log(`Error reading container ${container.id}:`, containerError);
             }
-          } catch (containerError) {
-            console.log(`Error reading container ${container.id}:`, containerError);
           }
         }
+      } catch (containerError) {
+        console.log('Container method failed:', containerError);
       }
-    } catch (containerError) {
-      console.log('Container method failed:', containerError);
     }
     
     // Method 2: If container method didn't work or returned few contacts, try default method
