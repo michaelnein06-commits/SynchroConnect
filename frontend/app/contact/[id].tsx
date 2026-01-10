@@ -698,13 +698,13 @@ export default function ContactDetail() {
                   >
                     <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
                     <Text style={[styles.dateButtonText, !formData.birthday && styles.placeholder]}>
-                      {formData.birthday ? format(new Date(formData.birthday), 'MMMM dd, yyyy') : 'Select birthday'}
+                      {formatBirthday(formData.birthday) !== '-' ? formatBirthday(formData.birthday) : 'Select birthday'}
                     </Text>
                     <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
                   </TouchableOpacity>
                 ) : (
                   <Text style={styles.fieldValue}>
-                    {formData.birthday ? format(new Date(formData.birthday), 'MMMM dd, yyyy') : '-'}
+                    {formatBirthday(formData.birthday)}
                   </Text>
                 )}
               </View>
