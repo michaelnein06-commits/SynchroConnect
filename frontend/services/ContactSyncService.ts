@@ -1,6 +1,7 @@
 import * as Contacts from 'expo-contacts';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const LAST_SYNC_KEY = 'last_contact_sync';
@@ -52,30 +53,39 @@ export class ContactSyncService {
    * Request contacts permission
    */
   async requestPermission(): Promise<boolean> {
-    const { status } = await Contacts.requestPermissionsAsync();
-    return status === 'granted';
+    try {
+      const { status } = await Contacts.requestPermissionsAsync();
+      return status === 'granted';
+    } catch (error) {
+      console.error('Permission request error:', error);
+      return false;
+    }
   }
 
   /**
    * Get all contacts from device
    */
   async getDeviceContacts(): Promise<Contacts.Contact[]> {
-    const { data } = await Contacts.getContactsAsync({
-      fields: [
-        Contacts.Fields.Name,
-        Contacts.Fields.FirstName,
-        Contacts.Fields.LastName,
-        Contacts.Fields.PhoneNumbers,
-        Contacts.Fields.Emails,
-        Contacts.Fields.Birthday,
-        Contacts.Fields.JobTitle,
-        Contacts.Fields.Company,
-        Contacts.Fields.Addresses,
-        Contacts.Fields.Note,
-        Contacts.Fields.Image,
-      ],
-    });
-    return data;
+    try {
+      const { data } = await Contacts.getContactsAsync({
+        fields: [
+          Contacts.Fields.Name,
+          Contacts.Fields.FirstName,
+          Contacts.Fields.LastName,
+          Contacts.Fields.PhoneNumbers,
+          Contacts.Fields.Emails,
+          Contacts.Fields.Birthday,
+          Contacts.Fields.JobTitle,
+          Contacts.Fields.Company,
+          Contacts.Fields.Addresses,
+          Contacts.Fields.Note,
+        ],
+      });
+      return data || [];
+    } catch (error) {
+      console.error('Error getting device contacts:', error);
+      return [];
+    }
   }
 
   /**
@@ -87,11 +97,19 @@ export class ContactSyncService {
         `${EXPO_PUBLIC_BACKEND_URL}/api/contacts`,
         this.getAuthHeaders()
       );
-      return response.data;
+      return response.data || [];
     } catch (error) {
       console.error('Error fetching app contacts:', error);
       return [];
     }
+  }
+
+  /**
+   * Normalize phone number for comparison
+   */
+  private normalizePhone(phone?: string): string {
+    if (!phone) return '';
+    return phone.replace(/\D/g, '').slice(-10); // Last 10 digits
   }
 
   /**
@@ -108,8 +126,9 @@ export class ContactSyncService {
     let birthday: string | undefined;
     if (deviceContact.birthday) {
       const { year, month, day } = deviceContact.birthday;
-      if (year && month !== undefined && day) {
-        birthday = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      if (month !== undefined && day) {
+        const y = year || 2000; // Default year if not set
+        birthday = `${y}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       }
     }
 
@@ -121,11 +140,11 @@ export class ContactSyncService {
       phone,
       email,
       birthday,
-      job: deviceContact.jobTitle || undefined,
+      job: deviceContact.jobTitle || deviceContact.company || undefined,
       location,
       notes: deviceContact.note || undefined,
       device_contact_id: deviceContact.id,
-      pipeline_stage: 'Monthly', // Default for new contacts
+      pipeline_stage: 'New', // NEW: Imported contacts go to "New" stage
     };
   }
 
@@ -134,6 +153,11 @@ export class ContactSyncService {
    */
   async updateDeviceContact(deviceContactId: string, appContact: AppContact): Promise<boolean> {
     try {
+      if (Platform.OS === 'web') {
+        console.log('Cannot update device contacts on web');
+        return false;
+      }
+
       // Get current device contact
       const contact = await Contacts.getContactByIdAsync(deviceContactId, [
         Contacts.Fields.Name,
@@ -162,7 +186,7 @@ export class ContactSyncService {
         updates.lastName = nameParts.slice(1).join(' ') || '';
       }
 
-      // Update phone if changed
+      // Update phone if provided
       if (appContact.phone) {
         updates.phoneNumbers = [{
           label: 'mobile',
@@ -170,7 +194,7 @@ export class ContactSyncService {
         }];
       }
 
-      // Update email if changed
+      // Update email if provided
       if (appContact.email) {
         updates.emails = [{
           label: 'home',
@@ -178,14 +202,14 @@ export class ContactSyncService {
         }];
       }
 
-      // Update birthday if changed
+      // Update birthday if provided
       if (appContact.birthday) {
         const parts = appContact.birthday.split('-');
-        if (parts.length === 3) {
+        if (parts.length >= 3) {
           updates.birthday = {
-            year: parseInt(parts[0]),
-            month: parseInt(parts[1]) - 1, // Months are 0-indexed
-            day: parseInt(parts[2]),
+            year: parseInt(parts[0]) || undefined,
+            month: (parseInt(parts[1]) || 1) - 1, // Months are 0-indexed
+            day: parseInt(parts[2]) || 1,
           };
         }
       }
@@ -210,7 +234,7 @@ export class ContactSyncService {
 
       // Apply updates
       await Contacts.updateContactAsync(updates as Contacts.Contact);
-      this.log(`Updated device contact: ${appContact.name}`);
+      this.log(`✓ Updated on device: ${appContact.name}`);
       return true;
     } catch (error) {
       console.error('Error updating device contact:', error);
@@ -223,7 +247,12 @@ export class ContactSyncService {
    */
   async createDeviceContact(appContact: AppContact): Promise<string | null> {
     try {
-      const nameParts = appContact.name.split(' ');
+      if (Platform.OS === 'web') {
+        console.log('Cannot create device contacts on web');
+        return null;
+      }
+
+      const nameParts = (appContact.name || 'Unknown').split(' ');
       
       const newContact: Contacts.Contact = {
         contactType: Contacts.ContactTypes.Person,
@@ -248,11 +277,11 @@ export class ContactSyncService {
 
       if (appContact.birthday) {
         const parts = appContact.birthday.split('-');
-        if (parts.length === 3) {
+        if (parts.length >= 3) {
           newContact.birthday = {
-            year: parseInt(parts[0]),
-            month: parseInt(parts[1]) - 1,
-            day: parseInt(parts[2]),
+            year: parseInt(parts[0]) || undefined,
+            month: (parseInt(parts[1]) || 1) - 1,
+            day: parseInt(parts[2]) || 1,
           };
         }
       }
@@ -273,7 +302,7 @@ export class ContactSyncService {
       }
 
       const contactId = await Contacts.addContactAsync(newContact);
-      this.log(`Created device contact: ${appContact.name}`);
+      this.log(`✓ Created on device: ${appContact.name}`);
       return contactId;
     } catch (error) {
       console.error('Error creating device contact:', error);
@@ -294,7 +323,7 @@ export class ContactSyncService {
         this.getAuthHeaders()
       );
       
-      this.log(`Imported: ${contactData.name}`);
+      this.log(`✓ Imported to app: ${contactData.name}`);
       return response.data;
     } catch (error) {
       console.error('Error importing contact:', error);
@@ -348,7 +377,7 @@ export class ContactSyncService {
 
       this.log(`Found ${deviceContacts.length} device contacts, ${appContacts.length} app contacts`);
 
-      // Create lookup maps
+      // Create lookup maps for app contacts
       const appContactsByDeviceId = new Map<string, AppContact>();
       const appContactsByPhone = new Map<string, AppContact>();
       const appContactsByEmail = new Map<string, AppContact>();
@@ -358,44 +387,48 @@ export class ContactSyncService {
           appContactsByDeviceId.set(contact.device_contact_id, contact);
         }
         if (contact.phone) {
-          // Normalize phone number for comparison
-          const normalizedPhone = contact.phone.replace(/\D/g, '');
-          appContactsByPhone.set(normalizedPhone, contact);
+          const normalizedPhone = this.normalizePhone(contact.phone);
+          if (normalizedPhone) {
+            appContactsByPhone.set(normalizedPhone, contact);
+          }
         }
         if (contact.email) {
           appContactsByEmail.set(contact.email.toLowerCase(), contact);
         }
       }
 
-      // STEP 1: Sync from device to app (import new contacts)
-      this.log('Checking for new device contacts...');
+      // STEP 1: Device → App (import new contacts, update existing)
+      this.log('Syncing device → app...');
       for (const deviceContact of deviceContacts) {
         if (!deviceContact.name && !deviceContact.firstName) continue;
+        if (!deviceContact.id) continue;
 
-        // Check if already linked
-        if (deviceContact.id && appContactsByDeviceId.has(deviceContact.id)) {
-          continue; // Already synced
-        }
+        // Check if already linked by device_contact_id
+        let existingAppContact = appContactsByDeviceId.get(deviceContact.id);
 
-        // Check by phone or email
-        const phone = deviceContact.phoneNumbers?.[0]?.number?.replace(/\D/g, '');
-        const email = deviceContact.emails?.[0]?.email?.toLowerCase();
-
-        let existingAppContact: AppContact | undefined;
-        
-        if (phone && appContactsByPhone.has(phone)) {
-          existingAppContact = appContactsByPhone.get(phone);
-        } else if (email && appContactsByEmail.has(email)) {
-          existingAppContact = appContactsByEmail.get(email);
+        // If not linked, check by phone or email
+        if (!existingAppContact) {
+          const phone = this.normalizePhone(deviceContact.phoneNumbers?.[0]?.number);
+          const email = deviceContact.emails?.[0]?.email?.toLowerCase();
+          
+          if (phone) {
+            existingAppContact = appContactsByPhone.get(phone);
+          }
+          if (!existingAppContact && email) {
+            existingAppContact = appContactsByEmail.get(email);
+          }
         }
 
         if (existingAppContact) {
-          // Link existing contact
-          if (!existingAppContact.device_contact_id && deviceContact.id) {
-            await this.updateAppContact(existingAppContact._id || existingAppContact.id!, {
-              device_contact_id: deviceContact.id,
-            });
-            this.log(`Linked: ${existingAppContact.name}`);
+          // Link existing contact if not linked yet
+          if (!existingAppContact.device_contact_id) {
+            const contactId = existingAppContact._id || existingAppContact.id;
+            if (contactId) {
+              await this.updateAppContact(contactId, {
+                device_contact_id: deviceContact.id,
+              });
+              this.log(`Linked: ${existingAppContact.name}`);
+            }
           }
         } else {
           // Import new contact
@@ -406,9 +439,16 @@ export class ContactSyncService {
         }
       }
 
-      // STEP 2: Sync from app to device (update device contacts)
-      this.log('Syncing app changes to device...');
-      for (const appContact of appContacts) {
+      // STEP 2: App → Device (sync changes back, create new contacts on device)
+      this.log('Syncing app → device...');
+      
+      // Refresh app contacts after imports
+      const updatedAppContacts = await this.getAppContacts();
+      
+      for (const appContact of updatedAppContacts) {
+        const contactId = appContact._id || appContact.id;
+        if (!contactId) continue;
+
         if (appContact.device_contact_id) {
           // Update existing device contact
           const success = await this.updateDeviceContact(
@@ -418,9 +458,16 @@ export class ContactSyncService {
           if (success) {
             result.syncedBack++;
           }
+        } else {
+          // Create new contact on device and link it
+          const deviceId = await this.createDeviceContact(appContact);
+          if (deviceId) {
+            await this.updateAppContact(contactId, {
+              device_contact_id: deviceId,
+            });
+            result.syncedBack++;
+          }
         }
-        // Note: We don't create new device contacts for app-only contacts
-        // to avoid cluttering the user's phone contacts
       }
 
       // Save last sync time
@@ -430,14 +477,15 @@ export class ContactSyncService {
       return result;
 
     } catch (error: any) {
-      result.errors.push(error.message || 'Unknown sync error');
+      const errorMsg = error?.message || 'Unknown sync error';
+      result.errors.push(errorMsg);
       console.error('Sync error:', error);
       return result;
     }
   }
 
   /**
-   * Quick sync - only check for new contacts
+   * Quick sync - only check for new contacts from device
    */
   async quickSync(): Promise<{ newContacts: number }> {
     try {
@@ -449,32 +497,40 @@ export class ContactSyncService {
         this.getAppContacts(),
       ]);
 
-      // Get device IDs that are already in app
-      const existingDeviceIds = new Set(
-        appContacts
-          .filter(c => c.device_contact_id)
-          .map(c => c.device_contact_id)
-      );
+      // Get device IDs and phones/emails that are already in app
+      const existingDeviceIds = new Set<string>();
+      const existingPhones = new Set<string>();
+      const existingEmails = new Set<string>();
 
-      // Find new contacts
+      for (const c of appContacts) {
+        if (c.device_contact_id) existingDeviceIds.add(c.device_contact_id);
+        if (c.phone) existingPhones.add(this.normalizePhone(c.phone));
+        if (c.email) existingEmails.add(c.email.toLowerCase());
+      }
+
+      // Find and import new contacts
       let newContacts = 0;
       for (const deviceContact of deviceContacts) {
-        if (!deviceContact.id || existingDeviceIds.has(deviceContact.id)) continue;
+        if (!deviceContact.id) continue;
         if (!deviceContact.name && !deviceContact.firstName) continue;
+        
+        // Skip if already linked
+        if (existingDeviceIds.has(deviceContact.id)) continue;
 
-        // Check if contact exists by phone/email
-        const phone = deviceContact.phoneNumbers?.[0]?.number?.replace(/\D/g, '');
+        // Skip if phone or email exists
+        const phone = this.normalizePhone(deviceContact.phoneNumbers?.[0]?.number);
         const email = deviceContact.emails?.[0]?.email?.toLowerCase();
         
-        const exists = appContacts.some(ac => {
-          const acPhone = ac.phone?.replace(/\D/g, '');
-          const acEmail = ac.email?.toLowerCase();
-          return (phone && acPhone === phone) || (email && acEmail === email);
-        });
+        if (phone && existingPhones.has(phone)) continue;
+        if (email && existingEmails.has(email)) continue;
 
-        if (!exists) {
-          const imported = await this.importToApp(deviceContact);
-          if (imported) newContacts++;
+        // Import this new contact
+        const imported = await this.importToApp(deviceContact);
+        if (imported) {
+          newContacts++;
+          // Add to sets to prevent duplicates in same sync
+          if (phone) existingPhones.add(phone);
+          if (email) existingEmails.add(email);
         }
       }
 
@@ -486,21 +542,23 @@ export class ContactSyncService {
   }
 
   /**
-   * Sync single contact back to device
+   * Sync single contact back to device (call after saving a contact)
    */
   async syncContactToDevice(appContact: AppContact): Promise<boolean> {
     try {
       const hasPermission = await this.requestPermission();
       if (!hasPermission) return false;
 
+      const contactId = appContact._id || appContact.id;
+
       if (appContact.device_contact_id) {
-        // Update existing
+        // Update existing device contact
         return await this.updateDeviceContact(appContact.device_contact_id, appContact);
-      } else {
-        // Create new and link
+      } else if (contactId) {
+        // Create new device contact and link it
         const deviceId = await this.createDeviceContact(appContact);
         if (deviceId) {
-          await this.updateAppContact(appContact._id || appContact.id!, {
+          await this.updateAppContact(contactId, {
             device_contact_id: deviceId,
           });
           return true;
