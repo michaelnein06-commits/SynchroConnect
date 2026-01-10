@@ -348,10 +348,18 @@ export class ContactSyncService {
 
   /**
    * UPDATE a device contact with app data (App → iPhone)
+   * Note: This requires write permissions and may not work in Expo Go
    */
   async updateDeviceContactFromApp(deviceContactId: string, appContact: AppContact): Promise<boolean> {
     try {
       if (Platform.OS === 'web') return false;
+
+      // Check if we have write permission
+      const { status } = await Contacts.getPermissionsAsync();
+      if (status !== 'granted') {
+        this.log('No contact permission for writing');
+        return false;
+      }
 
       // Build the contact update object
       const nameParts = appContact.name.split(' ');
@@ -385,7 +393,7 @@ export class ContactSyncService {
       if (appContact.birthday) {
         try {
           const date = new Date(appContact.birthday);
-          if (!isNaN(date.getTime())) {
+          if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2100) {
             contactUpdate.birthday = {
               year: date.getFullYear(),
               month: date.getMonth(),
@@ -410,9 +418,14 @@ export class ContactSyncService {
       await Contacts.updateContactAsync(contactUpdate as Contacts.Contact);
       this.log(`✓ Updated iPhone contact: ${appContact.name}`);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating device contact:', error);
-      this.log(`✗ Failed to update iPhone: ${appContact.name}`);
+      // Check if it's a permission or capability error
+      if (error?.message?.includes('not supported') || error?.message?.includes('permission')) {
+        this.log(`✗ Write not supported (requires dev build): ${appContact.name}`);
+      } else {
+        this.log(`✗ Failed to update iPhone: ${appContact.name} - ${error?.message || 'Unknown error'}`);
+      }
       return false;
     }
   }
