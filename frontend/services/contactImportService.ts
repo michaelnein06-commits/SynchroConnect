@@ -10,6 +10,7 @@ export interface ImportedContact {
   birthday?: string;
   image?: any;
   id?: string;
+  note?: string;
 }
 
 export async function requestContactsPermission(): Promise<boolean> {
