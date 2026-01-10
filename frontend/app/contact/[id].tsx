@@ -33,6 +33,32 @@ import ContactSyncService from '../../services/ContactSyncService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Safe date parser - handles various formats and invalid dates
+const safeParseDate = (dateString?: string | null): Date | null => {
+  if (!dateString) return null;
+  try {
+    const date = new Date(dateString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) return null;
+    // Check if year is reasonable (1900-2100)
+    if (date.getFullYear() < 1900 || date.getFullYear() > 2100) return null;
+    return date;
+  } catch (e) {
+    return null;
+  }
+};
+
+// Safe date formatter
+const formatBirthday = (dateString?: string | null): string => {
+  const date = safeParseDate(dateString);
+  if (!date) return '-';
+  try {
+    return format(date, 'MMMM dd, yyyy');
+  } catch (e) {
+    return '-';
+  }
+};
+
 // Safe haptics wrapper
 const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => {
   try {
