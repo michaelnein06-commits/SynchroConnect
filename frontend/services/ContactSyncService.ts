@@ -510,17 +510,69 @@ export class ContactSyncService {
       // STEP 2: App → Device (sync changes back)
       this.log('Syncing app → device...');
       
-      // Refresh app contacts after imports
+      // Refresh app contacts after imports and re-fetch device contacts
       const updatedAppContacts = await this.getAppContacts();
+      
+      // Re-fetch device contacts for the latest IDs
+      let freshDeviceContacts: ImportedContact[] = [];
+      try {
+        freshDeviceContacts = await importPhoneContacts();
+      } catch (e) {
+        this.log('Warning: Could not refresh device contacts');
+      }
+      
+      // Create fresh lookup
+      const freshDeviceById = new Map<string, ImportedContact>();
+      const freshDeviceByPhone = new Map<string, ImportedContact>();
+      const freshDeviceByEmail = new Map<string, ImportedContact>();
+      const freshDeviceByName = new Map<string, ImportedContact>();
+      
+      for (const dc of freshDeviceContacts) {
+        if (dc.id) freshDeviceById.set(dc.id, dc);
+        if (dc.name) freshDeviceByName.set(dc.name.toLowerCase(), dc);
+        if (dc.phoneNumbers?.[0]) {
+          freshDeviceByPhone.set(this.normalizePhone(dc.phoneNumbers[0]), dc);
+        }
+        if (dc.emails?.[0]) {
+          freshDeviceByEmail.set(dc.emails[0].toLowerCase(), dc);
+        }
+      }
       
       for (const appContact of updatedAppContacts) {
         const contactId = appContact._id || appContact.id;
         if (!contactId) continue;
 
-        if (appContact.device_contact_id) {
+        let deviceContactId = appContact.device_contact_id;
+        
+        // Check if device_contact_id is valid
+        if (deviceContactId && !freshDeviceById.has(deviceContactId)) {
+          // Try to re-link
+          const phone = this.normalizePhone(appContact.phone);
+          const email = appContact.email?.toLowerCase();
+          const name = appContact.name?.toLowerCase();
+          
+          let matchedDevice: ImportedContact | undefined;
+          if (phone && freshDeviceByPhone.has(phone)) {
+            matchedDevice = freshDeviceByPhone.get(phone);
+          } else if (email && freshDeviceByEmail.has(email)) {
+            matchedDevice = freshDeviceByEmail.get(email);
+          } else if (name && freshDeviceByName.has(name)) {
+            matchedDevice = freshDeviceByName.get(name);
+          }
+          
+          if (matchedDevice?.id) {
+            deviceContactId = matchedDevice.id;
+            await this.updateAppContact(contactId, { device_contact_id: deviceContactId });
+            this.log(`Re-linked for sync: ${appContact.name}`);
+          } else {
+            deviceContactId = undefined;
+          }
+        }
+
+        if (deviceContactId) {
           // Update existing device contact
           const success = await this.updateDeviceContact(
-            appContact.device_contact_id,
+            deviceContactId,
             appContact
           );
           if (success) {
@@ -542,7 +594,7 @@ export class ContactSyncService {
       // Save last sync time
       await AsyncStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
       
-      this.log(`✓ Sync complete! Imported: ${result.imported}, Synced to device: ${result.syncedBack}`);
+      this.log(`✓ Sync complete! Imported: ${result.imported}, Updated: ${result.updated}, Synced to device: ${result.syncedBack}`);
       return result;
 
     } catch (error: any) {
