@@ -147,34 +147,98 @@ export default function Index() {
   // Contact Sync Service
   const syncService = token ? new ContactSyncService(token) : null;
 
+  // Full Two-Way Sync (iPhone ↔ App)
+  const performFullSync = async () => {
+    if (!syncService || isSyncing) return;
+    
+    setIsSyncing(true);
+    try {
+      const result = await syncService.performFullSync();
+      await fetchContacts();
+      
+      const messages = [];
+      if (result.imported > 0) messages.push(`${result.imported} imported from iPhone`);
+      if (result.updated > 0) messages.push(`${result.updated} updated from iPhone`);
+      if (result.syncedBack > 0) messages.push(`${result.syncedBack} synced to iPhone`);
+      
+      const message = messages.length > 0 
+        ? `✓ ${messages.join(', ')}` 
+        : 'All contacts are already in sync';
+      setLastSyncResult(message);
+      
+      Alert.alert('Two-Way Sync Complete', message);
+      
+      if (result.errors.length > 0) {
+        console.warn('Sync errors:', result.errors);
+      }
+    } catch (error) {
+      console.error('Full sync error:', error);
+      Alert.alert(t('error'), 'Failed to perform two-way sync');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   // Sync app contacts TO device (App → iPhone)
-  // This pushes your app changes (birthday, phone, etc.) to iPhone contacts
   const syncToDevice = async () => {
     if (!syncService || isSyncing) return;
     
     setIsSyncing(true);
     try {
       const result = await syncService.syncAppToDevice();
+      await fetchContacts();
       
-      const message = result.syncedBack > 0 
-        ? `✓ Synced ${result.syncedBack} contacts to iPhone` 
-        : 'All contacts are already synced';
+      const total = result.synced + result.created;
+      const message = total > 0 
+        ? `✓ Updated ${result.synced}, created ${result.created} contacts on iPhone` 
+        : 'All contacts are already synced to iPhone';
       setLastSyncResult(message);
       
-      Alert.alert('Sync Complete', message);
+      Alert.alert('App → iPhone Complete', message);
       
       if (result.errors.length > 0) {
         console.warn('Sync errors:', result.errors);
       }
     } catch (error) {
       console.error('Sync error:', error);
-      Alert.alert(t('error'), 'Failed to sync to device');
+      Alert.alert(t('error'), 'Failed to sync to iPhone');
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // Link existing app contacts with device contacts (without importing new ones)
+  // Sync from iPhone TO app (iPhone → App)
+  const syncFromDevice = async () => {
+    if (!syncService || isSyncing) return;
+    
+    setIsSyncing(true);
+    try {
+      const result = await syncService.syncDeviceToApp();
+      await fetchContacts();
+      
+      const messages = [];
+      if (result.synced > 0) messages.push(`${result.synced} updated`);
+      if (result.imported > 0) messages.push(`${result.imported} imported`);
+      
+      const message = messages.length > 0 
+        ? `✓ ${messages.join(', ')} from iPhone` 
+        : 'All contacts are already in sync';
+      setLastSyncResult(message);
+      
+      Alert.alert('iPhone → App Complete', message);
+      
+      if (result.errors.length > 0) {
+        console.warn('Sync errors:', result.errors);
+      }
+    } catch (error) {
+      console.error('Sync error:', error);
+      Alert.alert(t('error'), 'Failed to sync from iPhone');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Link existing app contacts with device contacts
   const linkContacts = async () => {
     if (!syncService || isSyncing) return;
     
@@ -183,14 +247,12 @@ export default function Index() {
       const result = await syncService.linkExistingContacts();
       await fetchContacts();
       
-      const message = `Linked ${result.linked} contacts with iPhone`;
+      const message = result.linked > 0 
+        ? `✓ Linked ${result.linked} contacts with iPhone`
+        : 'All contacts are already linked';
       setLastSyncResult(message);
       
-      if (result.linked > 0) {
-        Alert.alert('✓ Linking Complete', message);
-      } else {
-        Alert.alert('Linking Complete', 'All contacts are already linked');
-      }
+      Alert.alert('Linking Complete', message);
     } catch (error) {
       console.error('Link error:', error);
       Alert.alert(t('error'), 'Failed to link contacts');
