@@ -34,28 +34,30 @@ class ContactSyncTester:
             await self.session.close()
             
     async def authenticate(self):
-        """Authenticate using test Google auth flow"""
-        print("🔐 Authenticating with Google auth...")
-        
-        auth_data = {"session_id": "test"}
+        """Create a test JWT token for authentication"""
+        print("🔐 Creating test JWT token...")
         
         try:
-            async with self.session.post(
-                f"{self.base_url}/auth/google",
-                json=auth_data,
-                headers={"Content-Type": "application/json"}
-            ) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    self.auth_token = data["access_token"]
-                    print(f"✅ Authentication successful")
-                    return True
-                else:
-                    error_text = await response.text()
-                    print(f"❌ Authentication failed: {response.status} - {error_text}")
-                    return False
+            import jwt
+            from datetime import datetime, timedelta
+            
+            # Use the same JWT settings as the backend
+            JWT_SECRET = 'synchroconnectr_secret_key_2025_super_secure_random_string'
+            JWT_ALGORITHM = 'HS256'
+            
+            # Create a test token
+            payload = {
+                'user_id': 'test_user_sync_123',
+                'email': 'sync_test@example.com',
+                'exp': datetime.utcnow() + timedelta(hours=1)
+            }
+            
+            self.auth_token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+            print(f"✅ Test token created successfully")
+            return True
+            
         except Exception as e:
-            print(f"❌ Authentication error: {str(e)}")
+            print(f"❌ Token creation error: {str(e)}")
             return False
             
     def get_auth_headers(self):
