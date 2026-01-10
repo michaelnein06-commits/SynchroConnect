@@ -469,6 +469,7 @@ export default function Index() {
   const renderPipelineContactCard = (contact: Contact, index: number) => {
     const daysUntil = getDaysUntilDue(contact.next_due);
     const isOverdue = daysUntil !== null && daysUntil < 0;
+    const isNewContact = contact.pipeline_stage === 'New';
     const stageColor = getStageColor(selectedStage);
 
     return (
@@ -481,7 +482,7 @@ export default function Index() {
         style={[
           styles.pipelineCard,
           { borderLeftColor: stageColor },
-          isOverdue && styles.pipelineCardOverdue,
+          isOverdue && !isNewContact && styles.pipelineCardOverdue,
         ]}
       >
         <View style={styles.pipelineCardContent}>
@@ -510,7 +511,8 @@ export default function Index() {
             )}
           </View>
           <View style={styles.pipelineCardRight}>
-            {daysUntil !== null && (
+            {/* Only show countdown for non-New contacts */}
+            {daysUntil !== null && !isNewContact && (
               <View style={[
                 styles.pipelineDueBadge,
                 isOverdue ? styles.pipelineDueOverdue : styles.pipelineDueOk
@@ -526,6 +528,13 @@ export default function Index() {
                 ]}>
                   {isOverdue ? `${Math.abs(daysUntil)}d` : `${daysUntil}d`}
                 </Text>
+              </View>
+            )}
+            {/* Show "Assign" badge for new contacts */}
+            {isNewContact && (
+              <View style={[styles.pipelineDueBadge, { backgroundColor: COLORS.new + '20' }]}>
+                <Ionicons name="arrow-forward-outline" size={12} color={COLORS.new} />
+                <Text style={[styles.pipelineDueText, { color: COLORS.new }]}>Assign</Text>
               </View>
             )}
             <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
