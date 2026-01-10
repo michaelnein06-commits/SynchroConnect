@@ -437,6 +437,13 @@ export class ContactSyncService {
     try {
       if (Platform.OS === 'web') return null;
 
+      // Check if we have write permission
+      const { status } = await Contacts.getPermissionsAsync();
+      if (status !== 'granted') {
+        this.log('No contact permission for writing');
+        return null;
+      }
+
       const nameParts = appContact.name.split(' ');
       const firstName = nameParts[0] || 'Unknown';
       const lastName = nameParts.slice(1).join(' ') || '';
@@ -465,7 +472,7 @@ export class ContactSyncService {
       if (appContact.birthday) {
         try {
           const date = new Date(appContact.birthday);
-          if (!isNaN(date.getTime())) {
+          if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2100) {
             newContact.birthday = {
               year: date.getFullYear(),
               month: date.getMonth(),
@@ -486,9 +493,13 @@ export class ContactSyncService {
       const contactId = await Contacts.addContactAsync(newContact);
       this.log(`✓ Created iPhone contact: ${appContact.name}`);
       return contactId;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating device contact:', error);
-      this.log(`✗ Failed to create iPhone contact: ${appContact.name}`);
+      if (error?.message?.includes('not supported') || error?.message?.includes('permission')) {
+        this.log(`✗ Write not supported (requires dev build): ${appContact.name}`);
+      } else {
+        this.log(`✗ Failed to create iPhone: ${appContact.name} - ${error?.message || 'Unknown error'}`);
+      }
       return null;
     }
   }
