@@ -222,8 +222,9 @@ class Draft(BaseModel):
 
 # ============ Utility Functions ============
 def calculate_target_interval(pipeline_stage: str) -> int:
-    """Convert pipeline stage to days"""
+    """Convert pipeline stage to days. 'New' stage has no interval (returns 0)"""
     intervals = {
+        "New": 0,  # New contacts have no countdown
         "Weekly": 7,
         "Bi-Weekly": 14,
         "Monthly": 30,
