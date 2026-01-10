@@ -82,7 +82,7 @@ export function formatContactForCRM(importedContact: ImportedContact) {
     device_contact_id: importedContact.id || '',
     tags: [],
     groups: [],
-    pipeline_stage: 'Monthly',
+    pipeline_stage: 'New',  // NEW: Imported contacts go to "New" stage
     language: 'English',
     tone: 'Casual',
     notes: `Imported from phone contacts`,
