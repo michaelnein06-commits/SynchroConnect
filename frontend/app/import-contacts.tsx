@@ -11,6 +11,7 @@ import {
   TextInput,
   Image,
   Animated,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -48,9 +49,10 @@ export default function ImportContacts() {
   const [importing, setImporting] = useState(false);
   const [importedContacts, setImportedContacts] = useState<ImportedContact[]>([]);
   const [selectedContacts, setSelectedContacts] = useState<Set<number>>(new Set());
-  const [step, setStep] = useState<'start' | 'select' | 'importing' | 'complete'>('start');
+  const [step, setStep] = useState<'start' | 'select' | 'importing' | 'complete' | 'limited'>('start');
   const [importStats, setImportStats] = useState({ total: 0, success: 0, failed: 0 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [showLimitedWarning, setShowLimitedWarning] = useState(false);
 
   // API headers with auth token
   const getAuthHeaders = () => ({
@@ -70,6 +72,12 @@ export default function ImportContacts() {
     setImporting(true);
     try {
       const contacts = await importPhoneContacts();
+      
+      // Check if we got very few contacts (likely limited access)
+      if (contacts.length < 20 && Platform.OS === 'ios') {
+        setShowLimitedWarning(true);
+      }
+      
       setImportedContacts(contacts);
       setSelectedContacts(new Set(contacts.map((_, index) => index)));
       setStep('select');
@@ -78,6 +86,10 @@ export default function ImportContacts() {
     } finally {
       setImporting(false);
     }
+  };
+
+  const handleOpenSettings = () => {
+    Linking.openSettings();
   };
 
   const toggleContactSelection = (index: number) => {
