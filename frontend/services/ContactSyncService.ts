@@ -384,7 +384,45 @@ export class ContactSyncService {
         }
       }
 
-      // STEP 1: Device → App (import new contacts)
+      // STEP 0: Fix stale device_contact_ids and re-link
+      this.log('Fixing stale links...');
+      for (const appContact of appContacts) {
+        const contactId = appContact._id || appContact.id;
+        if (!contactId) continue;
+        
+        // Check if device_contact_id is stale
+        if (appContact.device_contact_id && !deviceById.has(appContact.device_contact_id)) {
+          this.log(`Stale ID detected for: ${appContact.name}`);
+          
+          // Try to re-link by phone, email, or name
+          const phone = this.normalizePhone(appContact.phone);
+          const email = appContact.email?.toLowerCase();
+          const name = appContact.name?.toLowerCase();
+          
+          let matchedDevice: ImportedContact | undefined;
+          if (phone && deviceByPhone.has(phone)) {
+            matchedDevice = deviceByPhone.get(phone);
+          } else if (email && deviceByEmail.has(email)) {
+            matchedDevice = deviceByEmail.get(email);
+          } else if (name && deviceByName.has(name)) {
+            matchedDevice = deviceByName.get(name);
+          }
+          
+          if (matchedDevice?.id) {
+            await this.updateAppContact(contactId, { device_contact_id: matchedDevice.id });
+            appContact.device_contact_id = matchedDevice.id;
+            appContactsByDeviceId.set(matchedDevice.id, appContact);
+            this.log(`Re-linked: ${appContact.name}`);
+          } else {
+            // Clear the stale ID
+            await this.updateAppContact(contactId, { device_contact_id: null });
+            appContact.device_contact_id = undefined;
+            this.log(`Cleared stale ID: ${appContact.name}`);
+          }
+        }
+      }
+
+      // STEP 1: Device → App (import NEW contacts AND update existing with device data)
       this.log('Syncing device → app...');
       for (const deviceContact of deviceContacts) {
         if (!deviceContact.name) continue;
@@ -414,14 +452,46 @@ export class ContactSyncService {
         }
 
         if (existingAppContact) {
-          // Link existing contact if not linked yet
-          if (!existingAppContact.device_contact_id && deviceContact.id) {
-            const contactId = existingAppContact._id || existingAppContact.id;
-            if (contactId) {
-              await this.updateAppContact(contactId, {
-                device_contact_id: deviceContact.id,
-              });
-              this.log(`Linked: ${existingAppContact.name}`);
+          const contactId = existingAppContact._id || existingAppContact.id;
+          
+          // Link if not linked yet
+          if (!existingAppContact.device_contact_id && deviceContact.id && contactId) {
+            await this.updateAppContact(contactId, {
+              device_contact_id: deviceContact.id,
+            });
+            existingAppContact.device_contact_id = deviceContact.id;
+            this.log(`Linked: ${existingAppContact.name}`);
+          }
+          
+          // UPDATE app contact with device data (iPhone → App)
+          // Only update fields that are empty in app but filled in device
+          if (contactId) {
+            const updates: Partial<AppContact> = {};
+            
+            // Update phone if empty in app but exists in device
+            if (!existingAppContact.phone && deviceContact.phoneNumbers?.[0]) {
+              updates.phone = deviceContact.phoneNumbers[0];
+            }
+            
+            // Update email if empty in app but exists in device
+            if (!existingAppContact.email && deviceContact.emails?.[0]) {
+              updates.email = deviceContact.emails[0];
+            }
+            
+            // Update birthday if empty in app but exists in device
+            if (!existingAppContact.birthday && deviceContact.birthday) {
+              updates.birthday = deviceContact.birthday;
+            }
+            
+            // Update job if empty in app but exists in device
+            if (!existingAppContact.job && (deviceContact.jobTitle || deviceContact.company)) {
+              updates.job = deviceContact.jobTitle || deviceContact.company || '';
+            }
+            
+            if (Object.keys(updates).length > 0) {
+              await this.updateAppContact(contactId, updates);
+              result.updated++;
+              this.log(`Updated from device: ${existingAppContact.name}`);
             }
           }
         } else {
