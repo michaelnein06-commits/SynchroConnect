@@ -326,7 +326,7 @@ export class ContactSyncService {
         return result;
       }
 
-      this.log('Starting sync...');
+      this.log('Starting full two-way sync...');
 
       // Get contacts using the WORKING import function
       let deviceContacts: ImportedContact[] = [];
@@ -343,7 +343,24 @@ export class ContactSyncService {
 
       this.log(`Found ${deviceContacts.length} device contacts, ${appContacts.length} app contacts`);
 
-      // Create lookup maps for app contacts
+      // Create lookup maps for DEVICE contacts
+      const deviceById = new Map<string, ImportedContact>();
+      const deviceByPhone = new Map<string, ImportedContact>();
+      const deviceByEmail = new Map<string, ImportedContact>();
+      const deviceByName = new Map<string, ImportedContact>();
+
+      for (const dc of deviceContacts) {
+        if (dc.id) deviceById.set(dc.id, dc);
+        if (dc.name) deviceByName.set(dc.name.toLowerCase(), dc);
+        if (dc.phoneNumbers?.[0]) {
+          deviceByPhone.set(this.normalizePhone(dc.phoneNumbers[0]), dc);
+        }
+        if (dc.emails?.[0]) {
+          deviceByEmail.set(dc.emails[0].toLowerCase(), dc);
+        }
+      }
+
+      // Create lookup maps for APP contacts
       const appContactsByDeviceId = new Map<string, AppContact>();
       const appContactsByPhone = new Map<string, AppContact>();
       const appContactsByEmail = new Map<string, AppContact>();
