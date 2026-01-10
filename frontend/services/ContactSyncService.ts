@@ -67,7 +67,13 @@ export class ContactSyncService {
    */
   async getDeviceContacts(): Promise<Contacts.Contact[]> {
     try {
-      const { data } = await Contacts.getContactsAsync({
+      // Check if we're on web - contacts not available
+      if (Platform.OS === 'web') {
+        console.log('Device contacts not available on web');
+        return [];
+      }
+
+      const result = await Contacts.getContactsAsync({
         fields: [
           Contacts.Fields.Name,
           Contacts.Fields.FirstName,
@@ -81,7 +87,14 @@ export class ContactSyncService {
           Contacts.Fields.Note,
         ],
       });
-      return data || [];
+      
+      // Handle null or undefined result
+      if (!result || !result.data) {
+        console.log('No contacts returned from device');
+        return [];
+      }
+      
+      return result.data;
     } catch (error) {
       console.error('Error getting device contacts:', error);
       return [];
