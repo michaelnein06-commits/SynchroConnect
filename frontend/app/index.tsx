@@ -147,49 +147,55 @@ export default function Index() {
   // Contact Sync Service
   const syncService = token ? new ContactSyncService(token) : null;
 
-  // Perform contact sync with device
-  const performSync = async (showAlert = true) => {
+  // Sync app contacts TO device (App → iPhone)
+  // This pushes your app changes (birthday, phone, etc.) to iPhone contacts
+  const syncToDevice = async () => {
     if (!syncService || isSyncing) return;
     
     setIsSyncing(true);
     try {
-      const result = await syncService.performFullSync();
+      const result = await syncService.syncAppToDevice();
       
-      // Refresh contacts after sync
-      await fetchContacts();
-      
-      const message = `Synced! ${result.imported} new contacts imported, ${result.syncedBack} synced back to device`;
+      const message = result.syncedBack > 0 
+        ? `✓ Synced ${result.syncedBack} contacts to iPhone` 
+        : 'All contacts are already synced';
       setLastSyncResult(message);
       
-      if (showAlert && (result.imported > 0 || result.syncedBack > 0)) {
-        Alert.alert('✓ Sync Complete', message);
-      }
+      Alert.alert('Sync Complete', message);
       
       if (result.errors.length > 0) {
         console.warn('Sync errors:', result.errors);
       }
     } catch (error) {
       console.error('Sync error:', error);
-      if (showAlert) {
-        Alert.alert(t('error'), 'Failed to sync contacts');
-      }
+      Alert.alert(t('error'), 'Failed to sync to device');
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // Quick sync on app launch (background)
-  const quickSync = async () => {
-    if (!syncService) return;
+  // Link existing app contacts with device contacts (without importing new ones)
+  const linkContacts = async () => {
+    if (!syncService || isSyncing) return;
     
+    setIsSyncing(true);
     try {
-      const result = await syncService.quickSync();
-      if (result.newContacts > 0) {
-        await fetchContacts();
-        setLastSyncResult(`${result.newContacts} new contacts found`);
+      const result = await syncService.linkExistingContacts();
+      await fetchContacts();
+      
+      const message = `Linked ${result.linked} contacts with iPhone`;
+      setLastSyncResult(message);
+      
+      if (result.linked > 0) {
+        Alert.alert('✓ Linking Complete', message);
+      } else {
+        Alert.alert('Linking Complete', 'All contacts are already linked');
       }
     } catch (error) {
-      console.error('Quick sync error:', error);
+      console.error('Link error:', error);
+      Alert.alert(t('error'), 'Failed to link contacts');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
