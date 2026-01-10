@@ -547,4 +547,29 @@ const styles = StyleSheet.create({
   statCardGradient: { paddingHorizontal: 32, paddingVertical: 20, alignItems: 'center' },
   statNumber: { fontSize: 40, fontWeight: 'bold' },
   statLabel: { fontSize: 14, color: COLORS.textLight, marginTop: 4 },
+
+  // Limited Access Warning
+  limitedWarning: {
+    backgroundColor: COLORS.warning + '15',
+    margin: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.warning + '30',
+  },
+  limitedWarningContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+  },
+  limitedWarningTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.warning,
+  },
+  limitedWarningText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
 });
