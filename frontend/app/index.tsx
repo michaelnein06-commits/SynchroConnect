@@ -3248,9 +3248,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   noBirthdayText: {
-    fontSize: 14,
-    color: COLORS.textLight,
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text,
     marginTop: 12,
+  },
+  noBirthdayHint: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    marginTop: 4,
   },
   birthdayCard: {
     flexDirection: 'row',
