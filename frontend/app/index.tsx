@@ -3371,6 +3371,9 @@ const styles = StyleSheet.create({
   upcomingBadgeSoon: {
     backgroundColor: COLORS.accent + '15',
   },
+  upcomingBadgeToday: {
+    backgroundColor: COLORS.accent,
+  },
   upcomingBadgeText: {
     fontSize: 12,
     fontWeight: '600',
@@ -3378,5 +3381,8 @@ const styles = StyleSheet.create({
   },
   upcomingBadgeTextSoon: {
     color: COLORS.accent,
+  },
+  upcomingBadgeTextToday: {
+    color: COLORS.surface,
   },
 });
