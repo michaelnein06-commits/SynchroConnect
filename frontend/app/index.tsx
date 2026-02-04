@@ -1469,7 +1469,7 @@ export default function Index() {
       {activeTab === 'pipeline' && renderPipeline()}
       {activeTab === 'contacts' && renderContacts()}
       {activeTab === 'groups' && renderGroups()}
-      {activeTab === 'drafts' && renderDrafts()}
+      {activeTab === 'planner' && renderPlanner()}
       {activeTab === 'profile' && renderProfile()}
 
       {/* Enhanced FAB with gradient */}
