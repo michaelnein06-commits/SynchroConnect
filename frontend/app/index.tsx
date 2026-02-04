@@ -135,7 +135,9 @@ interface Group {
   id: string;
   name: string;
   description?: string;
+  color?: string;
   profile_picture?: string;
+  contact_count?: number;
 }
 
 export default function Index() {
