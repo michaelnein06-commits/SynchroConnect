@@ -10,11 +10,25 @@ import {
   Alert,
   TextInput,
   Modal,
+  Platform,
 } from 'react-native';
-import { DraxProvider, DraxView, DraxScrollView } from 'react-native-drax';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
+
+// Safe haptics import
+const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => {
+  if (Platform.OS === 'web') return;
+  try {
+    const Haptics = await import('expo-haptics');
+    if (type === 'success') {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else if (type === 'medium') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } else {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  } catch (e) {}
+};
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -72,14 +86,13 @@ const DragDropGroups: React.FC<DragDropGroupsProps> = ({
   onGroupPress,
   onCreateGroup,
 }) => {
-  const [draggingContact, setDraggingContact] = useState<Contact | null>(null);
-  const [receivingGroupId, setReceivingGroupId] = useState<string | null>(null);
-  const [receivingUnassigned, setReceivingUnassigned] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [showMoveToGroupModal, setShowMoveToGroupModal] = useState(false);
 
   // Contacts not in any group
   const unassignedContacts = useMemo(() => {
@@ -108,59 +121,42 @@ const DragDropGroups: React.FC<DragDropGroupsProps> = ({
     );
   };
 
-  const handleDragStart = useCallback((contact: Contact) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setDraggingContact(contact);
+  const handleLongPress = useCallback((contact: Contact) => {
+    triggerHaptic('medium');
+    setSelectedContact(contact);
+    setShowMoveToGroupModal(true);
   }, []);
 
-  const handleDragEnd = useCallback(() => {
-    setDraggingContact(null);
-    setReceivingGroupId(null);
-    setReceivingUnassigned(false);
-  }, []);
-
-  const handleGroupReceiveDragEnter = useCallback((groupId: string) => {
-    if (draggingContact && !draggingContact.groups?.includes(groupId)) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setReceivingGroupId(groupId);
-    }
-  }, [draggingContact]);
-
-  const handleGroupReceiveDragExit = useCallback(() => {
-    setReceivingGroupId(null);
-  }, []);
-
-  const handleUnassignedReceiveDragEnter = useCallback(() => {
-    if (draggingContact && draggingContact.groups && draggingContact.groups.length > 0) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setReceivingUnassigned(true);
-    }
-  }, [draggingContact]);
-
-  const handleUnassignedReceiveDragExit = useCallback(() => {
-    setReceivingUnassigned(false);
-  }, []);
-
-  const handleDropOnGroup = useCallback(async (contact: Contact, groupId: string) => {
-    if (contact.groups?.includes(groupId)) return;
+  const handleAddToGroup = useCallback(async (groupId: string) => {
+    if (!selectedContact) return;
     
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setDraggingContact(null);
-    setReceivingGroupId(null);
-    
-    try {
-      await onAddContactToGroup(contact.id, groupId);
-    } catch (error) {
-      console.error('Error adding contact to group:', error);
-      Alert.alert('Error', 'Failed to add contact to group');
+    if (selectedContact.groups?.includes(groupId)) {
+      // Already in group - remove it
+      try {
+        await onRemoveContactFromGroup(selectedContact.id, groupId);
+        triggerHaptic('success');
+      } catch (error) {
+        console.error('Error removing from group:', error);
+        Alert.alert('Error', 'Failed to remove from group');
+      }
+    } else {
+      // Not in group - add it
+      try {
+        await onAddContactToGroup(selectedContact.id, groupId);
+        triggerHaptic('success');
+      } catch (error) {
+        console.error('Error adding to group:', error);
+        Alert.alert('Error', 'Failed to add to group');
+      }
     }
-  }, [onAddContactToGroup]);
+  }, [selectedContact, onAddContactToGroup, onRemoveContactFromGroup]);
 
   const handleRemoveFromGroup = useCallback(async (contact: Contact, groupId: string) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    triggerHaptic('medium');
     
     try {
       await onRemoveContactFromGroup(contact.id, groupId);
+      triggerHaptic('success');
     } catch (error) {
       console.error('Error removing contact from group:', error);
       Alert.alert('Error', 'Failed to remove contact from group');
@@ -178,7 +174,7 @@ const DragDropGroups: React.FC<DragDropGroupsProps> = ({
       setShowCreateGroupModal(false);
       setNewGroupName('');
       setNewGroupDescription('');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      triggerHaptic('success');
     } catch (error) {
       console.error('Error creating group:', error);
       Alert.alert('Error', 'Failed to create group');
@@ -191,59 +187,51 @@ const DragDropGroups: React.FC<DragDropGroupsProps> = ({
       : COLORS.primary;
 
     return (
-      <DraxView
+      <TouchableOpacity
         key={`${contact.id}-${groupId || 'unassigned'}`}
         style={[styles.contactCard, inGroup && { borderLeftWidth: 3, borderLeftColor: groupColor }]}
-        draggingStyle={styles.contactCardDragging}
-        dragReleasedStyle={styles.contactCardReleased}
-        dragPayload={{ contact, sourceGroupId: groupId }}
-        longPressDelay={150}
-        onDragStart={() => handleDragStart(contact)}
-        onDragEnd={handleDragEnd}
+        onPress={() => onContactPress(contact.id)}
+        onLongPress={() => handleLongPress(contact)}
+        delayLongPress={300}
+        activeOpacity={0.8}
       >
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => onContactPress(contact.id)}
-          style={styles.contactCardTouchable}
-        >
-          <View style={styles.contactCardContent}>
-            {contact.profile_picture ? (
-              <Image source={{ uri: contact.profile_picture }} style={styles.contactAvatar} />
-            ) : (
-              <View style={[styles.contactAvatarPlaceholder, { backgroundColor: groupColor + '20' }]}>
-                <Text style={[styles.contactAvatarText, { color: groupColor }]}>
-                  {contact.name.charAt(0).toUpperCase()}
-                </Text>
+        <View style={styles.contactCardContent}>
+          {contact.profile_picture ? (
+            <Image source={{ uri: contact.profile_picture }} style={styles.contactAvatar} />
+          ) : (
+            <View style={[styles.contactAvatarPlaceholder, { backgroundColor: groupColor + '20' }]}>
+              <Text style={[styles.contactAvatarText, { color: groupColor }]}>
+                {contact.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <View style={styles.contactInfo}>
+            <Text style={styles.contactName} numberOfLines={1}>{contact.name}</Text>
+            {contact.job && (
+              <Text style={styles.contactJob} numberOfLines={1}>{contact.job}</Text>
+            )}
+            {!inGroup && contact.groups && contact.groups.length > 0 && (
+              <View style={styles.contactGroupTags}>
+                {contact.groups.slice(0, 2).map((gId, idx) => {
+                  const group = groups.find(g => g.id === gId);
+                  return group ? (
+                    <View key={idx} style={[styles.groupTag, { backgroundColor: (group.color || COLORS.primary) + '20' }]}>
+                      <Text style={[styles.groupTagText, { color: group.color || COLORS.primary }]}>
+                        {group.name}
+                      </Text>
+                    </View>
+                  ) : null;
+                })}
+                {contact.groups.length > 2 && (
+                  <Text style={styles.moreGroups}>+{contact.groups.length - 2}</Text>
+                )}
               </View>
             )}
-            <View style={styles.contactInfo}>
-              <Text style={styles.contactName} numberOfLines={1}>{contact.name}</Text>
-              {contact.job && (
-                <Text style={styles.contactJob} numberOfLines={1}>{contact.job}</Text>
-              )}
-              {!inGroup && contact.groups && contact.groups.length > 0 && (
-                <View style={styles.contactGroupTags}>
-                  {contact.groups.slice(0, 2).map((gId, idx) => {
-                    const group = groups.find(g => g.id === gId);
-                    return group ? (
-                      <View key={idx} style={[styles.groupTag, { backgroundColor: (group.color || COLORS.primary) + '20' }]}>
-                        <Text style={[styles.groupTagText, { color: group.color || COLORS.primary }]}>
-                          {group.name}
-                        </Text>
-                      </View>
-                    ) : null;
-                  })}
-                  {contact.groups.length > 2 && (
-                    <Text style={styles.moreGroups}>+{contact.groups.length - 2}</Text>
-                  )}
-                </View>
-              )}
-            </View>
-            <View style={styles.dragHandle}>
-              <Ionicons name="menu" size={16} color={COLORS.textLight} />
-            </View>
           </View>
-        </TouchableOpacity>
+          <View style={styles.cardActions}>
+            <Ionicons name="ellipsis-vertical" size={16} color={COLORS.textLight} />
+          </View>
+        </View>
         
         {/* Remove from group button */}
         {inGroup && groupId && (
@@ -254,33 +242,17 @@ const DragDropGroups: React.FC<DragDropGroupsProps> = ({
             <Ionicons name="close-circle" size={20} color={COLORS.accent} />
           </TouchableOpacity>
         )}
-      </DraxView>
+      </TouchableOpacity>
     );
   };
 
   const renderGroupCard = (group: Group) => {
     const groupContacts = getGroupContacts(group.id);
     const isExpanded = expandedGroups.includes(group.id);
-    const isReceiving = receivingGroupId === group.id;
     const groupColor = group.color || COLORS.primary;
 
     return (
-      <DraxView
-        key={group.id}
-        style={[
-          styles.groupCard,
-          isReceiving && styles.groupCardReceiving,
-          { borderColor: isReceiving ? groupColor : COLORS.borderLight }
-        ]}
-        receivingStyle={[styles.groupCardReceiving, { borderColor: groupColor }]}
-        onReceiveDragEnter={() => handleGroupReceiveDragEnter(group.id)}
-        onReceiveDragExit={handleGroupReceiveDragExit}
-        onReceiveDragDrop={({ dragged: { payload } }) => {
-          if (payload?.contact) {
-            handleDropOnGroup(payload.contact as Contact, group.id);
-          }
-        }}
-      >
+      <View key={group.id} style={styles.groupCard}>
         {/* Group Header */}
         <TouchableOpacity
           style={styles.groupHeader}
@@ -305,13 +277,6 @@ const DragDropGroups: React.FC<DragDropGroupsProps> = ({
             </Text>
           </View>
 
-          {/* Drop indicator */}
-          {isReceiving && draggingContact && (
-            <View style={[styles.dropIndicator, { backgroundColor: groupColor }]}>
-              <Ionicons name="add" size={16} color="#fff" />
-            </View>
-          )}
-
           <Ionicons 
             name={isExpanded ? "chevron-up" : "chevron-down"} 
             size={20} 
@@ -325,227 +290,269 @@ const DragDropGroups: React.FC<DragDropGroupsProps> = ({
             {groupContacts.length === 0 ? (
               <View style={styles.emptyGroup}>
                 <Ionicons name="person-add-outline" size={24} color={COLORS.textLight} />
-                <Text style={styles.emptyGroupText}>Drag contacts here</Text>
+                <Text style={styles.emptyGroupText}>Long press contacts to add</Text>
               </View>
             ) : (
               groupContacts.map(contact => renderContactCard(contact, true, group.id))
             )}
           </View>
         )}
-      </DraxView>
+      </View>
     );
   };
 
   return (
-    <DraxProvider>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>Groups</Text>
-            <View style={styles.headerStats}>
-              <Text style={styles.headerStat}>{groups.length} groups</Text>
-              <Text style={styles.headerStatDivider}>•</Text>
-              <Text style={styles.headerStat}>{unassignedContacts.length} unassigned</Text>
-            </View>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>Groups</Text>
+          <View style={styles.headerStats}>
+            <Text style={styles.headerStat}>{groups.length} groups</Text>
+            <Text style={styles.headerStatDivider}>•</Text>
+            <Text style={styles.headerStat}>{unassignedContacts.length} unassigned</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.createGroupBtn}
-            onPress={() => setShowCreateGroupModal(true)}
-          >
-            <Ionicons name="add" size={20} color={COLORS.surface} />
-            <Text style={styles.createGroupBtnText}>New</Text>
-          </TouchableOpacity>
         </View>
-
-        {/* Drag Hint */}
-        <View style={styles.dragHintBar}>
-          <Ionicons name="hand-left-outline" size={14} color={COLORS.primary} />
-          <Text style={styles.dragHintText}>Long press & drag contacts between groups</Text>
-        </View>
-
-        <DraxScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+        <TouchableOpacity 
+          style={styles.createGroupBtn}
+          onPress={() => setShowCreateGroupModal(true)}
         >
-          {/* Groups Section */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionIconWrapper}>
-                <Ionicons name="albums" size={16} color={COLORS.primary} />
-              </View>
-              <Text style={styles.sectionTitle}>Your Groups</Text>
-            </View>
-            
-            {groups.length === 0 ? (
-              <View style={styles.emptySection}>
-                <Ionicons name="albums-outline" size={48} color={COLORS.textLight} />
-                <Text style={styles.emptySectionTitle}>No groups yet</Text>
-                <Text style={styles.emptySectionText}>Create groups to organize your contacts</Text>
-                <TouchableOpacity 
-                  style={styles.emptySectionBtn}
-                  onPress={() => setShowCreateGroupModal(true)}
-                >
-                  <Ionicons name="add" size={18} color={COLORS.surface} />
-                  <Text style={styles.emptySectionBtnText}>Create Group</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              groups.map(group => renderGroupCard(group))
-            )}
-          </View>
-
-          {/* Unassigned Contacts Section */}
-          <DraxView
-            style={[
-              styles.section,
-              styles.unassignedSection,
-              receivingUnassigned && styles.unassignedSectionReceiving
-            ]}
-            onReceiveDragEnter={handleUnassignedReceiveDragEnter}
-            onReceiveDragExit={handleUnassignedReceiveDragExit}
-            onReceiveDragDrop={({ dragged: { payload } }) => {
-              if (payload?.contact && payload?.sourceGroupId) {
-                handleRemoveFromGroup(payload.contact as Contact, payload.sourceGroupId);
-              }
-            }}
-          >
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconWrapper, { backgroundColor: COLORS.warning + '15' }]}>
-                <Ionicons name="person-outline" size={16} color={COLORS.warning} />
-              </View>
-              <Text style={styles.sectionTitle}>Unassigned Contacts</Text>
-              <View style={styles.sectionBadge}>
-                <Text style={styles.sectionBadgeText}>{unassignedContacts.length}</Text>
-              </View>
-            </View>
-
-            {/* Search */}
-            {unassignedContacts.length > 5 && (
-              <View style={styles.searchContainer}>
-                <Ionicons name="search" size={16} color={COLORS.textLight} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search unassigned contacts..."
-                  placeholderTextColor={COLORS.textLight}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')}>
-                    <Ionicons name="close-circle" size={18} color={COLORS.textLight} />
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-
-            {/* Drop zone indicator */}
-            {receivingUnassigned && (
-              <View style={styles.unassignedDropZone}>
-                <Ionicons name="remove-circle-outline" size={20} color={COLORS.warning} />
-                <Text style={styles.unassignedDropZoneText}>Drop to remove from group</Text>
-              </View>
-            )}
-
-            {filteredUnassignedContacts.length === 0 ? (
-              <View style={styles.emptyUnassigned}>
-                <Ionicons name="checkmark-circle-outline" size={32} color={COLORS.success} />
-                <Text style={styles.emptyUnassignedText}>
-                  {unassignedContacts.length === 0 
-                    ? "All contacts are assigned to groups!" 
-                    : "No contacts match your search"}
-                </Text>
-              </View>
-            ) : (
-              filteredUnassignedContacts.slice(0, 20).map(contact => renderContactCard(contact, false))
-            )}
-            
-            {filteredUnassignedContacts.length > 20 && (
-              <Text style={styles.moreContactsText}>
-                +{filteredUnassignedContacts.length - 20} more contacts
-              </Text>
-            )}
-          </DraxView>
-
-          <View style={{ height: 100 }} />
-        </DraxScrollView>
-
-        {/* Dragging Overlay */}
-        {draggingContact && (
-          <View style={styles.draggingOverlay}>
-            <View style={styles.draggingInfo}>
-              <Ionicons name="move" size={18} color={COLORS.primary} />
-              <Text style={styles.draggingText}>
-                Moving: {draggingContact.name}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Create Group Modal */}
-        <Modal visible={showCreateGroupModal} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHandle} />
-              
-              <Text style={styles.modalTitle}>Create New Group</Text>
-              
-              <View style={styles.modalField}>
-                <Text style={styles.modalLabel}>Group Name *</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="e.g., Work, Friends, Family"
-                  placeholderTextColor={COLORS.textLight}
-                  value={newGroupName}
-                  onChangeText={setNewGroupName}
-                  autoFocus
-                />
-              </View>
-              
-              <View style={styles.modalField}>
-                <Text style={styles.modalLabel}>Description (optional)</Text>
-                <TextInput
-                  style={[styles.modalInput, styles.modalTextArea]}
-                  placeholder="What is this group for?"
-                  placeholderTextColor={COLORS.textLight}
-                  value={newGroupDescription}
-                  onChangeText={setNewGroupDescription}
-                  multiline
-                  numberOfLines={3}
-                />
-              </View>
-              
-              <View style={styles.modalActions}>
-                <TouchableOpacity 
-                  style={styles.modalCancelBtn}
-                  onPress={() => {
-                    setShowCreateGroupModal(false);
-                    setNewGroupName('');
-                    setNewGroupDescription('');
-                  }}
-                >
-                  <Text style={styles.modalCancelText}>Cancel</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.modalCreateBtn}
-                  onPress={handleCreateGroup}
-                >
-                  <LinearGradient 
-                    colors={[COLORS.primary, COLORS.primaryDark]} 
-                    style={styles.modalCreateGradient}
-                  >
-                    <Ionicons name="checkmark" size={18} color="#fff" />
-                    <Text style={styles.modalCreateText}>Create</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+          <Ionicons name="add" size={20} color={COLORS.surface} />
+          <Text style={styles.createGroupBtnText}>New</Text>
+        </TouchableOpacity>
       </View>
-    </DraxProvider>
+
+      {/* Drag Hint */}
+      <View style={styles.dragHintBar}>
+        <Ionicons name="hand-left-outline" size={14} color={COLORS.primary} />
+        <Text style={styles.dragHintText}>Long press contacts to manage groups</Text>
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Groups Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIconWrapper}>
+              <Ionicons name="albums" size={16} color={COLORS.primary} />
+            </View>
+            <Text style={styles.sectionTitle}>Your Groups</Text>
+          </View>
+          
+          {groups.length === 0 ? (
+            <View style={styles.emptySection}>
+              <Ionicons name="albums-outline" size={48} color={COLORS.textLight} />
+              <Text style={styles.emptySectionTitle}>No groups yet</Text>
+              <Text style={styles.emptySectionText}>Create groups to organize your contacts</Text>
+              <TouchableOpacity 
+                style={styles.emptySectionBtn}
+                onPress={() => setShowCreateGroupModal(true)}
+              >
+                <Ionicons name="add" size={18} color={COLORS.surface} />
+                <Text style={styles.emptySectionBtnText}>Create Group</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            groups.map(group => renderGroupCard(group))
+          )}
+        </View>
+
+        {/* Unassigned Contacts Section */}
+        <View style={[styles.section, styles.unassignedSection]}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconWrapper, { backgroundColor: COLORS.warning + '15' }]}>
+              <Ionicons name="person-outline" size={16} color={COLORS.warning} />
+            </View>
+            <Text style={styles.sectionTitle}>Unassigned Contacts</Text>
+            <View style={styles.sectionBadge}>
+              <Text style={styles.sectionBadgeText}>{unassignedContacts.length}</Text>
+            </View>
+          </View>
+
+          {/* Search */}
+          {unassignedContacts.length > 5 && (
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={16} color={COLORS.textLight} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search unassigned contacts..."
+                placeholderTextColor={COLORS.textLight}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={18} color={COLORS.textLight} />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {filteredUnassignedContacts.length === 0 ? (
+            <View style={styles.emptyUnassigned}>
+              <Ionicons name="checkmark-circle-outline" size={32} color={COLORS.success} />
+              <Text style={styles.emptyUnassignedText}>
+                {unassignedContacts.length === 0 
+                  ? "All contacts are assigned to groups!" 
+                  : "No contacts match your search"}
+              </Text>
+            </View>
+          ) : (
+            filteredUnassignedContacts.slice(0, 20).map(contact => renderContactCard(contact, false))
+          )}
+          
+          {filteredUnassignedContacts.length > 20 && (
+            <Text style={styles.moreContactsText}>
+              +{filteredUnassignedContacts.length - 20} more contacts
+            </Text>
+          )}
+        </View>
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+
+      {/* Move to Group Modal */}
+      {showMoveToGroupModal && selectedContact && (
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalBackdrop} 
+            onPress={() => {
+              setShowMoveToGroupModal(false);
+              setSelectedContact(null);
+            }}
+            activeOpacity={1}
+          />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Manage "{selectedContact.name}"</Text>
+            <Text style={styles.modalSubtitle}>Tap groups to add/remove</Text>
+            
+            <View style={styles.groupOptions}>
+              {groups.length === 0 ? (
+                <View style={styles.noGroupsInModal}>
+                  <Text style={styles.noGroupsText}>No groups created yet</Text>
+                  <TouchableOpacity
+                    style={styles.createGroupInModalBtn}
+                    onPress={() => {
+                      setShowMoveToGroupModal(false);
+                      setSelectedContact(null);
+                      setShowCreateGroupModal(true);
+                    }}
+                  >
+                    <Ionicons name="add" size={16} color={COLORS.primary} />
+                    <Text style={styles.createGroupInModalText}>Create Group</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                groups.map(group => {
+                  const isInGroup = selectedContact.groups?.includes(group.id);
+                  const groupColor = group.color || COLORS.primary;
+                  
+                  return (
+                    <TouchableOpacity
+                      key={group.id}
+                      style={[
+                        styles.groupOption,
+                        isInGroup && { backgroundColor: groupColor + '15', borderColor: groupColor }
+                      ]}
+                      onPress={() => handleAddToGroup(group.id)}
+                    >
+                      <View style={[styles.groupOptionDot, { backgroundColor: groupColor }]} />
+                      <Text style={[
+                        styles.groupOptionText,
+                        isInGroup && { color: groupColor, fontWeight: '700' }
+                      ]}>
+                        {group.name}
+                      </Text>
+                      {isInGroup ? (
+                        <Ionicons name="checkmark-circle" size={20} color={groupColor} />
+                      ) : (
+                        <Ionicons name="add-circle-outline" size={20} color={COLORS.textLight} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => {
+                setShowMoveToGroupModal(false);
+                setSelectedContact(null);
+              }}
+            >
+              <Text style={styles.modalCloseBtnText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Create Group Modal */}
+      <Modal visible={showCreateGroupModal} transparent animationType="slide">
+        <View style={styles.createModalOverlay}>
+          <View style={styles.createModalContent}>
+            <View style={styles.modalHandle} />
+            
+            <Text style={styles.createModalTitle}>Create New Group</Text>
+            
+            <View style={styles.createModalField}>
+              <Text style={styles.createModalLabel}>Group Name *</Text>
+              <TextInput
+                style={styles.createModalInput}
+                placeholder="e.g., Work, Friends, Family"
+                placeholderTextColor={COLORS.textLight}
+                value={newGroupName}
+                onChangeText={setNewGroupName}
+                autoFocus
+              />
+            </View>
+            
+            <View style={styles.createModalField}>
+              <Text style={styles.createModalLabel}>Description (optional)</Text>
+              <TextInput
+                style={[styles.createModalInput, styles.createModalTextArea]}
+                placeholder="What is this group for?"
+                placeholderTextColor={COLORS.textLight}
+                value={newGroupDescription}
+                onChangeText={setNewGroupDescription}
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+            
+            <View style={styles.createModalActions}>
+              <TouchableOpacity 
+                style={styles.createModalCancelBtn}
+                onPress={() => {
+                  setShowCreateGroupModal(false);
+                  setNewGroupName('');
+                  setNewGroupDescription('');
+                }}
+              >
+                <Text style={styles.createModalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.createModalCreateBtn}
+                onPress={handleCreateGroup}
+              >
+                <LinearGradient 
+                  colors={[COLORS.primary, COLORS.primaryDark]} 
+                  style={styles.createModalCreateGradient}
+                >
+                  <Ionicons name="checkmark" size={18} color="#fff" />
+                  <Text style={styles.createModalCreateText}>Create</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 };
 
@@ -693,12 +700,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: 16,
     marginBottom: 12,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: COLORS.borderLight,
     overflow: 'hidden',
-  },
-  groupCardReceiving: {
-    borderStyle: 'dashed',
   },
   groupHeader: {
     flexDirection: 'row',
@@ -738,14 +742,6 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 2,
   },
-  dropIndicator: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
   groupContacts: {
     padding: 12,
     paddingTop: 0,
@@ -765,13 +761,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: 16,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: COLORS.borderLight,
-  },
-  unassignedSectionReceiving: {
-    borderColor: COLORS.warning,
-    borderStyle: 'dashed',
-    backgroundColor: COLORS.warning + '05',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -787,21 +778,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 14,
     color: COLORS.text,
-  },
-  unassignedDropZone: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.warning + '15',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
-    gap: 8,
-  },
-  unassignedDropZoneText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.warning,
   },
   emptyUnassigned: {
     alignItems: 'center',
@@ -825,21 +801,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: COLORS.borderLight,
-    overflow: 'hidden',
-  },
-  contactCardDragging: {
-    opacity: 0.9,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-    transform: [{ scale: 1.02 }],
-  },
-  contactCardReleased: {
-    opacity: 0.5,
-  },
-  contactCardTouchable: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
@@ -898,7 +859,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: COLORS.textLight,
   },
-  dragHandle: {
+  cardActions: {
     paddingLeft: 8,
   },
   removeFromGroupBtn: {
@@ -906,37 +867,22 @@ const styles = StyleSheet.create({
     top: 8,
     right: 8,
   },
-  draggingOverlay: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-  },
-  draggingInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-    gap: 10,
-  },
-  draggingText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
   // Modal
   modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: COLORS.surface,
@@ -944,6 +890,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 28,
     padding: 20,
     paddingBottom: 40,
+    maxHeight: '70%',
   },
   modalHandle: {
     width: 40,
@@ -951,25 +898,107 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  groupOptions: {
+    gap: 8,
+    maxHeight: 300,
+  },
+  groupOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    gap: 12,
+  },
+  groupOptionDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  groupOptionText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+    color: COLORS.text,
+  },
+  noGroupsInModal: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  noGroupsText: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginBottom: 12,
+  },
+  createGroupInModalBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  createGroupInModalText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  modalCloseBtn: {
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+  },
+  modalCloseBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.surface,
+  },
+  // Create Modal
+  createModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  createModalContent: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  createModalTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: COLORS.text,
     textAlign: 'center',
     marginBottom: 24,
   },
-  modalField: {
+  createModalField: {
     marginBottom: 16,
   },
-  modalLabel: {
+  createModalLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.textSecondary,
     marginBottom: 8,
   },
-  modalInput: {
+  createModalInput: {
     backgroundColor: COLORS.background,
     borderRadius: 12,
     paddingHorizontal: 16,
@@ -979,40 +1008,40 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.borderLight,
   },
-  modalTextArea: {
+  createModalTextArea: {
     minHeight: 80,
     textAlignVertical: 'top',
   },
-  modalActions: {
+  createModalActions: {
     flexDirection: 'row',
     gap: 12,
     marginTop: 24,
   },
-  modalCancelBtn: {
+  createModalCancelBtn: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 14,
     backgroundColor: COLORS.background,
     alignItems: 'center',
   },
-  modalCancelText: {
+  createModalCancelText: {
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.textSecondary,
   },
-  modalCreateBtn: {
+  createModalCreateBtn: {
     flex: 1,
     borderRadius: 14,
     overflow: 'hidden',
   },
-  modalCreateGradient: {
+  createModalCreateGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
     gap: 8,
   },
-  modalCreateText: {
+  createModalCreateText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
