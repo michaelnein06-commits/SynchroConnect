@@ -286,6 +286,10 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
 
     // Process contacts and convert images to base64
     const importedContacts: ImportedContact[] = [];
+    let contactsWithBirthdays = 0;
+    let contactsWithImages = 0;
+    let contactsWithNotes = 0;
+    let contactsWithAddresses = 0;
     
     for (const contact of uniqueContacts) {
       const name = contact.name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
@@ -306,6 +310,7 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
           return parts.join(', ');
         }).filter(a => a.length > 0);
         location = addresses[0]; // Use first address as primary location
+        if (location) contactsWithAddresses++;
       }
       
       // Convert image to base64 if available
@@ -320,12 +325,31 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
             });
             // Determine mime type (assume jpeg for contacts)
             imageBase64 = `data:image/jpeg;base64,${base64}`;
-            console.log(`Converted image for ${name}`);
+            contactsWithImages++;
           }
         } catch (imgError) {
-          console.log(`Could not convert image for ${name}:`, imgError);
+          // Silent fail for image conversion
         }
       }
+      
+      // Parse birthday correctly
+      // expo-contacts birthday: { year?, month (0-11), day }
+      let birthdayFormatted: string | undefined;
+      let birthdayRaw: { year?: number; month?: number; day?: number } | undefined;
+      
+      if (contact.birthday) {
+        birthdayRaw = {
+          year: contact.birthday.year,
+          month: contact.birthday.month,
+          day: contact.birthday.day
+        };
+        birthdayFormatted = formatBirthday(contact.birthday);
+        if (birthdayFormatted) contactsWithBirthdays++;
+        console.log(`Birthday for ${name}: raw=${JSON.stringify(contact.birthday)}, formatted=${birthdayFormatted}`);
+      }
+      
+      // Track notes
+      if (contact.note) contactsWithNotes++;
       
       importedContacts.push({
         name: name || 'Unknown',
@@ -333,12 +357,8 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         emails: contact.emails?.map((e) => e.email || '').filter(e => e) || [],
         company: contact.company,
         jobTitle: contact.jobTitle,
-        birthday: contact.birthday ? 
-          new Date(
-            contact.birthday.year || 2000, 
-            (contact.birthday.month || 1) - 1, 
-            contact.birthday.day || 1
-          ).toLocaleDateString() : undefined,
+        birthday: birthdayFormatted,
+        birthdayRaw,
         image: contact.image,
         imageBase64,
         id: contact.id,
