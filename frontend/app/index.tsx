@@ -740,6 +740,18 @@ export default function Index() {
   };
 
   const renderPipeline = () => {
+    // Use the Drag & Drop Kanban Pipeline view
+    return (
+      <DragDropPipeline
+        contacts={contacts}
+        onMoveContact={handleDragDropMoveContact}
+        onContactPress={(contactId) => router.push(`/contact/${contactId}`)}
+        onRefresh={onRefresh}
+      />
+    );
+  };
+
+  const renderOldPipeline = () => {
     const stageContacts = contacts.filter(c => c.pipeline_stage === selectedStage);
     const stageColor = getStageColor(selectedStage);
     // Don't count "New" contacts as overdue
