@@ -161,6 +161,10 @@ export default function Index() {
   // Sync state
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncResult, setLastSyncResult] = useState<string | null>(null);
+  // Planner tab state
+  const [plannerSubTab, setPlannerSubTab] = useState<PlannerSubTab>('calendar');
+  const [calendarView, setCalendarView] = useState<CalendarView>('month');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   // API headers with auth token
   const getAuthHeaders = () => ({
