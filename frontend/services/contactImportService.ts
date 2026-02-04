@@ -8,13 +8,34 @@ export interface ImportedContact {
   emails?: string[];
   company?: string;
   jobTitle?: string;
-  birthday?: string;
+  birthday?: string;       // ISO format YYYY-MM-DD
+  birthdayRaw?: {          // Raw birthday object for debugging
+    year?: number;
+    month?: number;
+    day?: number;
+  };
   image?: any;
-  imageBase64?: string;  // Base64 encoded image
+  imageBase64?: string;    // Base64 encoded image
   id?: string;
   note?: string;
-  location?: string;  // Address/location
-  addresses?: string[];  // All addresses
+  location?: string;       // Address/location
+  addresses?: string[];    // All addresses
+}
+
+// Helper to format birthday from expo-contacts format
+function formatBirthday(birthday?: { year?: number; month?: number; day?: number }): string {
+  if (!birthday) return '';
+  
+  // expo-contacts uses 0-indexed months (January = 0)
+  const year = birthday.year || 2000;  // Default year if not provided
+  const month = (birthday.month !== undefined ? birthday.month : 0) + 1; // Convert to 1-indexed
+  const day = birthday.day || 1;
+  
+  // Return ISO format YYYY-MM-DD
+  const monthStr = month.toString().padStart(2, '0');
+  const dayStr = day.toString().padStart(2, '0');
+  
+  return `${year}-${monthStr}-${dayStr}`;
 }
 
 export async function requestContactsPermission(): Promise<boolean> {
