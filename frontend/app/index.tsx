@@ -1132,6 +1132,27 @@ export default function Index() {
       
       {plannerSubTab === 'calendar' ? (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Birthday Summary Card */}
+          <View style={styles.birthdaySummaryCard}>
+            <LinearGradient colors={COLORS.accentGradient} style={styles.birthdaySummaryGradient}>
+              <View style={styles.birthdaySummaryContent}>
+                <Ionicons name="gift" size={28} color={COLORS.surface} />
+                <View style={styles.birthdaySummaryText}>
+                  <Text style={styles.birthdaySummaryTitle}>
+                    {contacts.filter(c => c.birthday).length} Geburtstage
+                  </Text>
+                  <Text style={styles.birthdaySummarySubtitle}>
+                    {upcomingBirthdays.length > 0 && upcomingBirthdays[0]?.daysUntil === 0
+                      ? `Heute: ${upcomingBirthdays[0]?.contact.name}`
+                      : upcomingBirthdays.length > 0
+                        ? `Nächster in ${upcomingBirthdays[0]?.daysUntil} Tagen`
+                        : 'Keine eingetragen'}
+                  </Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </View>
+
           {/* Calendar View Selector */}
           <View style={styles.calendarViewSelector}>
             {(['week', 'month', 'year'] as CalendarView[]).map((view) => (
@@ -1153,28 +1174,61 @@ export default function Index() {
               <Calendar
                 current={selectedDate}
                 onDayPress={(day: any) => setSelectedDate(day.dateString)}
+                markingType="custom"
                 markedDates={{
                   ...getBirthdayMarkedDates,
                   [selectedDate]: {
                     ...getBirthdayMarkedDates[selectedDate],
-                    selected: true,
-                    selectedColor: COLORS.primary,
+                    customStyles: {
+                      container: { 
+                        backgroundColor: getBirthdayMarkedDates[selectedDate] 
+                          ? COLORS.primary 
+                          : COLORS.primary,
+                        borderRadius: 8,
+                      },
+                      text: { color: COLORS.surface, fontWeight: '700' }
+                    }
                   }
+                }}
+                dayComponent={({ date, state, marking }: any) => {
+                  const isSelected = date?.dateString === selectedDate;
+                  const hasBirthday = getBirthdayMarkedDates[date?.dateString]?.contacts?.length > 0;
+                  const birthdayCount = getBirthdayMarkedDates[date?.dateString]?.contacts?.length || 0;
+                  
+                  return (
+                    <TouchableOpacity
+                      onPress={() => setSelectedDate(date?.dateString)}
+                      style={[
+                        styles.calendarDayContainer,
+                        isSelected && styles.calendarDaySelected,
+                        hasBirthday && !isSelected && styles.calendarDayBirthday,
+                      ]}
+                    >
+                      <Text style={[
+                        styles.calendarDayText,
+                        state === 'disabled' && styles.calendarDayTextDisabled,
+                        isSelected && styles.calendarDayTextSelected,
+                        hasBirthday && !isSelected && styles.calendarDayTextBirthday,
+                        state === 'today' && !isSelected && styles.calendarDayTextToday,
+                      ]}>
+                        {date?.day}
+                      </Text>
+                      {hasBirthday && (
+                        <View style={[styles.birthdayDot, isSelected && styles.birthdayDotSelected]}>
+                          {birthdayCount > 1 && (
+                            <Text style={styles.birthdayDotText}>{birthdayCount}</Text>
+                          )}
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
                 }}
                 theme={{
                   backgroundColor: COLORS.surface,
                   calendarBackground: COLORS.surface,
                   textSectionTitleColor: COLORS.textLight,
-                  selectedDayBackgroundColor: COLORS.primary,
-                  selectedDayTextColor: COLORS.surface,
-                  todayTextColor: COLORS.primary,
-                  dayTextColor: COLORS.text,
-                  textDisabledColor: COLORS.textLight,
-                  dotColor: COLORS.accent,
-                  selectedDotColor: COLORS.surface,
                   arrowColor: COLORS.primary,
                   monthTextColor: COLORS.text,
-                  textDayFontWeight: '500',
                   textMonthFontWeight: '700',
                   textDayHeaderFontWeight: '600',
                 }}
@@ -1187,13 +1241,32 @@ export default function Index() {
                 current={selectedDate}
                 onDayPress={(day: any) => setSelectedDate(day.dateString)}
                 hideExtraDays={true}
-                markedDates={{
-                  ...getBirthdayMarkedDates,
-                  [selectedDate]: {
-                    ...getBirthdayMarkedDates[selectedDate],
-                    selected: true,
-                    selectedColor: COLORS.primary,
-                  }
+                dayComponent={({ date, state }: any) => {
+                  const isSelected = date?.dateString === selectedDate;
+                  const hasBirthday = getBirthdayMarkedDates[date?.dateString]?.contacts?.length > 0;
+                  
+                  return (
+                    <TouchableOpacity
+                      onPress={() => setSelectedDate(date?.dateString)}
+                      style={[
+                        styles.calendarDayContainer,
+                        isSelected && styles.calendarDaySelected,
+                        hasBirthday && !isSelected && styles.calendarDayBirthday,
+                      ]}
+                    >
+                      <Text style={[
+                        styles.calendarDayText,
+                        state === 'disabled' && styles.calendarDayTextDisabled,
+                        isSelected && styles.calendarDayTextSelected,
+                        hasBirthday && !isSelected && styles.calendarDayTextBirthday,
+                      ]}>
+                        {date?.day}
+                      </Text>
+                      {hasBirthday && (
+                        <View style={[styles.birthdayDot, isSelected && styles.birthdayDotSelected]} />
+                      )}
+                    </TouchableOpacity>
+                  );
                 }}
                 theme={{
                   backgroundColor: COLORS.surface,
