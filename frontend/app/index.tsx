@@ -1298,7 +1298,7 @@ export default function Index() {
           </View>
         </Pressable>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
