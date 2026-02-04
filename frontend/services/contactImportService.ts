@@ -22,14 +22,18 @@ export interface ImportedContact {
   addresses?: string[];
 }
 
-// Helper to format birthday from expo-contacts format
-function formatBirthday(birthday?: { year?: number; month?: number; day?: number }): string {
+// Helper to format birthday - handles both string and number values
+function formatBirthday(birthday?: { year?: number | string; month?: number | string; day?: number | string }): string {
   if (!birthday) return '';
   
-  // expo-contacts uses 0-indexed months (January = 0)
-  const year = birthday.year || 2000;
-  const month = (birthday.month !== undefined ? birthday.month : 0) + 1;
-  const day = birthday.day || 1;
+  // Convert to numbers (expo-contacts can return strings or numbers)
+  const year = typeof birthday.year === 'string' ? parseInt(birthday.year) : (birthday.year || 2000);
+  // expo-contacts month is 0-indexed on iOS
+  const monthRaw = typeof birthday.month === 'string' ? parseInt(birthday.month) : birthday.month;
+  const month = monthRaw !== undefined ? monthRaw + 1 : 1; // Convert to 1-indexed
+  const day = typeof birthday.day === 'string' ? parseInt(birthday.day) : (birthday.day || 1);
+  
+  if (isNaN(month) || isNaN(day)) return '';
   
   const monthStr = month.toString().padStart(2, '0');
   const dayStr = day.toString().padStart(2, '0');
@@ -54,39 +58,6 @@ export async function requestContactsPermission(): Promise<boolean> {
   }
 }
 
-export async function checkContactAccessLevel(): Promise<'full' | 'limited' | 'denied'> {
-  try {
-    const { status } = await Contacts.getPermissionsAsync();
-    
-    if (status !== 'granted') {
-      return 'denied';
-    }
-    
-    const result = await Contacts.getContactsAsync({
-      fields: [Contacts.Fields.Name],
-      pageSize: 1000,
-    });
-    
-    return result.data.length > 0 ? 'full' : 'limited';
-  } catch (error) {
-    return 'denied';
-  }
-}
-
-export function showFullAccessAlert() {
-  Alert.alert(
-    'Limited Contact Access',
-    'You\'ve only granted access to some contacts. To import all your contacts:\n\n1. Go to Settings\n2. Find this app\n3. Tap "Contacts"\n4. Select "Full Access"',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Open Settings', 
-        onPress: () => Linking.openSettings() 
-      },
-    ]
-  );
-}
-
 export async function importPhoneContacts(): Promise<ImportedContact[]> {
   try {
     if (Platform.OS === 'web') {
@@ -94,215 +65,174 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       return [];
     }
 
-    console.log('Requesting contacts permission...');
-    const { status: existingStatus } = await Contacts.getPermissionsAsync();
-    console.log('Current permission status:', existingStatus);
+    console.log('=== CONTACT IMPORT START ===');
     
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Contacts.requestPermissionsAsync();
-      finalStatus = status;
-    }
+    // Request permission
+    const { status } = await Contacts.getPermissionsAsync();
+    console.log('Permission status:', status);
     
-    if (finalStatus !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Please grant contact access in Settings to import contacts.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Open Settings', onPress: () => Linking.openSettings() },
-        ]
-      );
-      throw new Error('Contacts permission not granted');
+    if (status !== 'granted') {
+      const { status: newStatus } = await Contacts.requestPermissionsAsync();
+      if (newStatus !== 'granted') {
+        Alert.alert('Berechtigung erforderlich', 'Bitte erlaube Zugriff auf Kontakte in den Einstellungen.');
+        return [];
+      }
     }
 
-    console.log('Starting contact import with ALL fields...');
+    // Log available fields for debugging
+    console.log('Available Contacts.Fields:', Object.keys(Contacts.Fields));
+    console.log('Birthday field value:', Contacts.Fields.Birthday);
+    console.log('Image field value:', Contacts.Fields.Image);
+    console.log('Note field value:', Contacts.Fields.Note);
+    console.log('Addresses field value:', Contacts.Fields.Addresses);
+
+    // Try to fetch with all fields
+    let contacts: Contacts.Contact[] = [];
     
-    let allContacts: Contacts.Contact[] = [];
+    // Build fields array - only include non-null fields
+    const fieldsToFetch: Contacts.FieldType[] = [];
     
-    // Try to get contacts with ALL fields including Birthday, Image, Note, Addresses
+    if (Contacts.Fields.ID) fieldsToFetch.push(Contacts.Fields.ID);
+    if (Contacts.Fields.Name) fieldsToFetch.push(Contacts.Fields.Name);
+    if (Contacts.Fields.FirstName) fieldsToFetch.push(Contacts.Fields.FirstName);
+    if (Contacts.Fields.LastName) fieldsToFetch.push(Contacts.Fields.LastName);
+    if (Contacts.Fields.PhoneNumbers) fieldsToFetch.push(Contacts.Fields.PhoneNumbers);
+    if (Contacts.Fields.Emails) fieldsToFetch.push(Contacts.Fields.Emails);
+    if (Contacts.Fields.Company) fieldsToFetch.push(Contacts.Fields.Company);
+    if (Contacts.Fields.JobTitle) fieldsToFetch.push(Contacts.Fields.JobTitle);
+    if (Contacts.Fields.Birthday) fieldsToFetch.push(Contacts.Fields.Birthday);
+    if (Contacts.Fields.Image) fieldsToFetch.push(Contacts.Fields.Image);
+    if (Contacts.Fields.Note) fieldsToFetch.push(Contacts.Fields.Note);
+    if (Contacts.Fields.Addresses) fieldsToFetch.push(Contacts.Fields.Addresses);
+    
+    console.log('Fields to fetch:', fieldsToFetch);
+
     try {
-      console.log('Fetching with full fields...');
-      
-      // First try with Birthday field specifically
-      console.log('Testing Birthday field...');
-      try {
-        const birthdayTest = await Contacts.getContactsAsync({
-          fields: [Contacts.Fields.Name, Contacts.Fields.Birthday],
-          pageSize: 10,
-        });
-        console.log(`Birthday test: ${birthdayTest?.data?.length || 0} contacts`);
-        if (birthdayTest?.data?.[0]?.birthday) {
-          console.log('Birthday field WORKS!');
-        } else {
-          console.log('Birthday field returns no data');
-        }
-      } catch (birthdayErr: any) {
-        console.log('Birthday field ERROR:', birthdayErr?.message);
-      }
-      
-      // Now try full fetch
+      console.log('Fetching contacts...');
       const result = await Contacts.getContactsAsync({
-        fields: [
-          Contacts.Fields.ID,
-          Contacts.Fields.Name,
-          Contacts.Fields.FirstName, 
-          Contacts.Fields.LastName,
-          Contacts.Fields.PhoneNumbers,
-          Contacts.Fields.Emails,
-          Contacts.Fields.Company,
-          Contacts.Fields.JobTitle,
-          Contacts.Fields.Birthday,
-          Contacts.Fields.Image,
-          Contacts.Fields.Note,
-          Contacts.Fields.Addresses,
-        ],
+        fields: fieldsToFetch,
         pageSize: 10000,
       });
       
-      console.log('Full fields result:', result?.data?.length || 0);
+      console.log('Fetch result - total:', result?.total, 'data length:', result?.data?.length);
       
       if (result?.data?.length > 0) {
-        allContacts = result.data;
-        console.log(`Full fields fetch: ${allContacts.length} contacts`);
+        contacts = result.data;
         
-        // Check what we got
-        const withBirthday = allContacts.filter(c => c.birthday);
-        const withImage = allContacts.filter(c => c.image);
-        const withNote = allContacts.filter(c => c.note);
-        const withAddress = allContacts.filter(c => c.addresses?.length);
+        // Debug first contact
+        const firstContact = contacts[0];
+        console.log('First contact keys:', Object.keys(firstContact));
+        console.log('First contact birthday:', firstContact.birthday);
+        console.log('First contact image:', firstContact.image ? 'YES' : 'NO');
+        console.log('First contact note:', firstContact.note);
+        console.log('First contact addresses:', firstContact.addresses);
         
-        console.log(`Direct fetch results:`);
-        console.log(`- With birthday: ${withBirthday.length}`);
-        console.log(`- With image: ${withImage.length}`);
-        console.log(`- With note: ${withNote.length}`);
-        console.log(`- With address: ${withAddress.length}`);
+        // Count contacts with each field
+        const withBirthday = contacts.filter(c => c.birthday).length;
+        const withImage = contacts.filter(c => c.image).length;
+        const withNote = contacts.filter(c => c.note).length;
+        const withAddresses = contacts.filter(c => c.addresses && c.addresses.length > 0).length;
         
-        if (withBirthday.length > 0) {
-          console.log(`Sample birthday: ${withBirthday[0].name} -> ${JSON.stringify(withBirthday[0].birthday)}`);
-        }
-      } else {
-        console.log('Full fields returned 0 contacts');
+        console.log('Contacts with birthday:', withBirthday);
+        console.log('Contacts with image:', withImage);
+        console.log('Contacts with note:', withNote);
+        console.log('Contacts with addresses:', withAddresses);
+        
+        // Log first few birthdays if any
+        const birthdayContacts = contacts.filter(c => c.birthday).slice(0, 3);
+        birthdayContacts.forEach(c => {
+          console.log(`Birthday example: ${c.name} -> ${JSON.stringify(c.birthday)}`);
+        });
       }
-    } catch (e: any) {
-      console.log('Full fields fetch ERROR:', e?.message || String(e));
-    }
-    
-    // Fallback: basic fields only
-    if (allContacts.length === 0) {
+    } catch (fetchError: any) {
+      console.log('Fetch error:', fetchError?.message || fetchError);
+      
+      // Fallback to basic fields
       try {
-        console.log('Fallback: basic fields only...');
-        const result = await Contacts.getContactsAsync({
+        console.log('Trying fallback fetch...');
+        const fallbackResult = await Contacts.getContactsAsync({
           fields: [
             Contacts.Fields.Name,
             Contacts.Fields.PhoneNumbers,
             Contacts.Fields.Emails,
-            Contacts.Fields.ID,
           ],
           pageSize: 10000,
         });
         
-        if (result?.data?.length > 0) {
-          allContacts = result.data;
-          console.log(`Basic fetch: ${allContacts.length} contacts`);
+        if (fallbackResult?.data) {
+          contacts = fallbackResult.data;
+          console.log('Fallback fetch got:', contacts.length, 'contacts');
         }
-      } catch (e: any) {
-        console.log('Basic fetch error:', e?.message);
+      } catch (fallbackError: any) {
+        console.log('Fallback error:', fallbackError?.message);
       }
     }
-    
-    if (allContacts.length === 0) {
+
+    if (contacts.length === 0) {
       console.log('No contacts found');
       return [];
     }
-    
+
     // Process contacts
-    console.log(`Processing ${allContacts.length} contacts...`);
+    console.log('Processing', contacts.length, 'contacts...');
     
     const importedContacts: ImportedContact[] = [];
-    let birthdayCount = 0;
-    let imageCount = 0;
-    let noteCount = 0;
-    let addressCount = 0;
-    
-    for (let i = 0; i < allContacts.length; i++) {
-      const contact = allContacts[i];
+    let stats = { birthdays: 0, images: 0, notes: 0, addresses: 0 };
+
+    for (const contact of contacts) {
       const name = contact.name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
       if (!name) continue;
+
+      // Birthday
+      let birthdayFormatted: string | undefined;
+      let birthdayRaw: { year?: number; month?: number; day?: number } | undefined;
       
-      // Use data directly from the contact (already fetched with all fields)
-      let birthday = contact.birthday;
-      let image = contact.image;
-      let note = contact.note;
-      let addresses = contact.addresses || [];
-      
-      // If birthday/image missing, try individual fetch as last resort
-      if (contact.id && !birthday && !image) {
+      if (contact.birthday) {
+        birthdayRaw = {
+          year: typeof contact.birthday.year === 'string' ? parseInt(contact.birthday.year) : contact.birthday.year,
+          month: typeof contact.birthday.month === 'string' ? parseInt(contact.birthday.month) : contact.birthday.month,
+          day: typeof contact.birthday.day === 'string' ? parseInt(contact.birthday.day) : contact.birthday.day,
+        };
+        birthdayFormatted = formatBirthday(contact.birthday);
+        if (birthdayFormatted) stats.birthdays++;
+      }
+
+      // Addresses
+      let location: string | undefined;
+      let addressStrings: string[] = [];
+      if (contact.addresses && contact.addresses.length > 0) {
+        addressStrings = contact.addresses.map(addr => {
+          const parts = [
+            addr.street,
+            addr.city, 
+            addr.region,
+            addr.postalCode,
+            addr.country
+          ].filter(Boolean);
+          return parts.join(', ');
+        }).filter(a => a.length > 0);
+        
+        location = addressStrings[0];
+        if (location) stats.addresses++;
+      }
+
+      // Image to base64
+      let imageBase64: string | undefined;
+      if (contact.image?.uri) {
         try {
-          const fullContact = await Contacts.getContactByIdAsync(contact.id, [
-            Contacts.Fields.Birthday,
-            Contacts.Fields.Image,
-            Contacts.Fields.Note,
-            Contacts.Fields.Addresses,
-          ]);
-          
-          if (fullContact) {
-            birthday = fullContact.birthday || birthday;
-            image = fullContact.image || image;
-            note = fullContact.note || note;
-            addresses = fullContact.addresses || addresses;
-          }
+          const base64 = await FileSystem.readAsStringAsync(contact.image.uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          imageBase64 = `data:image/jpeg;base64,${base64}`;
+          stats.images++;
         } catch (e) {
           // Silent fail
         }
       }
-      
-      // Parse birthday
-      let birthdayFormatted: string | undefined;
-      let birthdayRaw: { year?: number; month?: number; day?: number } | undefined;
-      
-      if (birthday) {
-        birthdayRaw = {
-          year: birthday.year,
-          month: birthday.month,
-          day: birthday.day
-        };
-        birthdayFormatted = formatBirthday(birthday);
-        birthdayCount++;
-        
-        if (birthdayCount <= 3) {
-          console.log(`Birthday found: ${name} -> ${birthdayFormatted}`);
-        }
-      }
-      
-      // Extract address
-      let location: string | undefined;
-      let addressStrings: string[] = [];
-      if (addresses && addresses.length > 0) {
-        addressStrings = addresses.map((addr: any) => {
-          const parts = [addr.street, addr.city, addr.region, addr.postalCode, addr.country].filter(Boolean);
-          return parts.join(', ');
-        }).filter((a: string) => a.length > 0);
-        location = addressStrings[0];
-        if (location) addressCount++;
-      }
-      
-      // Convert image to base64
-      let imageBase64: string | undefined;
-      if (image?.uri) {
-        try {
-          const base64 = await FileSystem.readAsStringAsync(image.uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-          imageBase64 = `data:image/jpeg;base64,${base64}`;
-          imageCount++;
-        } catch (imgErr) {
-          // Silent fail
-        }
-      }
-      
-      if (note) noteCount++;
-      
+
+      // Note
+      if (contact.note) stats.notes++;
+
       importedContacts.push({
         name,
         phoneNumbers: contact.phoneNumbers?.map(p => p.number || '').filter(Boolean) || [],
@@ -311,25 +241,42 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         jobTitle: contact.jobTitle,
         birthday: birthdayFormatted,
         birthdayRaw,
-        image,
+        image: contact.image,
         imageBase64,
         id: contact.id,
-        note,
+        note: contact.note,
         location,
         addresses: addressStrings,
       });
     }
 
     console.log('=== IMPORT COMPLETE ===');
-    console.log(`Total: ${importedContacts.length}`);
-    console.log(`Birthdays: ${birthdayCount}`);
-    console.log(`Images: ${imageCount}`);
-    console.log(`Notes: ${noteCount}`);
-    console.log(`Addresses: ${addressCount}`);
-    
+    console.log('Total contacts:', importedContacts.length);
+    console.log('With birthday:', stats.birthdays);
+    console.log('With image:', stats.images);
+    console.log('With note:', stats.notes);
+    console.log('With address:', stats.addresses);
+
+    // Show alert if no extended data
+    if (stats.birthdays === 0 && stats.images === 0 && importedContacts.length > 5) {
+      Alert.alert(
+        'Eingeschränkter Zugriff erkannt',
+        'Geburtstage und Bilder konnten nicht gelesen werden.\n\n' +
+        'Lösung:\n' +
+        '1. Gehe zu Einstellungen → Datenschutz → Kontakte\n' +
+        '2. Deaktiviere den Zugriff für Expo Go\n' +
+        '3. Aktiviere ihn wieder und wähle "Voller Zugriff"\n' +
+        '4. Versuche den Import erneut',
+        [
+          { text: 'OK' },
+          { text: 'Einstellungen', onPress: () => Linking.openSettings() },
+        ]
+      );
+    }
+
     return importedContacts;
-  } catch (error) {
-    console.error('Error importing contacts:', error);
+  } catch (error: any) {
+    console.error('Import error:', error?.message || error);
     throw error;
   }
 }
@@ -338,8 +285,8 @@ export function formatContactForCRM(importedContact: ImportedContact) {
   return {
     name: importedContact.name,
     job: importedContact.jobTitle || importedContact.company || '',
-    phone: importedContact.phoneNumbers && importedContact.phoneNumbers.length > 0 ? importedContact.phoneNumbers[0] : '',
-    email: importedContact.emails && importedContact.emails.length > 0 ? importedContact.emails[0] : '',
+    phone: importedContact.phoneNumbers?.[0] || '',
+    email: importedContact.emails?.[0] || '',
     birthday: importedContact.birthday || '',
     profile_picture: importedContact.imageBase64 || '',
     device_contact_id: importedContact.id || '',
