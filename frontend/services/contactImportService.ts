@@ -123,6 +123,25 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
     // Try to get contacts with ALL fields including Birthday, Image, Note, Addresses
     try {
       console.log('Fetching with full fields...');
+      
+      // First try with Birthday field specifically
+      console.log('Testing Birthday field...');
+      try {
+        const birthdayTest = await Contacts.getContactsAsync({
+          fields: [Contacts.Fields.Name, Contacts.Fields.Birthday],
+          pageSize: 10,
+        });
+        console.log(`Birthday test: ${birthdayTest?.data?.length || 0} contacts`);
+        if (birthdayTest?.data?.[0]?.birthday) {
+          console.log('Birthday field WORKS!');
+        } else {
+          console.log('Birthday field returns no data');
+        }
+      } catch (birthdayErr: any) {
+        console.log('Birthday field ERROR:', birthdayErr?.message);
+      }
+      
+      // Now try full fetch
       const result = await Contacts.getContactsAsync({
         fields: [
           Contacts.Fields.ID,
