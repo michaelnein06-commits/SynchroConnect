@@ -11,6 +11,8 @@ import * as ImagePicker from 'expo-image-picker';
 import ContactSyncService from '../services/ContactSyncService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, CalendarList, Agenda } from 'react-native-calendars';
+import DragDropPipeline from '../components/DragDropPipeline';
+import DragDropGroups from '../components/DragDropGroups';
 
 // Safe haptics wrapper
 const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => {
