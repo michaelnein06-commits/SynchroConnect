@@ -79,11 +79,23 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       return [];
     }
 
-    console.log('=== CONTACT IMPORT v2.0 (iOS 18+ Support) ===');
+    console.log('=== CONTACT IMPORT v3.0 (Robust iOS 18+ Support) ===');
     
-    // Request permission - accept both 'granted' and 'limited'
-    const { status } = await Contacts.getPermissionsAsync();
-    console.log('Current permission status:', status);
+    // STEP 0: Check and request permission with detailed logging
+    console.log('Step 0: Checking permissions...');
+    
+    let permissionResult;
+    try {
+      permissionResult = await Contacts.getPermissionsAsync();
+      console.log('Permission result:', JSON.stringify(permissionResult));
+    } catch (permError: any) {
+      console.log('Permission check error:', permError?.message || permError);
+      Alert.alert('Fehler', 'Berechtigungsprüfung fehlgeschlagen: ' + (permError?.message || 'Unbekannt'));
+      return [];
+    }
+    
+    const { status, canAskAgain } = permissionResult;
+    console.log('Permission status:', status, '| canAskAgain:', canAskAgain);
     
     // iOS 18+ can return 'limited' which is still valid!
     const hasAccess = status === 'granted' || status === 'limited';
@@ -91,18 +103,24 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
     
     if (!hasAccess) {
       console.log('No access, requesting permission...');
-      const { status: newStatus } = await Contacts.requestPermissionsAsync();
-      console.log('New permission status:', newStatus);
-      
-      if (newStatus !== 'granted' && newStatus !== 'limited') {
-        Alert.alert(
-          'Berechtigung erforderlich', 
-          'Bitte erlaube Zugriff auf Kontakte in den Einstellungen.',
-          [
-            { text: 'Abbrechen' },
-            { text: 'Einstellungen öffnen', onPress: () => Linking.openSettings() }
-          ]
-        );
+      try {
+        const requestResult = await Contacts.requestPermissionsAsync();
+        console.log('Request result:', JSON.stringify(requestResult));
+        
+        if (requestResult.status !== 'granted' && requestResult.status !== 'limited') {
+          console.log('Permission denied after request');
+          Alert.alert(
+            'Berechtigung erforderlich', 
+            'Bitte erlaube Zugriff auf Kontakte in den Einstellungen.\n\nGehe zu: Einstellungen → Datenschutz → Kontakte → Expo Go → Voller Zugriff',
+            [
+              { text: 'Abbrechen' },
+              { text: 'Einstellungen öffnen', onPress: () => Linking.openSettings() }
+            ]
+          );
+          return [];
+        }
+      } catch (reqError: any) {
+        console.log('Permission request error:', reqError?.message || reqError);
         return [];
       }
     }
@@ -110,8 +128,86 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
     // Log access type for debugging
     console.log('Access type:', isLimitedAccess ? 'LIMITED (iOS 18+)' : 'FULL');
 
-    // Define ALL the fields we want to request
-    const requestedFields = [
+    // STEP 1: Try to get contacts - start simple, no fields specified
+    console.log('Step 1: Fetching contacts (simple mode first)...');
+    
+    let allContacts: Contacts.Contact[] = [];
+    
+    try {
+      // First try: No fields specified - most compatible
+      console.log('Trying simple fetch without field specification...');
+      const simpleResult = await Contacts.getContactsAsync({
+        pageSize: 10000,
+      });
+      
+      console.log('Simple fetch result: ' + (simpleResult?.data?.length || 0) + ' contacts');
+      
+      if (simpleResult?.data && simpleResult.data.length > 0) {
+        allContacts = simpleResult.data;
+      }
+    } catch (simpleError: any) {
+      console.log('Simple fetch failed:', simpleError?.message || simpleError);
+    }
+    
+    // If simple fetch failed or returned 0, try with fields
+    if (allContacts.length === 0) {
+      console.log('Simple fetch returned 0, trying with basic fields...');
+      try {
+        const basicResult = await Contacts.getContactsAsync({
+          fields: [
+            Contacts.Fields.ID,
+            Contacts.Fields.Name,
+            Contacts.Fields.FirstName,
+            Contacts.Fields.LastName,
+            Contacts.Fields.PhoneNumbers,
+            Contacts.Fields.Emails,
+          ],
+          pageSize: 10000,
+        });
+        
+        console.log('Basic fields fetch result: ' + (basicResult?.data?.length || 0) + ' contacts');
+        
+        if (basicResult?.data) {
+          allContacts = basicResult.data;
+        }
+      } catch (basicError: any) {
+        console.log('Basic fields fetch failed:', basicError?.message || basicError);
+      }
+    }
+    
+    if (allContacts.length === 0) {
+      console.log('ERROR: Could not fetch any contacts');
+      console.log('This usually means:');
+      console.log('1. Permission was not properly granted');
+      console.log('2. Or there are no contacts on the device');
+      console.log('3. Or iOS is blocking access');
+      
+      Alert.alert(
+        'Keine Kontakte gefunden',
+        'Es konnten keine Kontakte gelesen werden.\n\n' +
+        'Bitte prüfe:\n' +
+        '1. Einstellungen → Datenschutz → Kontakte\n' +
+        '2. Finde "Expo Go" und wähle "Voller Zugriff"\n' +
+        '3. Starte die App komplett neu (nicht nur minimieren)\n' +
+        '4. Versuche es erneut',
+        [
+          { text: 'OK' },
+          { text: 'Einstellungen', onPress: () => Linking.openSettings() },
+        ]
+      );
+      return [];
+    }
+
+    console.log('Successfully fetched ' + allContacts.length + ' contacts');
+
+    // STEP 2: Now try to enrich each contact with extended fields
+    console.log('Step 2: Enriching contacts with extended fields...');
+    
+    const importedContacts: ImportedContact[] = [];
+    let stats = { birthdays: 0, images: 0, notes: 0, addresses: 0, enriched: 0 };
+
+    // Extended fields to request for individual contacts
+    const extendedFields = [
       Contacts.Fields.ID,
       Contacts.Fields.Name,
       Contacts.Fields.FirstName,
@@ -122,74 +218,17 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       Contacts.Fields.JobTitle,
       Contacts.Fields.Birthday,
       Contacts.Fields.Image,
-      Contacts.Fields.ImageAvailable,
       Contacts.Fields.Note,
       Contacts.Fields.Addresses,
-    ].filter(Boolean); // Filter out any undefined fields
-
-    console.log('Requesting fields:', requestedFields.length);
-
-    // STEP 1: Try to get all contacts with all fields at once
-    console.log('Step 1: Fetching contacts with extended fields...');
-    
-    let allContacts: Contacts.Contact[] = [];
-    
-    try {
-      const result = await Contacts.getContactsAsync({
-        fields: requestedFields,
-        pageSize: 10000,
-      });
-      
-      console.log('Initial fetch result:', result?.data?.length || 0, 'contacts');
-      
-      if (result?.data) {
-        allContacts = result.data;
-      }
-    } catch (e: any) {
-      console.log('Bulk fetch failed:', e?.message);
-      
-      // Fallback: Try without fields specification
-      try {
-        console.log('Trying fallback fetch without field specification...');
-        const fallbackResult = await Contacts.getContactsAsync({
-          pageSize: 10000,
-        });
-        if (fallbackResult?.data) {
-          allContacts = fallbackResult.data;
-          console.log('Fallback fetch got:', allContacts.length, 'contacts');
-        }
-      } catch (e2: any) {
-        console.log('Fallback also failed:', e2?.message);
-        return [];
-      }
-    }
-    
-    if (allContacts.length === 0) {
-      console.log('No contacts found');
-      return [];
-    }
-
-    // STEP 2: For LIMITED access on iOS 18+, we need to enrich contacts individually
-    // because the bulk fetch might not return extended fields
-    console.log('Step 2: Processing', allContacts.length, 'contacts...');
-    
-    const importedContacts: ImportedContact[] = [];
-    let stats = { birthdays: 0, images: 0, notes: 0, addresses: 0, enriched: 0 };
-    
-    // Check if bulk fetch returned extended data
-    const bulkHasExtendedData = allContacts.some(c => 
-      c.birthday || c.note || c.image?.uri || (c.addresses && c.addresses.length > 0)
-    );
-    console.log('Bulk fetch has extended data:', bulkHasExtendedData);
+    ].filter(Boolean);
 
     for (let i = 0; i < allContacts.length; i++) {
       let contact = allContacts[i];
       
-      // If bulk didn't have extended data AND we have limited access,
-      // try to fetch individually (might work for user-selected contacts)
-      if (!bulkHasExtendedData && contact.id) {
+      // Try to get extended data for each contact individually
+      if (contact.id) {
         try {
-          const enrichedContact = await Contacts.getContactByIdAsync(contact.id, requestedFields);
+          const enrichedContact = await Contacts.getContactByIdAsync(contact.id, extendedFields);
           if (enrichedContact) {
             contact = enrichedContact;
             stats.enriched++;
@@ -216,7 +255,7 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         if (birthdayFormatted) {
           stats.birthdays++;
           if (stats.birthdays <= 5) {
-            console.log(`✅ Birthday found: ${name} -> ${birthdayFormatted}`);
+            console.log('✅ Birthday: ' + name + ' -> ' + birthdayFormatted);
           }
         }
       }
@@ -250,7 +289,7 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
           imageBase64 = `data:image/jpeg;base64,${base64}`;
           stats.images++;
           if (stats.images <= 3) {
-            console.log(`✅ Image found: ${name}`);
+            console.log('✅ Image: ' + name);
           }
         } catch (e) {
           // Silent fail for image
@@ -261,7 +300,7 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       if (contact.note) {
         stats.notes++;
         if (stats.notes <= 3) {
-          console.log(`✅ Note found: ${name}`);
+          console.log('✅ Note: ' + name);
         }
       }
 
@@ -283,47 +322,34 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       
       // Progress log every 50 contacts
       if ((i + 1) % 50 === 0) {
-        console.log(`Progress: ${i + 1}/${allContacts.length}`);
+        console.log('Progress: ' + (i + 1) + '/' + allContacts.length);
       }
     }
 
     console.log('=== IMPORT COMPLETE ===');
-    console.log('Total contacts:', importedContacts.length);
-    console.log('With birthday:', stats.birthdays);
-    console.log('With image:', stats.images);
-    console.log('With note:', stats.notes);
-    console.log('With address:', stats.addresses);
-    console.log('Individually enriched:', stats.enriched);
+    console.log('Total contacts: ' + importedContacts.length);
+    console.log('With birthday: ' + stats.birthdays);
+    console.log('With image: ' + stats.images);
+    console.log('With note: ' + stats.notes);
+    console.log('With address: ' + stats.addresses);
+    console.log('Enriched individually: ' + stats.enriched);
 
     // Show helpful alert if no extended data was found
     if (stats.birthdays === 0 && stats.images === 0 && importedContacts.length > 5) {
-      // Check if we're on iOS 18+
       const isIOS = Platform.OS === 'ios';
       
-      if (isIOS && isLimitedAccess) {
+      if (isIOS) {
         Alert.alert(
-          'Eingeschränkter Zugriff (iOS 18+)',
-          'Du hast "Eingeschränkten Zugriff" gewählt. Für Geburtstage und Bilder:\n\n' +
+          'Erweiterte Daten fehlen',
+          'Kontakte wurden geladen, aber Geburtstage und Bilder fehlen.\n\n' +
+          'Für vollen Zugriff:\n' +
           '1. Gehe zu Einstellungen → Datenschutz → Kontakte\n' +
           '2. Tippe auf "Expo Go"\n' +
-          '3. Wähle "Voller Zugriff"\n' +
-          '4. Importiere die Kontakte erneut',
+          '3. Wähle "Voller Zugriff" (nicht "Eingeschränkt")\n' +
+          '4. Schließe Expo Go komplett (aus App-Übersicht wischen)\n' +
+          '5. Öffne die App neu und importiere erneut',
           [
-            { text: 'Später' },
-            { text: 'Einstellungen', onPress: () => Linking.openSettings() },
-          ]
-        );
-      } else if (isIOS) {
-        Alert.alert(
-          'Erweiterte Daten nicht gefunden',
-          'Geburtstage und Bilder wurden nicht gefunden.\n\n' +
-          'Mögliche Lösungen:\n' +
-          '• Prüfe, ob deine Kontakte Geburtstage haben\n' +
-          '• Gehe zu Einstellungen → Datenschutz → Kontakte\n' +
-          '• Stelle sicher, dass "Voller Zugriff" aktiviert ist\n' +
-          '• Starte die App neu und versuche es erneut',
-          [
-            { text: 'OK' },
+            { text: 'Verstanden' },
             { text: 'Einstellungen', onPress: () => Linking.openSettings() },
           ]
         );
@@ -333,6 +359,7 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
     return importedContacts;
   } catch (error: any) {
     console.error('Import error:', error?.message || error);
+    Alert.alert('Import Fehler', error?.message || 'Unbekannter Fehler beim Import');
     throw error;
   }
 }
