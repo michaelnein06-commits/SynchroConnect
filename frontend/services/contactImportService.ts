@@ -141,6 +141,8 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         pageSize: 10000,
       });
       
+      console.log('Full fields result:', result?.data?.length || 0);
+      
       if (result?.data?.length > 0) {
         allContacts = result.data;
         console.log(`Full fields fetch: ${allContacts.length} contacts`);
@@ -160,9 +162,11 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         if (withBirthday.length > 0) {
           console.log(`Sample birthday: ${withBirthday[0].name} -> ${JSON.stringify(withBirthday[0].birthday)}`);
         }
+      } else {
+        console.log('Full fields returned 0 contacts');
       }
     } catch (e: any) {
-      console.log('Full fields fetch error:', e?.message);
+      console.log('Full fields fetch ERROR:', e?.message || String(e));
     }
     
     // Fallback: basic fields only
