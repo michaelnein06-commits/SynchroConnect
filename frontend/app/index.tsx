@@ -1776,13 +1776,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  
+  // Enhanced Empty State
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 80,
+    paddingVertical: 60,
+    paddingHorizontal: 32,
+  },
+  emptyIconWrapper: {
+    marginBottom: 4,
+  },
+  emptyIconGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyText: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     color: COLORS.text,
     marginTop: 20,
@@ -1792,7 +1805,33 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 8,
     textAlign: 'center',
-    paddingHorizontal: 40,
+    lineHeight: 22,
+  },
+  
+  // Draft Header styles
+  draftHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 10,
+  },
+  draftAIBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  // Profile Avatar placeholder
+  profileAvatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 32,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   
   // Enhanced FAB
