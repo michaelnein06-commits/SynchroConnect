@@ -165,26 +165,85 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         pageSize: 10000,
       });
       
-      if (result && result.data) {
+      console.log('Result total:', result?.total);
+      console.log('Result data length:', result?.data?.length);
+      
+      if (result && result.data && result.data.length > 0) {
         contacts = result.data;
-        console.log(`Initial fetch: ${contacts.length} contacts`);
+        console.log(`Initial fetch SUCCESS: ${contacts.length} contacts`);
         
         // Debug: Check what fields we got
-        if (contacts.length > 0) {
-          const sample = contacts[0];
-          console.log('Sample contact fields:', Object.keys(sample).filter(k => (sample as any)[k] !== undefined));
-          
-          // Check for birthdays in first 20
-          const withBirthday = contacts.slice(0, 50).filter(c => c.birthday);
-          console.log(`First 50 contacts: ${withBirthday.length} have birthday field`);
-          
-          if (withBirthday.length > 0) {
-            console.log('Sample birthday:', JSON.stringify(withBirthday[0].birthday));
-          }
+        const sample = contacts[0];
+        console.log('Sample contact fields:', Object.keys(sample).filter(k => (sample as any)[k] !== undefined));
+        
+        // Check for birthdays in first 50
+        const withBirthday = contacts.slice(0, 50).filter(c => c.birthday);
+        console.log(`First 50 contacts: ${withBirthday.length} have birthday field`);
+        
+        if (withBirthday.length > 0) {
+          console.log('Sample birthday:', JSON.stringify(withBirthday[0].birthday));
         }
+      } else {
+        console.log('Initial fetch returned empty or null data');
       }
-    } catch (e) {
-      console.log('Initial fetch error:', e);
+    } catch (e: any) {
+      console.log('Initial fetch error:', e?.message || e);
+    }
+    
+    // Fallback: Try with minimal fields if first attempt failed
+    if (contacts.length === 0) {
+      console.log('Trying fallback with minimal fields...');
+      try {
+        const minimalResult = await Contacts.getContactsAsync({
+          fields: [
+            Contacts.Fields.Name,
+            Contacts.Fields.PhoneNumbers,
+            Contacts.Fields.Emails,
+          ],
+          pageSize: 10000,
+        });
+        
+        console.log('Minimal result total:', minimalResult?.total);
+        console.log('Minimal result data length:', minimalResult?.data?.length);
+        
+        if (minimalResult && minimalResult.data && minimalResult.data.length > 0) {
+          contacts = minimalResult.data;
+          console.log(`Minimal fetch SUCCESS: ${contacts.length} contacts`);
+        }
+      } catch (e: any) {
+        console.log('Minimal fetch error:', e?.message || e);
+      }
+    }
+    
+    // Last resort: Try without any fields specified
+    if (contacts.length === 0) {
+      console.log('Trying last resort - no fields specified...');
+      try {
+        const bareResult = await Contacts.getContactsAsync({});
+        
+        console.log('Bare result total:', bareResult?.total);
+        console.log('Bare result data length:', bareResult?.data?.length);
+        
+        if (bareResult && bareResult.data && bareResult.data.length > 0) {
+          contacts = bareResult.data;
+          console.log(`Bare fetch SUCCESS: ${contacts.length} contacts`);
+        }
+      } catch (e: any) {
+        console.log('Bare fetch error:', e?.message || e);
+      }
+    }
+    
+    // If still no contacts, the permission might be wrong
+    if (contacts.length === 0) {
+      console.log('CRITICAL: No contacts could be fetched!');
+      console.log('Possible causes:');
+      console.log('1. Limited Contact Access is enabled');
+      console.log('2. No contacts exist on the device');
+      console.log('3. Permission was revoked');
+      
+      // Re-check permission
+      const { status } = await Contacts.getPermissionsAsync();
+      console.log('Current permission status:', status);
     }
     
     // Step 2: If no birthdays found in bulk fetch, try individual fetch
