@@ -1012,32 +1012,69 @@ export default function Index() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>SynchroConnectr</Text>
-          <Text style={styles.headerSubtitle}>
-            {activeTab === 'pipeline' && 'Organize by frequency'}
-            {activeTab === 'contacts' && `${contacts.length} contacts`}
-            {activeTab === 'groups' && `${groups.length} groups`}
-            {activeTab === 'drafts' && `${drafts.length} AI drafts`}
-            {activeTab === 'profile' && 'Your profile'}
-          </Text>
-        </View>
-      </View>
+    <View style={styles.container}>
+      {/* Enhanced Header with Gradient */}
+      <LinearGradient
+        colors={COLORS.primaryGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            <View style={styles.headerContent}>
+              <View style={styles.headerTextContainer}>
+                <Text style={styles.headerTitle}>SynchroConnectr</Text>
+                <Text style={styles.headerSubtitle}>
+                  {activeTab === 'pipeline' && 'Organize by frequency'}
+                  {activeTab === 'contacts' && `${contacts.length} contacts`}
+                  {activeTab === 'groups' && `${groups.length} groups`}
+                  {activeTab === 'drafts' && `${drafts.length} AI drafts`}
+                  {activeTab === 'profile' && 'Your profile'}
+                </Text>
+              </View>
+              {/* Quick Stats Badge */}
+              {activeTab === 'pipeline' && contacts.filter(c => {
+                if (c.pipeline_stage === 'New') return false;
+                const days = getDaysUntilDue(c.next_due);
+                return days !== null && days < 0;
+              }).length > 0 && (
+                <View style={styles.headerBadge}>
+                  <Ionicons name="alert-circle" size={14} color={COLORS.surface} />
+                  <Text style={styles.headerBadgeText}>
+                    {contacts.filter(c => {
+                      if (c.pipeline_stage === 'New') return false;
+                      const days = getDaysUntilDue(c.next_due);
+                      return days !== null && days < 0;
+                    }).length} overdue
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
 
-      {/* Search Bar - Only in Contacts tab */}
+      {/* Search Bar - Enhanced with shadow */}
       {activeTab === 'contacts' && (
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={COLORS.textLight} style={{ marginRight: 8 }} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search contacts..."
-            placeholderTextColor={COLORS.textLight}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
+        <View style={styles.searchWrapper}>
+          <View style={styles.searchContainer}>
+            <View style={styles.searchIconWrapper}>
+              <Ionicons name="search" size={18} color={COLORS.primary} />
+            </View>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search contacts..."
+              placeholderTextColor={COLORS.textLight}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.searchClearBtn}>
+                <Ionicons name="close-circle" size={20} color={COLORS.textLight} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       )}
 
@@ -1048,64 +1085,56 @@ export default function Index() {
       {activeTab === 'drafts' && renderDrafts()}
       {activeTab === 'profile' && renderProfile()}
 
-      {/* FAB - Contacts and Groups tabs */}
+      {/* Enhanced FAB with gradient */}
       {activeTab === 'contacts' && (
-        <TouchableOpacity style={styles.fab} onPress={() => router.push('/contact/new')}>
-          <Ionicons name="add" size={32} color={COLORS.surface} />
+        <TouchableOpacity style={styles.fabWrapper} onPress={() => router.push('/contact/new')} activeOpacity={0.9}>
+          <LinearGradient colors={COLORS.primaryGradient} style={styles.fab}>
+            <Ionicons name="add" size={28} color={COLORS.surface} />
+          </LinearGradient>
         </TouchableOpacity>
       )}
       {activeTab === 'groups' && (
-        <TouchableOpacity style={styles.fab} onPress={() => router.push('/group/new')}>
-          <Ionicons name="add" size={32} color={COLORS.surface} />
+        <TouchableOpacity style={styles.fabWrapper} onPress={() => router.push('/group/new')} activeOpacity={0.9}>
+          <LinearGradient colors={COLORS.primaryGradient} style={styles.fab}>
+            <Ionicons name="add" size={28} color={COLORS.surface} />
+          </LinearGradient>
         </TouchableOpacity>
       )}
 
-      {/* Bottom Tab Bar - New order: Pipeline, Groups, Contacts, Drafts, Profile */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('pipeline')}>
-          <Ionicons
-            name={activeTab === 'pipeline' ? 'git-branch' : 'git-branch-outline'}
-            size={24}
-            color={activeTab === 'pipeline' ? COLORS.primary : COLORS.textLight}
-          />
-          <Text style={[styles.tabLabel, activeTab === 'pipeline' && styles.tabLabelActive]}>{t('pipeline')}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('groups')}>
-          <Ionicons
-            name={activeTab === 'groups' ? 'albums' : 'albums-outline'}
-            size={24}
-            color={activeTab === 'groups' ? COLORS.primary : COLORS.textLight}
-          />
-          <Text style={[styles.tabLabel, activeTab === 'groups' && styles.tabLabelActive]}>{t('groups')}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('contacts')}>
-          <Ionicons
-            name={activeTab === 'contacts' ? 'people' : 'people-outline'}
-            size={24}
-            color={activeTab === 'contacts' ? COLORS.primary : COLORS.textLight}
-          />
-          <Text style={[styles.tabLabel, activeTab === 'contacts' && styles.tabLabelActive]}>{t('contacts')}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('drafts')}>
-          <Ionicons
-            name={activeTab === 'drafts' ? 'sparkles' : 'sparkles-outline'}
-            size={24}
-            color={activeTab === 'drafts' ? COLORS.primary : COLORS.textLight}
-          />
-          <Text style={[styles.tabLabel, activeTab === 'drafts' && styles.tabLabelActive]}>{t('drafts')}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabButton} onPress={() => setActiveTab('profile')}>
-          <Ionicons
-            name={activeTab === 'profile' ? 'person' : 'person-outline'}
-            size={24}
-            color={activeTab === 'profile' ? COLORS.primary : COLORS.textLight}
-          />
-          <Text style={[styles.tabLabel, activeTab === 'profile' && styles.tabLabelActive]}>{t('profile')}</Text>
-        </TouchableOpacity>
+      {/* Enhanced Bottom Tab Bar */}
+      <View style={styles.tabBarWrapper}>
+        <View style={styles.tabBar}>
+          {[
+            { key: 'pipeline', icon: 'git-branch', label: t('pipeline') },
+            { key: 'groups', icon: 'albums', label: t('groups') },
+            { key: 'contacts', icon: 'people', label: t('contacts') },
+            { key: 'drafts', icon: 'sparkles', label: t('drafts') },
+            { key: 'profile', icon: 'person', label: t('profile') },
+          ].map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={styles.tabButton}
+                onPress={() => {
+                  triggerHaptic('light');
+                  setActiveTab(tab.key as Tab);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.tabIconWrapper, isActive && styles.tabIconWrapperActive]}>
+                  <Ionicons
+                    name={isActive ? tab.icon as any : `${tab.icon}-outline` as any}
+                    size={22}
+                    color={isActive ? COLORS.primary : COLORS.textLight}
+                  />
+                </View>
+                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{tab.label}</Text>
+                {isActive && <View style={styles.tabActiveIndicator} />}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       <ContactImportPrompt visible={showImportPrompt} onClose={() => setShowImportPrompt(false)} />
