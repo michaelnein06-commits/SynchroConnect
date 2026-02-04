@@ -1416,7 +1416,7 @@ export default function Index() {
                   {activeTab === 'pipeline' && 'Organize by frequency'}
                   {activeTab === 'contacts' && `${contacts.length} contacts`}
                   {activeTab === 'groups' && `${groups.length} groups`}
-                  {activeTab === 'drafts' && `${drafts.length} AI drafts`}
+                  {activeTab === 'planner' && (plannerSubTab === 'calendar' ? 'Geburtstage & Events' : `${drafts.length} AI drafts`)}
                   {activeTab === 'profile' && 'Your profile'}
                 </Text>
               </View>
