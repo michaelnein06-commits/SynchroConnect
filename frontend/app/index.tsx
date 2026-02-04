@@ -30,28 +30,47 @@ const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => 
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 const COLORS = {
+  // Primary colors with gradient support
   primary: '#6366F1',
   primaryDark: '#4F46E5',
   primaryLight: '#A5B4FC',
+  primaryGradient: ['#6366F1', '#8B5CF6'] as const,
+  
+  // Accent colors
   accent: '#F43F5E',
   accentLight: '#FDA4AF',
-  background: '#F1F5F9',
-  surface: '#FFFFFF',
-  text: '#0F172A',
-  textLight: '#64748B',
-  border: '#E2E8F0',
+  accentGradient: ['#F43F5E', '#FB7185'] as const,
+  
+  // Success/Warning
   success: '#10B981',
   successLight: '#D1FAE5',
+  successGradient: ['#10B981', '#34D399'] as const,
   warning: '#F59E0B',
   warningLight: '#FEF3C7',
-  // Pipeline stage colors
-  new: '#3B82F6', // Blue for new contacts
+  
+  // Neutrals - Enhanced
+  background: '#F8FAFC',
+  surface: '#FFFFFF',
+  surfaceElevated: '#FFFFFF',
+  text: '#0F172A',
+  textSecondary: '#475569',
+  textLight: '#94A3B8',
+  border: '#E2E8F0',
+  borderLight: '#F1F5F9',
+  
+  // Pipeline stage colors - More vibrant
+  new: '#3B82F6',
   weekly: '#8B5CF6',
   biweekly: '#06B6D4',
   monthly: '#10B981',
   quarterly: '#F59E0B',
   annually: '#EC4899',
+  
+  // Shadow color
+  shadow: '#6366F1',
 };
 
 // Get color for pipeline stage
