@@ -1495,7 +1495,7 @@ export default function Index() {
             { key: 'pipeline', icon: 'git-branch', label: t('pipeline') },
             { key: 'groups', icon: 'albums', label: t('groups') },
             { key: 'contacts', icon: 'people', label: t('contacts') },
-            { key: 'drafts', icon: 'sparkles', label: t('drafts') },
+            { key: 'planner', icon: 'calendar', label: 'Planner' },
             { key: 'profile', icon: 'person', label: t('profile') },
           ].map((tab) => {
             const isActive = activeTab === tab.key;
