@@ -1804,15 +1804,29 @@ const styles = StyleSheet.create({
   },
   tabLabelActive: {
     color: COLORS.primary,
+    fontWeight: '700',
   },
+  tabActiveIndicator: {
+    position: 'absolute',
+    top: 0,
+    width: 20,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: COLORS.primary,
+  },
+  
+  // Enhanced Group Card
   groupCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 16,
     marginHorizontal: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   groupCardHeader: {
     flexDirection: 'row',
