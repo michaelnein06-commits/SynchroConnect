@@ -118,87 +118,149 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
 
     console.log('Starting contact import...');
     
-    // Get all contacts with ALL fields in one request
+    // Try multiple fetch approaches
     let allContacts: Contacts.Contact[] = [];
     
+    // Approach 1: Basic fields only (most reliable)
     try {
+      console.log('Trying basic fields fetch...');
       const result = await Contacts.getContactsAsync({
         fields: [
           Contacts.Fields.Name,
-          Contacts.Fields.FirstName,
+          Contacts.Fields.FirstName, 
           Contacts.Fields.LastName,
           Contacts.Fields.PhoneNumbers,
           Contacts.Fields.Emails,
-          Contacts.Fields.Company,
-          Contacts.Fields.JobTitle,
-          Contacts.Fields.Birthday,
-          Contacts.Fields.Image,
-          Contacts.Fields.Note,
-          Contacts.Fields.Addresses,
           Contacts.Fields.ID,
         ],
         pageSize: 10000,
       });
       
-      if (result && result.data) {
+      if (result?.data?.length > 0) {
         allContacts = result.data;
-        console.log(`Fetched ${allContacts.length} contacts`);
+        console.log(`Basic fetch: ${allContacts.length} contacts`);
       }
     } catch (e: any) {
-      console.log('Fetch error:', e?.message || e);
+      console.log('Basic fetch error:', e?.message);
+    }
+    
+    // Approach 2: If basic failed, try without fields
+    if (allContacts.length === 0) {
+      try {
+        console.log('Trying fetch without fields...');
+        const result = await Contacts.getContactsAsync({
+          pageSize: 10000,
+        });
+        
+        if (result?.data?.length > 0) {
+          allContacts = result.data;
+          console.log(`No-fields fetch: ${allContacts.length} contacts`);
+        }
+      } catch (e: any) {
+        console.log('No-fields fetch error:', e?.message);
+      }
+    }
+    
+    // Approach 3: Try containers
+    if (allContacts.length === 0) {
+      try {
+        console.log('Trying container fetch...');
+        const containers = await Contacts.getContainersAsync({});
+        console.log(`Found ${containers.length} containers`);
+        
+        for (const container of containers) {
+          const result = await Contacts.getContactsAsync({
+            containerId: container.id,
+            fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers, Contacts.Fields.Emails],
+            pageSize: 10000,
+          });
+          
+          if (result?.data) {
+            allContacts.push(...result.data);
+          }
+        }
+        console.log(`Container fetch: ${allContacts.length} contacts`);
+      } catch (e: any) {
+        console.log('Container fetch error:', e?.message);
+      }
     }
     
     if (allContacts.length === 0) {
-      console.log('No contacts found, returning empty');
+      console.log('ERROR: No contacts could be fetched with any method');
       return [];
     }
     
-    // Process contacts directly without individual fetch
+    // Now fetch extended data for each contact individually
+    console.log(`Processing ${allContacts.length} contacts...`);
+    
     const importedContacts: ImportedContact[] = [];
     let birthdayCount = 0;
     let imageCount = 0;
-    let noteCount = 0;
-    let addressCount = 0;
     
-    for (const contact of allContacts) {
+    for (let i = 0; i < allContacts.length; i++) {
+      const contact = allContacts[i];
       const name = contact.name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
       if (!name) continue;
+      
+      // Try to get extended fields for this contact
+      let birthday: any = contact.birthday;
+      let image: any = contact.image;
+      let note: string | undefined = contact.note;
+      let addresses: any[] = contact.addresses || [];
+      
+      // If we don't have birthday/image, try fetching individual contact
+      if (contact.id && (!birthday || !image)) {
+        try {
+          const fullContact = await Contacts.getContactByIdAsync(contact.id, [
+            Contacts.Fields.Birthday,
+            Contacts.Fields.Image,
+            Contacts.Fields.Note,
+            Contacts.Fields.Addresses,
+            Contacts.Fields.Company,
+            Contacts.Fields.JobTitle,
+          ]);
+          
+          if (fullContact) {
+            birthday = fullContact.birthday || birthday;
+            image = fullContact.image || image;
+            note = fullContact.note || note;
+            addresses = fullContact.addresses || addresses;
+          }
+        } catch (e) {
+          // Individual fetch failed, use what we have
+        }
+      }
       
       // Parse birthday
       let birthdayFormatted: string | undefined;
       let birthdayRaw: { year?: number; month?: number; day?: number } | undefined;
       
-      if (contact.birthday) {
+      if (birthday) {
         birthdayRaw = {
-          year: contact.birthday.year,
-          month: contact.birthday.month,
-          day: contact.birthday.day
+          year: birthday.year,
+          month: birthday.month,
+          day: birthday.day
         };
-        birthdayFormatted = formatBirthday(contact.birthday);
+        birthdayFormatted = formatBirthday(birthday);
         birthdayCount++;
-        
-        if (birthdayCount <= 3) {
-          console.log(`Birthday: ${name} -> ${birthdayFormatted}`);
-        }
       }
       
       // Extract address
       let location: string | undefined;
-      let addresses: string[] = [];
-      if (contact.addresses && contact.addresses.length > 0) {
-        addresses = contact.addresses.map(addr => {
+      let addressStrings: string[] = [];
+      if (addresses && addresses.length > 0) {
+        addressStrings = addresses.map((addr: any) => {
           const parts = [addr.street, addr.city, addr.region, addr.postalCode, addr.country].filter(Boolean);
           return parts.join(', ');
-        }).filter(a => a.length > 0);
-        location = addresses[0];
-        if (location) addressCount++;
+        }).filter((a: string) => a.length > 0);
+        location = addressStrings[0];
       }
       
       // Convert image to base64
       let imageBase64: string | undefined;
-      if (contact.image?.uri) {
+      if (image?.uri) {
         try {
-          const base64 = await FileSystem.readAsStringAsync(contact.image.uri, {
+          const base64 = await FileSystem.readAsStringAsync(image.uri, {
             encoding: FileSystem.EncodingType.Base64,
           });
           imageBase64 = `data:image/jpeg;base64,${base64}`;
@@ -208,8 +270,6 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         }
       }
       
-      if (contact.note) noteCount++;
-      
       importedContacts.push({
         name,
         phoneNumbers: contact.phoneNumbers?.map(p => p.number || '').filter(Boolean) || [],
@@ -218,22 +278,24 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
         jobTitle: contact.jobTitle,
         birthday: birthdayFormatted,
         birthdayRaw,
-        image: contact.image,
+        image,
         imageBase64,
         id: contact.id,
-        note: contact.note,
+        note,
         location,
-        addresses,
+        addresses: addressStrings,
       });
+      
+      // Progress
+      if ((i + 1) % 50 === 0) {
+        console.log(`Progress: ${i + 1}/${allContacts.length}`);
+      }
     }
 
     console.log('=== IMPORT COMPLETE ===');
     console.log(`Total: ${importedContacts.length}`);
     console.log(`Birthdays: ${birthdayCount}`);
     console.log(`Images: ${imageCount}`);
-    console.log(`Notes: ${noteCount}`);
-    console.log(`Addresses: ${addressCount}`);
-    console.log('=======================');
     
     return importedContacts;
   } catch (error) {
