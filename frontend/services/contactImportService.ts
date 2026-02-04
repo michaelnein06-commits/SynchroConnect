@@ -368,7 +368,14 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       });
     }
 
-    console.log(`Final imported contacts: ${importedContacts.length}`);
+    console.log(`=== IMPORT STATS ===`);
+    console.log(`Total imported: ${importedContacts.length}`);
+    console.log(`With birthdays: ${contactsWithBirthdays}`);
+    console.log(`With images: ${contactsWithImages}`);
+    console.log(`With notes: ${contactsWithNotes}`);
+    console.log(`With addresses: ${contactsWithAddresses}`);
+    console.log(`====================`);
+    
     return importedContacts;
   } catch (error) {
     console.error('Error importing contacts:', error);
