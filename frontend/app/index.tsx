@@ -2913,4 +2913,241 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.surface,
   },
+  
+  // Planner Sub-tabs
+  plannerSubTabs: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.surface,
+    padding: 8,
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 16,
+    gap: 8,
+  },
+  plannerSubTabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+    backgroundColor: 'transparent',
+  },
+  plannerSubTabButtonActive: {
+    backgroundColor: COLORS.primary,
+  },
+  plannerSubTabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  plannerSubTabTextActive: {
+    color: COLORS.surface,
+  },
+  plannerBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  plannerBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.surface,
+  },
+  
+  // Calendar Styles
+  calendarViewSelector: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.surface,
+    padding: 6,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    gap: 4,
+  },
+  calendarViewButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  calendarViewButtonActive: {
+    backgroundColor: COLORS.primary + '15',
+  },
+  calendarViewText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textLight,
+  },
+  calendarViewTextActive: {
+    color: COLORS.primary,
+  },
+  calendarContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: COLORS.surface,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  calendar: {
+    borderRadius: 20,
+  },
+  calendarList: {
+    borderRadius: 20,
+  },
+  
+  // Birthday Section
+  birthdaySection: {
+    marginTop: 24,
+    marginHorizontal: 16,
+  },
+  birthdaySectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 16,
+  },
+  noBirthdayContainer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+  },
+  noBirthdayText: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginTop: 12,
+  },
+  birthdayCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surface,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  birthdayCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  birthdayAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+  },
+  birthdayAvatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  birthdayAvatarText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.surface,
+  },
+  birthdayInfo: {
+    marginLeft: 14,
+    flex: 1,
+  },
+  birthdayName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  birthdayDate: {
+    fontSize: 13,
+    color: COLORS.accent,
+    marginTop: 4,
+  },
+  birthdayDraftButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary + '12',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  // Upcoming Birthdays
+  upcomingBirthdayCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 10,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  upcomingAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+  },
+  upcomingAvatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  upcomingAvatarText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.surface,
+  },
+  upcomingInfo: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  upcomingName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  upcomingDate: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  upcomingBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: COLORS.background,
+  },
+  upcomingBadgeSoon: {
+    backgroundColor: COLORS.accent + '15',
+  },
+  upcomingBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textLight,
+  },
+  upcomingBadgeTextSoon: {
+    color: COLORS.accent,
+  },
 });
