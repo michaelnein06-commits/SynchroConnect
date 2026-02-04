@@ -342,7 +342,8 @@ export function formatContactForCRM(importedContact: ImportedContact) {
     phone: importedContact.phoneNumbers && importedContact.phoneNumbers.length > 0 ? importedContact.phoneNumbers[0] : '',
     email: importedContact.emails && importedContact.emails.length > 0 ? importedContact.emails[0] : '',
     birthday: importedContact.birthday || '',
-    profile_picture: importedContact.image?.uri || '',
+    // Use base64 image if available, otherwise use URI (which might not work)
+    profile_picture: importedContact.imageBase64 || importedContact.image?.uri || '',
     device_contact_id: importedContact.id || '',
     tags: [],
     groups: [],
@@ -350,5 +351,6 @@ export function formatContactForCRM(importedContact: ImportedContact) {
     language: 'English',
     tone: 'Casual',
     notes: importedContact.note || '',  // Use the note from iPhone if available
+    location: importedContact.location || '',  // Use the address from iPhone
   };
 }
