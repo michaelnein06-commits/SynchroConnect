@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput, Image, Dimensions, Modal, Pressable, FlatList, Platform, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import ContactImportPrompt from '../components/ContactImportPrompt';
 import * as ImagePicker from 'expo-image-picker';
 import ContactSyncService from '../services/ContactSyncService';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Calendar, CalendarList, Agenda } from 'react-native-calendars';
 
 // Safe haptics wrapper
 const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => {
