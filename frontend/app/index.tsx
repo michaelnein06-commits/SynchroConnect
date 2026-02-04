@@ -776,23 +776,40 @@ export default function Index() {
     return (
       <View style={{ flex: 1 }}>
         {/* Search bar for groups */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={COLORS.textLight} style={{ marginRight: 8 }} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('search') + ' ' + t('groups').toLowerCase() + '...'}
-            placeholderTextColor={COLORS.textLight}
-            value={groupSearchQuery}
-            onChangeText={setGroupSearchQuery}
-          />
+        <View style={styles.searchWrapper}>
+          <View style={styles.searchContainer}>
+            <View style={styles.searchIconWrapper}>
+              <Ionicons name="search" size={18} color={COLORS.primary} />
+            </View>
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('search') + ' ' + t('groups').toLowerCase() + '...'}
+              placeholderTextColor={COLORS.textLight}
+              value={groupSearchQuery}
+              onChangeText={setGroupSearchQuery}
+            />
+            {groupSearchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setGroupSearchQuery('')} style={styles.searchClearBtn}>
+                <Ionicons name="close-circle" size={20} color={COLORS.textLight} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
         
-        <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        <ScrollView 
+          style={styles.content} 
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+          showsVerticalScrollIndicator={false}
+        >
           {filteredGroups.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Ionicons name="albums-outline" size={64} color={COLORS.textLight} />
+              <View style={styles.emptyIconWrapper}>
+                <LinearGradient colors={COLORS.primaryGradient} style={styles.emptyIconGradient}>
+                  <Ionicons name="albums" size={40} color={COLORS.surface} />
+                </LinearGradient>
+              </View>
               <Text style={styles.emptyText}>{t('noGroupsCreated')}</Text>
-              <Text style={styles.emptySubtext}>Tap + to create your first group</Text>
+              <Text style={styles.emptySubtext}>Organize your contacts into groups for easier management</Text>
             </View>
           ) : (
             filteredGroups.map((group) => {
@@ -802,15 +819,19 @@ export default function Index() {
                   <TouchableOpacity
                     style={styles.groupCardHeader}
                     onPress={() => router.push(`/group/${group.id}`)}
+                    activeOpacity={0.7}
                   >
                     {group.profile_picture ? (
                       <Image source={{ uri: group.profile_picture }} style={styles.groupAvatar} />
                     ) : (
-                      <View style={[styles.groupAvatarPlaceholder, { backgroundColor: (group.color || COLORS.primary) + '20' }]}>
-                        <Ionicons name="people" size={24} color={group.color || COLORS.primary} />
-                      </View>
+                      <LinearGradient 
+                        colors={[group.color || COLORS.primary, (group.color || COLORS.primary) + 'CC']} 
+                        style={styles.groupAvatarPlaceholder}
+                      >
+                        <Ionicons name="people" size={24} color={COLORS.surface} />
+                      </LinearGradient>
                     )}
-                    <View style={{ flex: 1, marginLeft: 12 }}>
+                    <View style={{ flex: 1, marginLeft: 14 }}>
                       <Text style={styles.groupName}>{group.name}</Text>
                       {group.description && (
                         <Text style={styles.groupDescription} numberOfLines={1}>
@@ -818,7 +839,7 @@ export default function Index() {
                         </Text>
                       )}
                       <View style={styles.groupStats}>
-                        <Ionicons name="people-outline" size={14} color={COLORS.textLight} />
+                        <Ionicons name="people-outline" size={14} color={COLORS.primary} />
                         <Text style={styles.groupContactCount}>
                           {groupContacts.length} {groupContacts.length === 1 ? 'contact' : 'contacts'}
                         </Text>
