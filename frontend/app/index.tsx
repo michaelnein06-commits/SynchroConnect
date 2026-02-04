@@ -479,6 +479,7 @@ export default function Index() {
     const daysUntil = getDaysUntilDue(contact.next_due);
     const isOverdue = daysUntil !== null && daysUntil < 0;
     const isNewContact = contact.pipeline_stage === 'New';
+    const stageColor = getStageColor(contact.pipeline_stage);
 
     return (
       <TouchableOpacity
@@ -487,22 +488,28 @@ export default function Index() {
         onPress={() => router.push(`/contact/${contact.id}`)}
         onLongPress={() => handleLongPressContact(contact)}
         delayLongPress={300}
+        activeOpacity={0.7}
       >
         <View style={styles.contactCardHeader}>
           {contact.profile_picture ? (
             <Image source={{ uri: contact.profile_picture }} style={styles.contactAvatar} />
           ) : (
-            <View style={styles.contactAvatarPlaceholder}>
+            <LinearGradient 
+              colors={getStageGradient(contact.pipeline_stage)} 
+              style={styles.contactAvatarPlaceholder}
+            >
               <Text style={styles.contactAvatarText}>{contact.name.charAt(0).toUpperCase()}</Text>
-            </View>
+            </LinearGradient>
           )}
-          <View style={{ flex: 1, marginLeft: 12 }}>
+          <View style={{ flex: 1, marginLeft: 14 }}>
             <Text style={styles.contactName}>{contact.name}</Text>
             {contact.job && <Text style={styles.contactJob}>{contact.job}</Text>}
             {contact.phone && <Text style={styles.contactPhone}>{contact.phone}</Text>}
-            {activeTab === 'contacts' && <Text style={styles.contactStage}>{contact.pipeline_stage}</Text>}
-            {contact.groups && contact.groups.length > 0 && (
-              <Text style={styles.contactGroups}>{contact.groups.join(', ')}</Text>
+            {activeTab === 'contacts' && (
+              <View style={[styles.contactStageBadge, { backgroundColor: stageColor + '15' }]}>
+                <View style={[styles.contactStageDot, { backgroundColor: stageColor }]} />
+                <Text style={[styles.contactStageText, { color: stageColor }]}>{contact.pipeline_stage}</Text>
+              </View>
             )}
           </View>
           {showDraftButton && (
@@ -510,21 +517,27 @@ export default function Index() {
               style={styles.draftButton}
               onPress={() => generateDraft(contact.id, contact.name)}
             >
-              <Ionicons name="sparkles" size={16} color={COLORS.primary} />
+              <Ionicons name="sparkles" size={18} color={COLORS.primary} />
             </TouchableOpacity>
           )}
         </View>
         {/* Don't show countdown for "New" stage contacts */}
         {daysUntil !== null && activeTab === 'pipeline' && !isNewContact && (
-          <View style={styles.dueBadge}>
-            <Text style={styles.dueText}>
+          <View style={[styles.dueBadge, isOverdue && styles.dueBadgeOverdue]}>
+            <Ionicons 
+              name={isOverdue ? "alert-circle" : "time-outline"} 
+              size={14} 
+              color={isOverdue ? COLORS.accent : COLORS.textLight} 
+            />
+            <Text style={[styles.dueText, isOverdue && styles.dueTextOverdue]}>
               {isOverdue ? `${Math.abs(daysUntil)}d overdue` : `Due in ${daysUntil}d`}
             </Text>
           </View>
         )}
         {/* Show "New" badge instead */}
         {isNewContact && activeTab === 'pipeline' && (
-          <View style={[styles.dueBadge, { backgroundColor: COLORS.new + '20' }]}>
+          <View style={[styles.dueBadge, { backgroundColor: COLORS.new + '15' }]}>
+            <Ionicons name="add-circle-outline" size={14} color={COLORS.new} />
             <Text style={[styles.dueText, { color: COLORS.new }]}>New - Assign to pipeline</Text>
           </View>
         )}
