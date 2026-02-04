@@ -980,52 +980,77 @@ export default function Index() {
   const getBirthdayMarkedDates = useMemo(() => {
     const markedDates: { [key: string]: any } = {};
     const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
     
     contacts.forEach(contact => {
       if (contact.birthday) {
         try {
           // Parse birthday - can be in various formats
-          let birthdayDate: Date | null = null;
+          let month: number | null = null;
+          let day: number | null = null;
           
-          // Try parsing different date formats
-          if (contact.birthday.includes('/')) {
+          // Try parsing different date formats: YYYY-MM-DD, MM/DD/YYYY, etc.
+          if (contact.birthday.includes('-')) {
+            const parts = contact.birthday.split('-');
+            if (parts.length >= 3) {
+              // YYYY-MM-DD format
+              month = parseInt(parts[1]);
+              day = parseInt(parts[2]);
+            } else if (parts.length === 2) {
+              // MM-DD format
+              month = parseInt(parts[0]);
+              day = parseInt(parts[1]);
+            }
+          } else if (contact.birthday.includes('/')) {
             const parts = contact.birthday.split('/');
             if (parts.length >= 2) {
-              const month = parseInt(parts[0]);
-              const day = parseInt(parts[1]);
-              birthdayDate = new Date(currentYear, month - 1, day);
+              // MM/DD/YYYY or MM/DD format
+              month = parseInt(parts[0]);
+              day = parseInt(parts[1]);
             }
-          } else if (contact.birthday.includes('-')) {
-            const parts = contact.birthday.split('-');
-            if (parts.length >= 2) {
-              const month = parseInt(parts[1]);
-              const day = parseInt(parts[2] || parts[0]);
-              birthdayDate = new Date(currentYear, month - 1, day);
-            }
-          } else {
-            birthdayDate = new Date(contact.birthday);
           }
           
-          if (birthdayDate && !isNaN(birthdayDate.getTime())) {
-            // Set to current year for recurring display
-            birthdayDate.setFullYear(currentYear);
-            const dateKey = birthdayDate.toISOString().split('T')[0];
+          if (month && day && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            // Create date for current year
+            const monthStr = month.toString().padStart(2, '0');
+            const dayStr = day.toString().padStart(2, '0');
+            const dateKey = `${currentYear}-${monthStr}-${dayStr}`;
+            const nextYearKey = `${nextYear}-${monthStr}-${dayStr}`;
             
+            // Add for current year
             if (!markedDates[dateKey]) {
               markedDates[dateKey] = {
                 marked: true,
-                dotColor: COLORS.accent,
+                customStyles: {
+                  container: { backgroundColor: COLORS.accent + '25', borderRadius: 8 },
+                  text: { color: COLORS.accent, fontWeight: '700' }
+                },
                 contacts: []
               };
             }
             markedDates[dateKey].contacts.push(contact);
+            
+            // Add for next year too
+            if (!markedDates[nextYearKey]) {
+              markedDates[nextYearKey] = {
+                marked: true,
+                customStyles: {
+                  container: { backgroundColor: COLORS.accent + '25', borderRadius: 8 },
+                  text: { color: COLORS.accent, fontWeight: '700' }
+                },
+                contacts: []
+              };
+            }
+            markedDates[nextYearKey].contacts.push(contact);
           }
         } catch (e) {
           // Skip invalid dates
+          console.log('Could not parse birthday:', contact.birthday);
         }
       }
     });
     
+    console.log(`Found ${Object.keys(markedDates).length} dates with birthdays`);
     return markedDates;
   }, [contacts]);
   
@@ -1034,6 +1059,47 @@ export default function Index() {
     const markedDate = getBirthdayMarkedDates[dateString];
     return markedDate?.contacts || [];
   };
+  
+  // Get upcoming birthdays sorted by days until
+  const upcomingBirthdays = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    
+    return contacts
+      .filter(c => c.birthday)
+      .map(contact => {
+        let month: number | null = null;
+        let day: number | null = null;
+        
+        if (contact.birthday?.includes('-')) {
+          const parts = contact.birthday.split('-');
+          if (parts.length >= 3) {
+            month = parseInt(parts[1]);
+            day = parseInt(parts[2]);
+          }
+        } else if (contact.birthday?.includes('/')) {
+          const parts = contact.birthday.split('/');
+          if (parts.length >= 2) {
+            month = parseInt(parts[0]);
+            day = parseInt(parts[1]);
+          }
+        }
+        
+        if (!month || !day) return null;
+        
+        let birthdayThisYear = new Date(currentYear, month - 1, day);
+        if (birthdayThisYear < now) {
+          birthdayThisYear = new Date(currentYear + 1, month - 1, day);
+        }
+        
+        const daysUntil = Math.ceil((birthdayThisYear.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        
+        return { contact, daysUntil, date: birthdayThisYear };
+      })
+      .filter(Boolean)
+      .sort((a, b) => (a?.daysUntil || 999) - (b?.daysUntil || 999))
+      .slice(0, 10);
+  }, [contacts]);
 
   const renderPlanner = () => (
     <View style={{ flex: 1 }}>
