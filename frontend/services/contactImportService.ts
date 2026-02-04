@@ -131,34 +131,24 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
 
     console.log('Starting contact import with FULL field request...');
     
-    // ALL fields we want to fetch - request EVERYTHING
+    // ALL fields we want to fetch - only valid fields
     const ALL_FIELDS = [
       Contacts.Fields.ID,
       Contacts.Fields.Name,
       Contacts.Fields.FirstName,
       Contacts.Fields.LastName,
       Contacts.Fields.MiddleName,
-      Contacts.Fields.MaidenName,
       Contacts.Fields.Nickname,
-      Contacts.Fields.NamePrefix,
-      Contacts.Fields.NameSuffix,
       Contacts.Fields.PhoneNumbers,
       Contacts.Fields.Emails,
       Contacts.Fields.Company,
       Contacts.Fields.JobTitle,
-      Contacts.Fields.Department,
       Contacts.Fields.Birthday,
-      Contacts.Fields.Dates,
       Contacts.Fields.Image,
       Contacts.Fields.ImageAvailable,
-      Contacts.Fields.RawImage,
-      Contacts.Fields.Thumbnail,
       Contacts.Fields.Note,
       Contacts.Fields.Addresses,
-      Contacts.Fields.SocialProfiles,
-      Contacts.Fields.InstantMessageAddresses,
       Contacts.Fields.UrlAddresses,
-      Contacts.Fields.Relationships,
       Contacts.Fields.ContactType,
     ];
     
