@@ -976,6 +976,324 @@ export default function Index() {
     </ScrollView>
   );
 
+  // Helper function to get birthday marked dates for calendar
+  const getBirthdayMarkedDates = useMemo(() => {
+    const markedDates: { [key: string]: any } = {};
+    const currentYear = new Date().getFullYear();
+    
+    contacts.forEach(contact => {
+      if (contact.birthday) {
+        try {
+          // Parse birthday - can be in various formats
+          let birthdayDate: Date | null = null;
+          
+          // Try parsing different date formats
+          if (contact.birthday.includes('/')) {
+            const parts = contact.birthday.split('/');
+            if (parts.length >= 2) {
+              const month = parseInt(parts[0]);
+              const day = parseInt(parts[1]);
+              birthdayDate = new Date(currentYear, month - 1, day);
+            }
+          } else if (contact.birthday.includes('-')) {
+            const parts = contact.birthday.split('-');
+            if (parts.length >= 2) {
+              const month = parseInt(parts[1]);
+              const day = parseInt(parts[2] || parts[0]);
+              birthdayDate = new Date(currentYear, month - 1, day);
+            }
+          } else {
+            birthdayDate = new Date(contact.birthday);
+          }
+          
+          if (birthdayDate && !isNaN(birthdayDate.getTime())) {
+            // Set to current year for recurring display
+            birthdayDate.setFullYear(currentYear);
+            const dateKey = birthdayDate.toISOString().split('T')[0];
+            
+            if (!markedDates[dateKey]) {
+              markedDates[dateKey] = {
+                marked: true,
+                dotColor: COLORS.accent,
+                contacts: []
+              };
+            }
+            markedDates[dateKey].contacts.push(contact);
+          }
+        } catch (e) {
+          // Skip invalid dates
+        }
+      }
+    });
+    
+    return markedDates;
+  }, [contacts]);
+  
+  // Get contacts with birthdays on selected date
+  const getContactsForDate = (dateString: string) => {
+    const markedDate = getBirthdayMarkedDates[dateString];
+    return markedDate?.contacts || [];
+  };
+
+  const renderPlanner = () => (
+    <View style={{ flex: 1 }}>
+      {/* Sub-tab navigation */}
+      <View style={styles.plannerSubTabs}>
+        <TouchableOpacity
+          style={[styles.plannerSubTabButton, plannerSubTab === 'calendar' && styles.plannerSubTabButtonActive]}
+          onPress={() => setPlannerSubTab('calendar')}
+        >
+          <Ionicons name="calendar" size={18} color={plannerSubTab === 'calendar' ? COLORS.surface : COLORS.primary} />
+          <Text style={[styles.plannerSubTabText, plannerSubTab === 'calendar' && styles.plannerSubTabTextActive]}>
+            Kalender
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.plannerSubTabButton, plannerSubTab === 'drafts' && styles.plannerSubTabButtonActive]}
+          onPress={() => setPlannerSubTab('drafts')}
+        >
+          <Ionicons name="sparkles" size={18} color={plannerSubTab === 'drafts' ? COLORS.surface : COLORS.primary} />
+          <Text style={[styles.plannerSubTabText, plannerSubTab === 'drafts' && styles.plannerSubTabTextActive]}>
+            Drafts
+          </Text>
+          {drafts.length > 0 && (
+            <View style={styles.plannerBadge}>
+              <Text style={styles.plannerBadgeText}>{drafts.length}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+      
+      {plannerSubTab === 'calendar' ? (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Calendar View Selector */}
+          <View style={styles.calendarViewSelector}>
+            {(['week', 'month', 'year'] as CalendarView[]).map((view) => (
+              <TouchableOpacity
+                key={view}
+                style={[styles.calendarViewButton, calendarView === view && styles.calendarViewButtonActive]}
+                onPress={() => setCalendarView(view)}
+              >
+                <Text style={[styles.calendarViewText, calendarView === view && styles.calendarViewTextActive]}>
+                  {view === 'week' ? 'Woche' : view === 'month' ? 'Monat' : 'Jahr'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          
+          {/* Calendar Component */}
+          <View style={styles.calendarContainer}>
+            {calendarView === 'month' && (
+              <Calendar
+                current={selectedDate}
+                onDayPress={(day: any) => setSelectedDate(day.dateString)}
+                markedDates={{
+                  ...getBirthdayMarkedDates,
+                  [selectedDate]: {
+                    ...getBirthdayMarkedDates[selectedDate],
+                    selected: true,
+                    selectedColor: COLORS.primary,
+                  }
+                }}
+                theme={{
+                  backgroundColor: COLORS.surface,
+                  calendarBackground: COLORS.surface,
+                  textSectionTitleColor: COLORS.textLight,
+                  selectedDayBackgroundColor: COLORS.primary,
+                  selectedDayTextColor: COLORS.surface,
+                  todayTextColor: COLORS.primary,
+                  dayTextColor: COLORS.text,
+                  textDisabledColor: COLORS.textLight,
+                  dotColor: COLORS.accent,
+                  selectedDotColor: COLORS.surface,
+                  arrowColor: COLORS.primary,
+                  monthTextColor: COLORS.text,
+                  textDayFontWeight: '500',
+                  textMonthFontWeight: '700',
+                  textDayHeaderFontWeight: '600',
+                }}
+                style={styles.calendar}
+              />
+            )}
+            
+            {calendarView === 'week' && (
+              <Calendar
+                current={selectedDate}
+                onDayPress={(day: any) => setSelectedDate(day.dateString)}
+                hideExtraDays={true}
+                markedDates={{
+                  ...getBirthdayMarkedDates,
+                  [selectedDate]: {
+                    ...getBirthdayMarkedDates[selectedDate],
+                    selected: true,
+                    selectedColor: COLORS.primary,
+                  }
+                }}
+                theme={{
+                  backgroundColor: COLORS.surface,
+                  calendarBackground: COLORS.surface,
+                  textSectionTitleColor: COLORS.textLight,
+                  selectedDayBackgroundColor: COLORS.primary,
+                  selectedDayTextColor: COLORS.surface,
+                  todayTextColor: COLORS.primary,
+                  dayTextColor: COLORS.text,
+                  textDisabledColor: COLORS.textLight,
+                  dotColor: COLORS.accent,
+                  selectedDotColor: COLORS.surface,
+                  arrowColor: COLORS.primary,
+                  monthTextColor: COLORS.text,
+                  textDayFontWeight: '500',
+                  textMonthFontWeight: '700',
+                  textDayHeaderFontWeight: '600',
+                }}
+                style={styles.calendar}
+              />
+            )}
+            
+            {calendarView === 'year' && (
+              <CalendarList
+                current={selectedDate}
+                onDayPress={(day: any) => setSelectedDate(day.dateString)}
+                pastScrollRange={0}
+                futureScrollRange={12}
+                horizontal={true}
+                pagingEnabled={true}
+                markedDates={{
+                  ...getBirthdayMarkedDates,
+                  [selectedDate]: {
+                    ...getBirthdayMarkedDates[selectedDate],
+                    selected: true,
+                    selectedColor: COLORS.primary,
+                  }
+                }}
+                theme={{
+                  backgroundColor: COLORS.surface,
+                  calendarBackground: COLORS.surface,
+                  textSectionTitleColor: COLORS.textLight,
+                  selectedDayBackgroundColor: COLORS.primary,
+                  selectedDayTextColor: COLORS.surface,
+                  todayTextColor: COLORS.primary,
+                  dayTextColor: COLORS.text,
+                  textDisabledColor: COLORS.textLight,
+                  dotColor: COLORS.accent,
+                  selectedDotColor: COLORS.surface,
+                  arrowColor: COLORS.primary,
+                  monthTextColor: COLORS.text,
+                }}
+                calendarWidth={SCREEN_WIDTH - 32}
+                calendarHeight={350}
+                style={styles.calendarList}
+              />
+            )}
+          </View>
+          
+          {/* Selected Date Birthdays */}
+          <View style={styles.birthdaySection}>
+            <Text style={styles.birthdaySectionTitle}>
+              <Ionicons name="gift" size={18} color={COLORS.accent} /> Geburtstage am {new Date(selectedDate).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}
+            </Text>
+            {getContactsForDate(selectedDate).length === 0 ? (
+              <View style={styles.noBirthdayContainer}>
+                <Ionicons name="calendar-outline" size={40} color={COLORS.textLight} />
+                <Text style={styles.noBirthdayText}>Keine Geburtstage an diesem Tag</Text>
+              </View>
+            ) : (
+              getContactsForDate(selectedDate).map((contact: Contact) => (
+                <TouchableOpacity
+                  key={contact.id}
+                  style={styles.birthdayCard}
+                  onPress={() => router.push(`/contact/${contact.id}`)}
+                >
+                  <View style={styles.birthdayCardLeft}>
+                    {contact.profile_picture ? (
+                      <Image source={{ uri: contact.profile_picture }} style={styles.birthdayAvatar} />
+                    ) : (
+                      <LinearGradient colors={COLORS.accentGradient} style={styles.birthdayAvatarPlaceholder}>
+                        <Text style={styles.birthdayAvatarText}>{contact.name.charAt(0)}</Text>
+                      </LinearGradient>
+                    )}
+                    <View style={styles.birthdayInfo}>
+                      <Text style={styles.birthdayName}>{contact.name}</Text>
+                      <Text style={styles.birthdayDate}>
+                        <Ionicons name="gift-outline" size={12} color={COLORS.accent} /> Geburtstag
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.birthdayDraftButton}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      generateDraft(contact.id, contact.name);
+                    }}
+                  >
+                    <Ionicons name="sparkles" size={18} color={COLORS.primary} />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+          
+          {/* Upcoming Birthdays */}
+          <View style={styles.birthdaySection}>
+            <Text style={styles.birthdaySectionTitle}>
+              <Ionicons name="calendar" size={18} color={COLORS.primary} /> Kommende Geburtstage
+            </Text>
+            {contacts
+              .filter(c => c.birthday)
+              .sort((a, b) => {
+                const now = new Date();
+                const aDate = new Date(a.birthday || '');
+                const bDate = new Date(b.birthday || '');
+                aDate.setFullYear(now.getFullYear());
+                bDate.setFullYear(now.getFullYear());
+                if (aDate < now) aDate.setFullYear(now.getFullYear() + 1);
+                if (bDate < now) bDate.setFullYear(now.getFullYear() + 1);
+                return aDate.getTime() - bDate.getTime();
+              })
+              .slice(0, 5)
+              .map((contact) => {
+                const bd = new Date(contact.birthday || '');
+                const now = new Date();
+                bd.setFullYear(now.getFullYear());
+                if (bd < now) bd.setFullYear(now.getFullYear() + 1);
+                const daysUntil = Math.ceil((bd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                
+                return (
+                  <TouchableOpacity
+                    key={contact.id}
+                    style={styles.upcomingBirthdayCard}
+                    onPress={() => router.push(`/contact/${contact.id}`)}
+                  >
+                    {contact.profile_picture ? (
+                      <Image source={{ uri: contact.profile_picture }} style={styles.upcomingAvatar} />
+                    ) : (
+                      <LinearGradient colors={getStageGradient(contact.pipeline_stage)} style={styles.upcomingAvatarPlaceholder}>
+                        <Text style={styles.upcomingAvatarText}>{contact.name.charAt(0)}</Text>
+                      </LinearGradient>
+                    )}
+                    <View style={styles.upcomingInfo}>
+                      <Text style={styles.upcomingName}>{contact.name}</Text>
+                      <Text style={styles.upcomingDate}>
+                        {bd.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}
+                      </Text>
+                    </View>
+                    <View style={[styles.upcomingBadge, daysUntil <= 7 && styles.upcomingBadgeSoon]}>
+                      <Text style={[styles.upcomingBadgeText, daysUntil <= 7 && styles.upcomingBadgeTextSoon]}>
+                        {daysUntil === 0 ? 'Heute!' : daysUntil === 1 ? 'Morgen' : `in ${daysUntil} Tagen`}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+          </View>
+          <View style={{ height: 120 }} />
+        </ScrollView>
+      ) : (
+        renderDrafts()
+      )}
+    </View>
+  );
+
   const renderProfile = () => (
     <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.profileCard}>
