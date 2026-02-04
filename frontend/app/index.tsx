@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput, Image, Dimensions, Modal, Pressable, FlatList, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput, Image, Dimensions, Modal, Pressable, FlatList, Platform, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,8 @@ import { useLanguage } from '../context/LanguageContext';
 import ContactImportPrompt from '../components/ContactImportPrompt';
 import * as ImagePicker from 'expo-image-picker';
 import ContactSyncService from '../services/ContactSyncService';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 // Safe haptics wrapper
 const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => {
