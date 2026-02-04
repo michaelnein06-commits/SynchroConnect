@@ -731,8 +731,25 @@ export default function Index() {
   };
 
   const renderContacts = () => (
-    <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-      {filteredContacts.map((contact) => renderContactCard(contact))}
+    <ScrollView 
+      style={styles.content} 
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+      showsVerticalScrollIndicator={false}
+    >
+      {filteredContacts.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconWrapper}>
+            <LinearGradient colors={COLORS.primaryGradient} style={styles.emptyIconGradient}>
+              <Ionicons name="people" size={40} color={COLORS.surface} />
+            </LinearGradient>
+          </View>
+          <Text style={styles.emptyText}>No Contacts Yet</Text>
+          <Text style={styles.emptySubtext}>Add your first contact to start building your network</Text>
+        </View>
+      ) : (
+        filteredContacts.map((contact) => renderContactCard(contact))
+      )}
+      <View style={{ height: 100 }} />
     </ScrollView>
   );
 
