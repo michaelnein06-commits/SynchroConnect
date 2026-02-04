@@ -3100,6 +3100,35 @@ const styles = StyleSheet.create({
     color: COLORS.surface,
   },
   
+  // Birthday Summary Card
+  birthdaySummaryCard: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  birthdaySummaryGradient: {
+    padding: 16,
+  },
+  birthdaySummaryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  birthdaySummaryText: {
+    marginLeft: 14,
+    flex: 1,
+  },
+  birthdaySummaryTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.surface,
+  },
+  birthdaySummarySubtitle: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+  
   // Calendar Styles
   calendarViewSelector: {
     flexDirection: 'row',
@@ -3138,12 +3167,67 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
+    paddingVertical: 8,
   },
   calendar: {
     borderRadius: 20,
   },
   calendarList: {
     borderRadius: 20,
+  },
+  
+  // Calendar Day Component Styles
+  calendarDayContainer: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    position: 'relative',
+  },
+  calendarDaySelected: {
+    backgroundColor: COLORS.primary,
+  },
+  calendarDayBirthday: {
+    backgroundColor: COLORS.accent + '20',
+  },
+  calendarDayText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: COLORS.text,
+  },
+  calendarDayTextDisabled: {
+    color: COLORS.textLight,
+  },
+  calendarDayTextSelected: {
+    color: COLORS.surface,
+    fontWeight: '700',
+  },
+  calendarDayTextBirthday: {
+    color: COLORS.accent,
+    fontWeight: '700',
+  },
+  calendarDayTextToday: {
+    color: COLORS.primary,
+    fontWeight: '700',
+  },
+  birthdayDot: {
+    position: 'absolute',
+    bottom: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  birthdayDotSelected: {
+    backgroundColor: COLORS.surface,
+  },
+  birthdayDotText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: COLORS.surface,
   },
   
   // Birthday Section
