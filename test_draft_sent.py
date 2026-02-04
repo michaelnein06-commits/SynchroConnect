@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 import time
 
-BASE_URL = "https://app-evolution-60.preview.emergentagent.com/api"
+BASE_URL = "https://mobile-crm-9.preview.emergentagent.com/api"
 
 def test_draft_sent_functionality():
     session = requests.Session()
