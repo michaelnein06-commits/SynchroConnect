@@ -1307,40 +1307,88 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  
+  // Enhanced Header Styles
+  headerGradient: {
+    paddingBottom: 16,
+  },
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    paddingTop: 8,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTextContainer: {
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.primary,
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.surface,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    marginTop: 2,
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  headerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  headerBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.surface,
+  },
+  
+  // Enhanced Search Styles
+  searchWrapper: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: COLORS.background,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
-    marginHorizontal: 16,
-    marginVertical: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 16,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  searchIconWrapper: {
+    width: 36,
+    height: 36,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: COLORS.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: COLORS.text,
   },
+  searchClearBtn: {
+    padding: 4,
+  },
+  
+  // Stage Selector (keeping for compatibility)
   stageSelector: {
     backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
@@ -1391,14 +1439,19 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  
+  // Enhanced Contact Card Styles
   contactCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 16,
     marginHorizontal: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   contactCardOverdue: {
     borderLeftWidth: 4,
@@ -1409,15 +1462,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contactAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 18,
   },
   contactAvatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.primary,
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1427,7 +1479,7 @@ const styles = StyleSheet.create({
     color: COLORS.surface,
   },
   contactName: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: COLORS.text,
   },
