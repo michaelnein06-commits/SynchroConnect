@@ -129,99 +129,127 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       throw new Error('Contacts permission not granted');
     }
 
-    console.log('Starting contact import...');
+    console.log('Starting contact import with FULL field request...');
     
-    // ALL fields we want to fetch
+    // ALL fields we want to fetch - request EVERYTHING
     const ALL_FIELDS = [
+      Contacts.Fields.ID,
       Contacts.Fields.Name,
       Contacts.Fields.FirstName,
       Contacts.Fields.LastName,
+      Contacts.Fields.MiddleName,
+      Contacts.Fields.MaidenName,
+      Contacts.Fields.Nickname,
+      Contacts.Fields.NamePrefix,
+      Contacts.Fields.NameSuffix,
       Contacts.Fields.PhoneNumbers,
       Contacts.Fields.Emails,
       Contacts.Fields.Company,
       Contacts.Fields.JobTitle,
+      Contacts.Fields.Department,
       Contacts.Fields.Birthday,
+      Contacts.Fields.Dates,
       Contacts.Fields.Image,
       Contacts.Fields.ImageAvailable,
       Contacts.Fields.RawImage,
-      Contacts.Fields.ID,
+      Contacts.Fields.Thumbnail,
       Contacts.Fields.Note,
       Contacts.Fields.Addresses,
+      Contacts.Fields.SocialProfiles,
+      Contacts.Fields.InstantMessageAddresses,
+      Contacts.Fields.UrlAddresses,
+      Contacts.Fields.Relationships,
+      Contacts.Fields.ContactType,
     ];
     
-    // Step 1: Get list of all contacts (may only have basic info)
-    let basicContacts: Contacts.Contact[] = [];
+    // Step 1: Get all contacts with all fields
+    let contacts: Contacts.Contact[] = [];
     
     try {
+      console.log('Fetching all contacts with ALL fields...');
       const result = await Contacts.getContactsAsync({
         fields: ALL_FIELDS,
         pageSize: 10000,
       });
       
       if (result && result.data) {
-        basicContacts = result.data;
-        console.log(`Got ${basicContacts.length} contacts from initial fetch`);
+        contacts = result.data;
+        console.log(`Initial fetch: ${contacts.length} contacts`);
         
-        // Check if we got full data by looking at first few contacts
-        const sampleWithBirthday = basicContacts.slice(0, 20).filter(c => c.birthday);
-        console.log(`Sample check: ${sampleWithBirthday.length}/20 have birthday in initial fetch`);
+        // Debug: Check what fields we got
+        if (contacts.length > 0) {
+          const sample = contacts[0];
+          console.log('Sample contact fields:', Object.keys(sample).filter(k => (sample as any)[k] !== undefined));
+          
+          // Check for birthdays in first 20
+          const withBirthday = contacts.slice(0, 50).filter(c => c.birthday);
+          console.log(`First 50 contacts: ${withBirthday.length} have birthday field`);
+          
+          if (withBirthday.length > 0) {
+            console.log('Sample birthday:', JSON.stringify(withBirthday[0].birthday));
+          }
+        }
       }
     } catch (e) {
-      console.log('Initial fetch failed:', e);
+      console.log('Initial fetch error:', e);
     }
     
-    // Step 2: ALWAYS fetch each contact individually to get full data
-    // This is the only reliable way to get Birthday, Image, Notes on iOS
-    console.log('Fetching full details for each contact individually...');
+    // Step 2: If no birthdays found in bulk fetch, try individual fetch
+    const bulkBirthdayCount = contacts.filter(c => c.birthday).length;
+    console.log(`Bulk fetch found ${bulkBirthdayCount} contacts with birthdays`);
     
-    const fullContacts: Contacts.Contact[] = [];
-    let fetchedCount = 0;
-    let birthdayCount = 0;
-    let imageCount = 0;
-    
-    for (const contact of basicContacts) {
-      if (contact.id) {
-        try {
-          const fullContact = await Contacts.getContactByIdAsync(contact.id, ALL_FIELDS);
-          
-          if (fullContact) {
-            fullContacts.push(fullContact);
+    if (bulkBirthdayCount === 0 && contacts.length > 0) {
+      console.log('No birthdays in bulk fetch - trying individual contact fetch...');
+      
+      const enrichedContacts: Contacts.Contact[] = [];
+      let individualBirthdayCount = 0;
+      
+      // Fetch each contact individually (this is slower but more reliable)
+      for (let i = 0; i < contacts.length; i++) {
+        const contact = contacts[i];
+        
+        if (contact.id) {
+          try {
+            const fullContact = await Contacts.getContactByIdAsync(contact.id, ALL_FIELDS);
             
-            if (fullContact.birthday) {
-              birthdayCount++;
-              // Log first few birthdays for debugging
-              if (birthdayCount <= 5) {
-                console.log(`Birthday found: ${fullContact.name} - ${JSON.stringify(fullContact.birthday)}`);
+            if (fullContact) {
+              enrichedContacts.push(fullContact);
+              if (fullContact.birthday) {
+                individualBirthdayCount++;
+                if (individualBirthdayCount <= 3) {
+                  console.log(`Found birthday for ${fullContact.name}: ${JSON.stringify(fullContact.birthday)}`);
+                }
               }
+            } else {
+              enrichedContacts.push(contact);
             }
-            if (fullContact.image || fullContact.rawImage) {
-              imageCount++;
-            }
-          } else {
-            fullContacts.push(contact);
+          } catch (e) {
+            enrichedContacts.push(contact);
           }
-        } catch (e) {
-          fullContacts.push(contact);
+        } else {
+          enrichedContacts.push(contact);
         }
-      } else {
-        fullContacts.push(contact);
+        
+        // Progress log every 100 contacts
+        if ((i + 1) % 100 === 0) {
+          console.log(`Progress: ${i + 1}/${contacts.length} (${individualBirthdayCount} birthdays found so far)`);
+        }
       }
       
-      fetchedCount++;
-      // Log progress every 50 contacts
-      if (fetchedCount % 50 === 0) {
-        console.log(`Fetched ${fetchedCount}/${basicContacts.length} contacts...`);
+      contacts = enrichedContacts;
+      console.log(`Individual fetch complete: ${individualBirthdayCount} birthdays found`);
+      
+      // If still no birthdays, show alert to user about permissions
+      if (individualBirthdayCount === 0) {
+        console.log('WARNING: No birthdays found even with individual fetch!');
+        console.log('This usually means iOS Limited Contacts Access is enabled.');
+        console.log('User should go to Settings > Privacy > Contacts > [App Name] > Full Access');
       }
     }
-    
-    console.log(`=== FETCH COMPLETE ===`);
-    console.log(`Total contacts: ${fullContacts.length}`);
-    console.log(`With birthdays: ${birthdayCount}`);
-    console.log(`With images: ${imageCount}`);
     
     // Remove duplicates
     const uniqueContactsMap = new Map<string, Contacts.Contact>();
-    for (const contact of fullContacts) {
+    for (const contact of contacts) {
       const contactName = contact.name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
       
       if (contact.id && contactName) {
@@ -235,50 +263,39 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
     }
     
     const uniqueContacts = Array.from(uniqueContactsMap.values());
-    console.log(`Unique contacts after deduplication: ${uniqueContacts.length}`);
+    console.log(`Unique contacts: ${uniqueContacts.length}`);
 
-    // Process contacts and convert to ImportedContact format
+    // Process contacts
     const importedContacts: ImportedContact[] = [];
-    let finalBirthdayCount = 0;
-    let finalImageCount = 0;
-    let finalNotesCount = 0;
-    let finalAddressCount = 0;
+    let finalStats = { birthdays: 0, images: 0, notes: 0, addresses: 0 };
     
     for (const contact of uniqueContacts) {
       const name = contact.name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
       if (!name || name.length === 0) continue;
       
-      // Extract address/location
+      // Extract address
       let location: string | undefined;
       let addresses: string[] = [];
       if (contact.addresses && contact.addresses.length > 0) {
         addresses = contact.addresses.map(addr => {
-          const parts = [
-            addr.street,
-            addr.city,
-            addr.region,
-            addr.postalCode,
-            addr.country
-          ].filter(Boolean);
+          const parts = [addr.street, addr.city, addr.region, addr.postalCode, addr.country].filter(Boolean);
           return parts.join(', ');
         }).filter(a => a.length > 0);
         location = addresses[0];
-        if (location) finalAddressCount++;
+        if (location) finalStats.addresses++;
       }
       
-      // Convert image to base64 if available
+      // Convert image to base64
       let imageBase64: string | undefined;
-      if (contact.image?.uri || contact.rawImage?.uri) {
+      const imageUri = contact.image?.uri || contact.rawImage?.uri;
+      if (imageUri) {
         try {
-          const imageUri = contact.image?.uri || contact.rawImage?.uri;
-          if (imageUri) {
-            const base64 = await FileSystem.readAsStringAsync(imageUri, {
-              encoding: FileSystem.EncodingType.Base64,
-            });
-            imageBase64 = `data:image/jpeg;base64,${base64}`;
-            finalImageCount++;
-          }
-        } catch (imgError) {
+          const base64 = await FileSystem.readAsStringAsync(imageUri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          imageBase64 = `data:image/jpeg;base64,${base64}`;
+          finalStats.images++;
+        } catch (e) {
           // Silent fail
         }
       }
@@ -294,15 +311,33 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
           day: contact.birthday.day
         };
         birthdayFormatted = formatBirthday(contact.birthday);
-        if (birthdayFormatted) finalBirthdayCount++;
+        if (birthdayFormatted) finalStats.birthdays++;
       }
       
-      if (contact.note) finalNotesCount++;
+      // Also check 'dates' field for birthday (some contacts store it there)
+      if (!birthdayFormatted && contact.dates && contact.dates.length > 0) {
+        const birthdayDate = contact.dates.find((d: any) => 
+          d.label?.toLowerCase().includes('birthday') || 
+          d.label?.toLowerCase().includes('geburtstag')
+        );
+        if (birthdayDate) {
+          birthdayRaw = {
+            year: birthdayDate.year,
+            month: birthdayDate.month,
+            day: birthdayDate.day
+          };
+          birthdayFormatted = formatBirthday(birthdayDate as any);
+          if (birthdayFormatted) finalStats.birthdays++;
+          console.log(`Found birthday in dates field for ${name}: ${birthdayFormatted}`);
+        }
+      }
+      
+      if (contact.note) finalStats.notes++;
       
       importedContacts.push({
-        name: name || 'Unknown',
-        phoneNumbers: contact.phoneNumbers?.map((p) => p.number || '').filter(n => n) || [],
-        emails: contact.emails?.map((e) => e.email || '').filter(e => e) || [],
+        name,
+        phoneNumbers: contact.phoneNumbers?.map(p => p.number || '').filter(Boolean) || [],
+        emails: contact.emails?.map(e => e.email || '').filter(Boolean) || [],
         company: contact.company,
         jobTitle: contact.jobTitle,
         birthday: birthdayFormatted,
@@ -316,13 +351,25 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
       });
     }
 
-    console.log(`=== FINAL IMPORT STATS ===`);
-    console.log(`Total imported: ${importedContacts.length}`);
-    console.log(`With birthdays: ${finalBirthdayCount}`);
-    console.log(`With images (base64): ${finalImageCount}`);
-    console.log(`With notes: ${finalNotesCount}`);
-    console.log(`With addresses: ${finalAddressCount}`);
-    console.log(`==========================`);
+    console.log('=== FINAL IMPORT STATS ===');
+    console.log(`Total: ${importedContacts.length}`);
+    console.log(`Birthdays: ${finalStats.birthdays}`);
+    console.log(`Images: ${finalStats.images}`);
+    console.log(`Notes: ${finalStats.notes}`);
+    console.log(`Addresses: ${finalStats.addresses}`);
+    console.log('==========================');
+    
+    // Show warning if no extended data found
+    if (finalStats.birthdays === 0 && finalStats.images === 0 && finalStats.notes === 0 && importedContacts.length > 10) {
+      Alert.alert(
+        'Eingeschränkter Zugriff',
+        'Es konnten keine Geburtstage, Bilder oder Notizen importiert werden.\n\nUm alle Daten zu importieren:\n\n1. Öffne Einstellungen\n2. Gehe zu Datenschutz & Sicherheit\n3. Tippe auf Kontakte\n4. Wähle "Voller Zugriff" für diese App',
+        [
+          { text: 'Später', style: 'cancel' },
+          { text: 'Einstellungen öffnen', onPress: () => Linking.openSettings() },
+        ]
+      );
+    }
     
     return importedContacts;
   } catch (error) {
