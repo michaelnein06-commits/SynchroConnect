@@ -2000,21 +2000,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   groupAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 18,
   },
   groupAvatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.primary + '20',
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
   groupName: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
     color: COLORS.text,
   },
   groupDescription: {
@@ -2029,8 +2028,9 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   groupContactCount: {
-    fontSize: 12,
-    color: COLORS.textLight,
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: '500',
   },
   // Modal Styles
   modalOverlay: {
@@ -2040,8 +2040,8 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: COLORS.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingHorizontal: 20,
     paddingBottom: 40,
     maxHeight: '80%',
@@ -2052,11 +2052,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border,
     borderRadius: 2,
     alignSelf: 'center',
-    marginVertical: 12,
+    marginVertical: 14,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     color: COLORS.text,
     textAlign: 'center',
     marginBottom: 20,
