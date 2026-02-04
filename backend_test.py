@@ -11,7 +11,7 @@ import time
 import sys
 
 # Use the production URL from frontend/.env
-BASE_URL = "https://mobile-crm-9.preview.emergentagent.com/api"
+BASE_URL = "https://crm-powerflow-1.preview.emergentagent.com/api"
 
 class SynchroConnectrTester:
     def __init__(self):
