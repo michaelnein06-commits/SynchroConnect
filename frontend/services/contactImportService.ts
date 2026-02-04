@@ -113,7 +113,7 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
     
     let allContacts: Contacts.Contact[] = [];
     
-    // Method 1: Simple direct fetch (most reliable)
+    // Method 1: Simple direct fetch with all fields including addresses and images
     try {
       console.log('Fetching contacts directly...');
       const result = await Contacts.getContactsAsync({
@@ -127,8 +127,11 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
           Contacts.Fields.JobTitle,
           Contacts.Fields.Birthday,
           Contacts.Fields.Image,
+          Contacts.Fields.ImageAvailable,
+          Contacts.Fields.RawImage,
           Contacts.Fields.ID,
           Contacts.Fields.Note,
+          Contacts.Fields.Addresses,  // Include addresses
         ],
         pageSize: 10000,
         pageOffset: 0,
@@ -162,7 +165,11 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
                   Contacts.Fields.PhoneNumbers,
                   Contacts.Fields.Emails,
                   Contacts.Fields.Image,
+                  Contacts.Fields.RawImage,
                   Contacts.Fields.ID,
+                  Contacts.Fields.Addresses,
+                  Contacts.Fields.Note,
+                  Contacts.Fields.Birthday,
                 ],
                 pageSize: 10000,
                 pageOffset: 0,
@@ -198,8 +205,10 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
             Contacts.Fields.JobTitle,
             Contacts.Fields.Birthday,
             Contacts.Fields.Image,
+            Contacts.Fields.RawImage,
             Contacts.Fields.ID,
             Contacts.Fields.Note,
+            Contacts.Fields.Addresses,
           ],
           pageSize: 10000,
           pageOffset: 0,
@@ -254,30 +263,69 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
     const uniqueContacts = Array.from(uniqueContactsMap.values());
     console.log(`Total unique contacts after deduplication: ${uniqueContacts.length}`);
 
-    const importedContacts: ImportedContact[] = uniqueContacts
-      .filter((contact) => {
-        const name = contact.name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
-        return name.length > 0;
-      })
-      .map((contact) => {
-        const name = contact.name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
-        return {
-          name: name || 'Unknown',
-          phoneNumbers: contact.phoneNumbers?.map((p) => p.number || '').filter(n => n) || [],
-          emails: contact.emails?.map((e) => e.email || '').filter(e => e) || [],
-          company: contact.company,
-          jobTitle: contact.jobTitle,
-          birthday: contact.birthday ? 
-            new Date(
-              contact.birthday.year || 2000, 
-              (contact.birthday.month || 1) - 1, 
-              contact.birthday.day || 1
-            ).toLocaleDateString() : undefined,
-          image: contact.image,
-          id: contact.id,
-          note: contact.note,
-        };
+    // Process contacts and convert images to base64
+    const importedContacts: ImportedContact[] = [];
+    
+    for (const contact of uniqueContacts) {
+      const name = contact.name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
+      if (!name || name.length === 0) continue;
+      
+      // Extract address/location
+      let location: string | undefined;
+      let addresses: string[] = [];
+      if (contact.addresses && contact.addresses.length > 0) {
+        addresses = contact.addresses.map(addr => {
+          const parts = [
+            addr.street,
+            addr.city,
+            addr.region,
+            addr.postalCode,
+            addr.country
+          ].filter(Boolean);
+          return parts.join(', ');
+        }).filter(a => a.length > 0);
+        location = addresses[0]; // Use first address as primary location
+      }
+      
+      // Convert image to base64 if available
+      let imageBase64: string | undefined;
+      if (contact.image?.uri || contact.rawImage?.uri) {
+        try {
+          const imageUri = contact.image?.uri || contact.rawImage?.uri;
+          if (imageUri) {
+            // Read the image and convert to base64
+            const base64 = await FileSystem.readAsStringAsync(imageUri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            // Determine mime type (assume jpeg for contacts)
+            imageBase64 = `data:image/jpeg;base64,${base64}`;
+            console.log(`Converted image for ${name}`);
+          }
+        } catch (imgError) {
+          console.log(`Could not convert image for ${name}:`, imgError);
+        }
+      }
+      
+      importedContacts.push({
+        name: name || 'Unknown',
+        phoneNumbers: contact.phoneNumbers?.map((p) => p.number || '').filter(n => n) || [],
+        emails: contact.emails?.map((e) => e.email || '').filter(e => e) || [],
+        company: contact.company,
+        jobTitle: contact.jobTitle,
+        birthday: contact.birthday ? 
+          new Date(
+            contact.birthday.year || 2000, 
+            (contact.birthday.month || 1) - 1, 
+            contact.birthday.day || 1
+          ).toLocaleDateString() : undefined,
+        image: contact.image,
+        imageBase64,
+        id: contact.id,
+        note: contact.note,
+        location,
+        addresses,
       });
+    }
 
     console.log(`Final imported contacts: ${importedContacts.length}`);
     return importedContacts;
