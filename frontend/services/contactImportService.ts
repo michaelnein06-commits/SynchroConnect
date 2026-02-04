@@ -131,26 +131,29 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
 
     console.log('Starting contact import with FULL field request...');
     
-    // ALL fields we want to fetch - only valid fields
-    const ALL_FIELDS = [
-      Contacts.Fields.ID,
-      Contacts.Fields.Name,
-      Contacts.Fields.FirstName,
-      Contacts.Fields.LastName,
-      Contacts.Fields.MiddleName,
-      Contacts.Fields.Nickname,
-      Contacts.Fields.PhoneNumbers,
-      Contacts.Fields.Emails,
-      Contacts.Fields.Company,
-      Contacts.Fields.JobTitle,
-      Contacts.Fields.Birthday,
-      Contacts.Fields.Image,
-      Contacts.Fields.ImageAvailable,
-      Contacts.Fields.Note,
-      Contacts.Fields.Addresses,
-      Contacts.Fields.UrlAddresses,
-      Contacts.Fields.ContactType,
+    // Build fields array dynamically, filtering out null/undefined fields
+    const FIELD_NAMES = [
+      'ID',
+      'Name', 
+      'FirstName',
+      'LastName',
+      'PhoneNumbers',
+      'Emails',
+      'Company',
+      'JobTitle',
+      'Birthday',
+      'Image',
+      'ImageAvailable',
+      'Note',
+      'Addresses',
     ];
+    
+    // Only include fields that exist and are not null
+    const ALL_FIELDS = FIELD_NAMES
+      .map(name => (Contacts.Fields as any)[name])
+      .filter(field => field !== null && field !== undefined);
+    
+    console.log('Using fields:', ALL_FIELDS);
     
     // Step 1: Get all contacts with all fields
     let contacts: Contacts.Contact[] = [];
