@@ -1,4 +1,5 @@
 import * as Contacts from 'expo-contacts';
+import * as FileSystem from 'expo-file-system';
 import { Platform, Alert, Linking } from 'react-native';
 
 export interface ImportedContact {
@@ -9,8 +10,11 @@ export interface ImportedContact {
   jobTitle?: string;
   birthday?: string;
   image?: any;
+  imageBase64?: string;  // Base64 encoded image
   id?: string;
   note?: string;
+  location?: string;  // Address/location
+  addresses?: string[];  // All addresses
 }
 
 export async function requestContactsPermission(): Promise<boolean> {
