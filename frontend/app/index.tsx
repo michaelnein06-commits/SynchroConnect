@@ -10,7 +10,6 @@ import ContactImportPrompt from '../components/ContactImportPrompt';
 import * as ImagePicker from 'expo-image-picker';
 import ContactSyncService from '../services/ContactSyncService';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 
 // Safe haptics wrapper
 const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => {
