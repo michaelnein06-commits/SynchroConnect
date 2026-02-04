@@ -239,25 +239,95 @@ export async function importPhoneContacts(): Promise<ImportedContact[]> {
           console.log(`Default method: Total available: ${result.total}, Retrieved: ${result.data.length}`);
           allContacts = result.data;
         } else {
-          console.log('Default method returned no data, trying minimal fields...');
-          // Try with minimal fields
-          const minimalResult = await Contacts.getContactsAsync({
+          console.log('Default method returned no data, trying with all fields again...');
+          // Try again with all fields but without pageOffset
+          const allFieldsResult = await Contacts.getContactsAsync({
             fields: [
               Contacts.Fields.Name,
+              Contacts.Fields.FirstName,
+              Contacts.Fields.LastName,
               Contacts.Fields.PhoneNumbers,
               Contacts.Fields.Emails,
+              Contacts.Fields.Company,
+              Contacts.Fields.JobTitle,
+              Contacts.Fields.Birthday,
+              Contacts.Fields.Image,
+              Contacts.Fields.ImageAvailable,
+              Contacts.Fields.RawImage,
+              Contacts.Fields.ID,
+              Contacts.Fields.Note,
+              Contacts.Fields.Addresses,
             ],
-            pageSize: 10000,
           });
           
-          if (minimalResult && minimalResult.data && minimalResult.data.length > 0) {
-            console.log(`Minimal method: Retrieved ${minimalResult.data.length} contacts`);
-            allContacts = minimalResult.data;
+          if (allFieldsResult && allFieldsResult.data && allFieldsResult.data.length > 0) {
+            console.log(`All fields method: Retrieved ${allFieldsResult.data.length} contacts`);
+            allContacts = allFieldsResult.data;
+          } else {
+            console.log('All fields method returned no data, trying minimal fields...');
+            // Last resort - minimal fields
+            const minimalResult = await Contacts.getContactsAsync({
+              fields: [
+                Contacts.Fields.Name,
+                Contacts.Fields.PhoneNumbers,
+                Contacts.Fields.Emails,
+              ],
+            });
+            
+            if (minimalResult && minimalResult.data && minimalResult.data.length > 0) {
+              console.log(`Minimal method: Retrieved ${minimalResult.data.length} contacts`);
+              console.log('WARNING: Only basic fields available - birthdays, images, notes, addresses may be missing!');
+              allContacts = minimalResult.data;
+            }
           }
         }
       } catch (fetchError) {
         console.log('Error fetching contacts:', fetchError);
       }
+    }
+
+    // If we still don't have contacts with all fields, try fetching additional data for each contact
+    if (allContacts.length > 0 && !allContacts[0].birthday && !allContacts[0].image) {
+      console.log('Attempting to fetch additional fields for each contact...');
+      const enrichedContacts: Contacts.Contact[] = [];
+      
+      // Only process first 100 to avoid timeout
+      const contactsToEnrich = allContacts.slice(0, 100);
+      
+      for (const contact of contactsToEnrich) {
+        if (contact.id) {
+          try {
+            const fullContact = await Contacts.getContactByIdAsync(contact.id, [
+              Contacts.Fields.Name,
+              Contacts.Fields.FirstName,
+              Contacts.Fields.LastName,
+              Contacts.Fields.PhoneNumbers,
+              Contacts.Fields.Emails,
+              Contacts.Fields.Company,
+              Contacts.Fields.JobTitle,
+              Contacts.Fields.Birthday,
+              Contacts.Fields.Image,
+              Contacts.Fields.RawImage,
+              Contacts.Fields.Note,
+              Contacts.Fields.Addresses,
+            ]);
+            if (fullContact) {
+              enrichedContacts.push(fullContact);
+            } else {
+              enrichedContacts.push(contact);
+            }
+          } catch (e) {
+            enrichedContacts.push(contact);
+          }
+        } else {
+          enrichedContacts.push(contact);
+        }
+      }
+      
+      // Add remaining contacts (not enriched)
+      enrichedContacts.push(...allContacts.slice(100));
+      allContacts = enrichedContacts;
+      console.log(`Enriched ${Math.min(100, contactsToEnrich.length)} contacts with additional fields`);
     }
 
     // Log warning if we got very few contacts
