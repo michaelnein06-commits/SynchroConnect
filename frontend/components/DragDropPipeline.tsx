@@ -8,11 +8,19 @@ import {
   Image,
   Dimensions,
   Alert,
+  Platform,
 } from 'react-native';
-import { DraxProvider, DraxView, DraxList } from 'react-native-drax';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+
+// Conditional import for drax (native only)
+let DraxProvider: any, DraxView: any;
+if (Platform.OS !== 'web') {
+  const drax = require('react-native-drax');
+  DraxProvider = drax.DraxProvider;
+  DraxView = drax.DraxView;
+}
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COLUMN_WIDTH = SCREEN_WIDTH * 0.75;
