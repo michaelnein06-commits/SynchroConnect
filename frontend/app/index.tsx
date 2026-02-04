@@ -874,24 +874,32 @@ export default function Index() {
       )}
       {drafts.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="mail-open-outline" size={64} color={COLORS.textLight} />
+          <View style={styles.emptyIconWrapper}>
+            <LinearGradient colors={COLORS.primaryGradient} style={styles.emptyIconGradient}>
+              <Ionicons name="sparkles" size={40} color={COLORS.surface} />
+            </LinearGradient>
+          </View>
           <Text style={styles.emptyText}>No AI Drafts Yet</Text>
-          <Text style={styles.emptySubtext}>Generate drafts from contacts</Text>
+          <Text style={styles.emptySubtext}>Generate personalized message drafts for your contacts using AI</Text>
         </View>
       ) : (
         drafts.map((draft) => (
           <View key={draft.id} style={styles.draftCard}>
             <View style={styles.draftHeader}>
-              <Text style={styles.draftContactName}>{draft.contact_name}</Text>
+              <View style={styles.draftHeaderLeft}>
+                <View style={styles.draftAIBadge}>
+                  <Ionicons name="sparkles" size={14} color={COLORS.primary} />
+                </View>
+                <Text style={styles.draftContactName}>{draft.contact_name}</Text>
+              </View>
               <TouchableOpacity 
                 style={styles.deleteDraftBtn}
                 onPress={() => handleDeleteDraft(draft.id)}
               >
-                <Ionicons name="trash-outline" size={18} color={COLORS.accent} />
+                <Ionicons name="close" size={18} color={COLORS.accent} />
               </TouchableOpacity>
             </View>
             <View style={styles.draftMessageContainer}>
-              <Ionicons name="sparkles" size={16} color={COLORS.primary} />
               <Text style={styles.draftMessage}>{draft.draft_message}</Text>
             </View>
             <View style={styles.draftActions}>
@@ -899,13 +907,14 @@ export default function Index() {
                 style={styles.copyButton}
                 onPress={() => copyDraftToClipboard(draft.draft_message)}
               >
-                <Ionicons name="copy-outline" size={18} color={COLORS.primary} />
-                <Text style={styles.copyButtonText}>Copy</Text>
+                <Ionicons name="copy" size={18} color={COLORS.surface} />
+                <Text style={styles.copyButtonText}>Copy to Clipboard</Text>
               </TouchableOpacity>
             </View>
           </View>
         ))
       )}
+      <View style={{ height: 100 }} />
     </ScrollView>
   );
 
@@ -915,7 +924,9 @@ export default function Index() {
         {user?.picture ? (
           <Image source={{ uri: user.picture }} style={styles.profileImage} />
         ) : (
-          <Ionicons name="person-circle-outline" size={80} color={COLORS.primary} />
+          <View style={styles.profileAvatarPlaceholder}>
+            <Ionicons name="person" size={50} color={COLORS.primary} />
+          </View>
         )}
         <Text style={styles.profileName}>{user?.name}</Text>
         <Text style={styles.profileEmail}>{user?.email}</Text>
