@@ -22,6 +22,7 @@ import { importPhoneContacts, formatContactForCRM, ImportedContact } from '../se
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
+// Force refresh v2
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 // Premium Color Palette
