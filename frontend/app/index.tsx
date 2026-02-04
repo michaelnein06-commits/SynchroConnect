@@ -170,6 +170,9 @@ export default function Index() {
   const [plannerSubTab, setPlannerSubTab] = useState<PlannerSubTab>('calendar');
   const [calendarView, setCalendarView] = useState<CalendarView>('month');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  // Drag and drop view mode
+  const [useDragDropPipeline, setUseDragDropPipeline] = useState(true);
+  const [useDragDropGroups, setUseDragDropGroups] = useState(true);
 
   // API headers with auth token
   const getAuthHeaders = () => ({
