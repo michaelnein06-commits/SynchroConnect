@@ -1377,25 +1377,16 @@ export default function Index() {
             <Text style={styles.birthdaySectionTitle}>
               <Ionicons name="calendar" size={18} color={COLORS.primary} /> Kommende Geburtstage
             </Text>
-            {contacts
-              .filter(c => c.birthday)
-              .sort((a, b) => {
-                const now = new Date();
-                const aDate = new Date(a.birthday || '');
-                const bDate = new Date(b.birthday || '');
-                aDate.setFullYear(now.getFullYear());
-                bDate.setFullYear(now.getFullYear());
-                if (aDate < now) aDate.setFullYear(now.getFullYear() + 1);
-                if (bDate < now) bDate.setFullYear(now.getFullYear() + 1);
-                return aDate.getTime() - bDate.getTime();
-              })
-              .slice(0, 5)
-              .map((contact) => {
-                const bd = new Date(contact.birthday || '');
-                const now = new Date();
-                bd.setFullYear(now.getFullYear());
-                if (bd < now) bd.setFullYear(now.getFullYear() + 1);
-                const daysUntil = Math.ceil((bd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            {upcomingBirthdays.length === 0 ? (
+              <View style={styles.noBirthdayContainer}>
+                <Ionicons name="gift-outline" size={40} color={COLORS.textLight} />
+                <Text style={styles.noBirthdayText}>Keine Geburtstage eingetragen</Text>
+                <Text style={styles.noBirthdayHint}>Füge Geburtstage zu deinen Kontakten hinzu</Text>
+              </View>
+            ) : (
+              upcomingBirthdays.map((item) => {
+                if (!item) return null;
+                const { contact, daysUntil, date } = item;
                 
                 return (
                   <TouchableOpacity
@@ -1406,24 +1397,33 @@ export default function Index() {
                     {contact.profile_picture ? (
                       <Image source={{ uri: contact.profile_picture }} style={styles.upcomingAvatar} />
                     ) : (
-                      <LinearGradient colors={getStageGradient(contact.pipeline_stage)} style={styles.upcomingAvatarPlaceholder}>
+                      <LinearGradient colors={COLORS.accentGradient} style={styles.upcomingAvatarPlaceholder}>
                         <Text style={styles.upcomingAvatarText}>{contact.name.charAt(0)}</Text>
                       </LinearGradient>
                     )}
                     <View style={styles.upcomingInfo}>
                       <Text style={styles.upcomingName}>{contact.name}</Text>
                       <Text style={styles.upcomingDate}>
-                        {bd.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}
+                        {date.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}
                       </Text>
                     </View>
-                    <View style={[styles.upcomingBadge, daysUntil <= 7 && styles.upcomingBadgeSoon]}>
-                      <Text style={[styles.upcomingBadgeText, daysUntil <= 7 && styles.upcomingBadgeTextSoon]}>
-                        {daysUntil === 0 ? 'Heute!' : daysUntil === 1 ? 'Morgen' : `in ${daysUntil} Tagen`}
+                    <View style={[
+                      styles.upcomingBadge, 
+                      daysUntil <= 7 && styles.upcomingBadgeSoon,
+                      daysUntil === 0 && styles.upcomingBadgeToday
+                    ]}>
+                      <Text style={[
+                        styles.upcomingBadgeText, 
+                        daysUntil <= 7 && styles.upcomingBadgeTextSoon,
+                        daysUntil === 0 && styles.upcomingBadgeTextToday
+                      ]}>
+                        {daysUntil === 0 ? '🎂 Heute!' : daysUntil === 1 ? 'Morgen' : `in ${daysUntil}d`}
                       </Text>
                     </View>
                   </TouchableOpacity>
                 );
-              })}
+              })
+            )}
           </View>
           <View style={{ height: 120 }} />
         </ScrollView>
