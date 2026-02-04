@@ -465,6 +465,91 @@ export default function Index() {
     }
   };
 
+  // Drag and drop handlers for Pipeline
+  const handleDragDropMoveContact = async (contactId: string, newStage: string) => {
+    try {
+      await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${contactId}`, {
+        pipeline_stage: newStage
+      }, getAuthHeaders());
+      
+      // Update local state immediately for responsiveness
+      setContacts(prevContacts => 
+        prevContacts.map(c => 
+          c.id === contactId ? { ...c, pipeline_stage: newStage } : c
+        )
+      );
+      
+      triggerHaptic('success');
+    } catch (error) {
+      console.error('Error moving contact:', error);
+      throw error;
+    }
+  };
+
+  // Drag and drop handlers for Groups
+  const handleDragDropAddToGroup = async (contactId: string, groupId: string) => {
+    try {
+      const contact = contacts.find(c => c.id === contactId);
+      if (!contact) return;
+      
+      const updatedGroups = [...(contact.groups || []), groupId];
+      
+      await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${contactId}`, {
+        groups: updatedGroups
+      }, getAuthHeaders());
+      
+      // Update local state immediately
+      setContacts(prevContacts => 
+        prevContacts.map(c => 
+          c.id === contactId ? { ...c, groups: updatedGroups } : c
+        )
+      );
+      
+      triggerHaptic('success');
+    } catch (error) {
+      console.error('Error adding contact to group:', error);
+      throw error;
+    }
+  };
+
+  const handleDragDropRemoveFromGroup = async (contactId: string, groupId: string) => {
+    try {
+      const contact = contacts.find(c => c.id === contactId);
+      if (!contact) return;
+      
+      const updatedGroups = (contact.groups || []).filter(g => g !== groupId);
+      
+      await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${contactId}`, {
+        groups: updatedGroups
+      }, getAuthHeaders());
+      
+      // Update local state immediately
+      setContacts(prevContacts => 
+        prevContacts.map(c => 
+          c.id === contactId ? { ...c, groups: updatedGroups } : c
+        )
+      );
+      
+      triggerHaptic('success');
+    } catch (error) {
+      console.error('Error removing contact from group:', error);
+      throw error;
+    }
+  };
+
+  const handleDragDropCreateGroup = async (name: string, description?: string) => {
+    try {
+      await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/groups`, {
+        name,
+        description
+      }, getAuthHeaders());
+      fetchGroups();
+    } catch (error) {
+      console.error('Error creating group:', error);
+      throw error;
+    }
+  };
+
   const getDaysUntilDue = (nextDue?: string) => {
     if (!nextDue) return null;
     const due = new Date(nextDue);
