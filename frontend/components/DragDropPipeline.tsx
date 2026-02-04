@@ -12,18 +12,24 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 
-// Conditional import for drax (native only)
-let DraxProvider: any, DraxView: any;
-if (Platform.OS !== 'web') {
-  const drax = require('react-native-drax');
-  DraxProvider = drax.DraxProvider;
-  DraxView = drax.DraxView;
-}
+// Safe haptics import
+const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => {
+  if (Platform.OS === 'web') return;
+  try {
+    const Haptics = await import('expo-haptics');
+    if (type === 'success') {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else if (type === 'medium') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } else {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  } catch (e) {}
+};
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COLUMN_WIDTH = SCREEN_WIDTH * 0.75;
+const COLUMN_WIDTH = Math.min(SCREEN_WIDTH * 0.75, 320);
 
 const COLORS = {
   primary: '#6366F1',
@@ -97,8 +103,8 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
   onContactPress,
   onRefresh,
 }) => {
-  const [draggingContact, setDraggingContact] = useState<Contact | null>(null);
-  const [receivingStage, setReceivingStage] = useState<string | null>(null);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [showMoveModal, setShowMoveModal] = useState(false);
 
   const getDaysUntilDue = (nextDue?: string) => {
     if (!nextDue) return null;
@@ -124,41 +130,31 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
     }).length;
   }, [contacts]);
 
-  const handleDragStart = useCallback((contact: Contact) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setDraggingContact(contact);
+  const handleLongPress = useCallback((contact: Contact) => {
+    triggerHaptic('medium');
+    setSelectedContact(contact);
+    setShowMoveModal(true);
   }, []);
 
-  const handleDragEnd = useCallback(() => {
-    setDraggingContact(null);
-    setReceivingStage(null);
-  }, []);
-
-  const handleReceiveDragEnter = useCallback((stage: string) => {
-    if (draggingContact && draggingContact.pipeline_stage !== stage) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setReceivingStage(stage);
+  const handleMoveToStage = useCallback(async (newStage: string) => {
+    if (!selectedContact) return;
+    if (selectedContact.pipeline_stage === newStage) {
+      setShowMoveModal(false);
+      setSelectedContact(null);
+      return;
     }
-  }, [draggingContact]);
-
-  const handleReceiveDragExit = useCallback(() => {
-    setReceivingStage(null);
-  }, []);
-
-  const handleDrop = useCallback(async (contact: Contact, newStage: string) => {
-    if (contact.pipeline_stage === newStage) return;
     
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setDraggingContact(null);
-    setReceivingStage(null);
+    triggerHaptic('success');
+    setShowMoveModal(false);
     
     try {
-      await onMoveContact(contact.id, newStage);
+      await onMoveContact(selectedContact.id, newStage);
+      setSelectedContact(null);
     } catch (error) {
       console.error('Error moving contact:', error);
       Alert.alert('Error', 'Failed to move contact');
     }
-  }, [onMoveContact]);
+  }, [selectedContact, onMoveContact]);
 
   const renderContactCard = (contact: Contact, stage: string) => {
     const daysUntil = getDaysUntilDue(contact.next_due);
@@ -167,80 +163,69 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
     const stageColor = getStageColor(stage);
 
     return (
-      <DraxView
+      <TouchableOpacity
         key={contact.id}
         style={[
           styles.contactCard,
           isOverdue && !isNewContact && styles.contactCardOverdue,
         ]}
-        draggingStyle={styles.contactCardDragging}
-        dragReleasedStyle={styles.contactCardReleased}
-        hoverDraggingStyle={styles.contactCardHoverDragging}
-        dragPayload={contact}
-        longPressDelay={150}
-        onDragStart={() => handleDragStart(contact)}
-        onDragEnd={handleDragEnd}
-        onDragDrop={() => {}}
+        onPress={() => onContactPress(contact.id)}
+        onLongPress={() => handleLongPress(contact)}
+        delayLongPress={300}
+        activeOpacity={0.8}
       >
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => onContactPress(contact.id)}
-          style={styles.contactCardTouchable}
-        >
-          <View style={styles.contactCardContent}>
-            {contact.profile_picture ? (
-              <Image source={{ uri: contact.profile_picture }} style={styles.contactAvatar} />
-            ) : (
-              <View style={[styles.contactAvatarPlaceholder, { backgroundColor: stageColor + '20' }]}>
-                <Text style={[styles.contactAvatarText, { color: stageColor }]}>
-                  {contact.name.charAt(0).toUpperCase()}
+        <View style={styles.contactCardContent}>
+          {contact.profile_picture ? (
+            <Image source={{ uri: contact.profile_picture }} style={styles.contactAvatar} />
+          ) : (
+            <View style={[styles.contactAvatarPlaceholder, { backgroundColor: stageColor + '20' }]}>
+              <Text style={[styles.contactAvatarText, { color: stageColor }]}>
+                {contact.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <View style={styles.contactInfo}>
+            <Text style={styles.contactName} numberOfLines={1}>{contact.name}</Text>
+            {contact.job && (
+              <Text style={styles.contactJob} numberOfLines={1}>{contact.job}</Text>
+            )}
+          </View>
+          <View style={styles.contactRight}>
+            {daysUntil !== null && !isNewContact && (
+              <View style={[
+                styles.dueBadge,
+                isOverdue ? styles.dueBadgeOverdue : styles.dueBadgeOk
+              ]}>
+                <Ionicons 
+                  name={isOverdue ? "alert-circle" : "time-outline"} 
+                  size={12} 
+                  color={isOverdue ? COLORS.accent : COLORS.success} 
+                />
+                <Text style={[
+                  styles.dueText,
+                  isOverdue ? styles.dueTextOverdue : styles.dueTextOk
+                ]}>
+                  {isOverdue ? `${Math.abs(daysUntil)}d` : `${daysUntil}d`}
                 </Text>
               </View>
             )}
-            <View style={styles.contactInfo}>
-              <Text style={styles.contactName} numberOfLines={1}>{contact.name}</Text>
-              {contact.job && (
-                <Text style={styles.contactJob} numberOfLines={1}>{contact.job}</Text>
-              )}
-            </View>
-            <View style={styles.contactRight}>
-              {daysUntil !== null && !isNewContact && (
-                <View style={[
-                  styles.dueBadge,
-                  isOverdue ? styles.dueBadgeOverdue : styles.dueBadgeOk
-                ]}>
-                  <Ionicons 
-                    name={isOverdue ? "alert-circle" : "time-outline"} 
-                    size={12} 
-                    color={isOverdue ? COLORS.accent : COLORS.success} 
-                  />
-                  <Text style={[
-                    styles.dueText,
-                    isOverdue ? styles.dueTextOverdue : styles.dueTextOk
-                  ]}>
-                    {isOverdue ? `${Math.abs(daysUntil)}d` : `${daysUntil}d`}
-                  </Text>
-                </View>
-              )}
-              {isNewContact && (
-                <View style={[styles.dueBadge, { backgroundColor: COLORS.new + '20' }]}>
-                  <Ionicons name="arrow-forward-outline" size={12} color={COLORS.new} />
-                </View>
-              )}
-            </View>
+            {isNewContact && (
+              <View style={[styles.dueBadge, { backgroundColor: COLORS.new + '20' }]}>
+                <Ionicons name="arrow-forward-outline" size={12} color={COLORS.new} />
+              </View>
+            )}
           </View>
-          <View style={styles.dragHandle}>
-            <Ionicons name="menu" size={16} color={COLORS.textLight} />
-          </View>
-        </TouchableOpacity>
-      </DraxView>
+        </View>
+        <View style={styles.dragHint}>
+          <Ionicons name="ellipsis-vertical" size={14} color={COLORS.textLight} />
+        </View>
+      </TouchableOpacity>
     );
   };
 
   const renderStageColumn = (stage: string) => {
     const stageContacts = contactsByStage[stage] || [];
     const stageColor = getStageColor(stage);
-    const isReceiving = receivingStage === stage;
     const overdueInStage = stageContacts.filter(c => {
       if (c.pipeline_stage === 'New') return false;
       const days = getDaysUntilDue(c.next_due);
@@ -248,22 +233,7 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
     }).length;
 
     return (
-      <DraxView
-        key={stage}
-        style={[
-          styles.stageColumn,
-          isReceiving && styles.stageColumnReceiving,
-          { borderColor: isReceiving ? stageColor : COLORS.borderLight }
-        ]}
-        receivingStyle={[styles.stageColumnReceiving, { borderColor: stageColor }]}
-        onReceiveDragEnter={() => handleReceiveDragEnter(stage)}
-        onReceiveDragExit={handleReceiveDragExit}
-        onReceiveDragDrop={({ dragged: { payload } }) => {
-          if (payload) {
-            handleDrop(payload as Contact, stage);
-          }
-        }}
-      >
+      <View key={stage} style={styles.stageColumn}>
         {/* Stage Header */}
         <View style={styles.stageHeader}>
           <LinearGradient 
@@ -288,16 +258,6 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
           </LinearGradient>
         </View>
 
-        {/* Drop Zone Indicator */}
-        {isReceiving && draggingContact && (
-          <View style={[styles.dropZoneIndicator, { backgroundColor: stageColor + '15' }]}>
-            <Ionicons name="add-circle" size={24} color={stageColor} />
-            <Text style={[styles.dropZoneText, { color: stageColor }]}>
-              Drop here to move to {stage}
-            </Text>
-          </View>
-        )}
-
         {/* Contacts List */}
         <ScrollView 
           style={styles.stageContent}
@@ -309,63 +269,107 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
             <View style={styles.emptyStage}>
               <Ionicons name="people-outline" size={32} color={COLORS.textLight} />
               <Text style={styles.emptyStageText}>No contacts</Text>
-              <Text style={styles.emptyStageHint}>Drag contacts here</Text>
+              <Text style={styles.emptyStageHint}>Long press to move</Text>
             </View>
           ) : (
             stageContacts.map(contact => renderContactCard(contact, stage))
           )}
         </ScrollView>
-      </DraxView>
+      </View>
     );
   };
 
   return (
-    <DraxProvider>
-      <View style={styles.container}>
-        {/* Header Stats */}
-        <View style={styles.headerStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{contacts.length}</Text>
-            <Text style={styles.statLabel}>Total Contacts</Text>
-          </View>
-          {totalOverdue > 0 && (
-            <View style={[styles.statItem, styles.statItemOverdue]}>
-              <Text style={[styles.statNumber, { color: COLORS.accent }]}>{totalOverdue}</Text>
-              <Text style={styles.statLabel}>Overdue</Text>
-            </View>
-          )}
-          <View style={styles.dragHintContainer}>
-            <Ionicons name="hand-left-outline" size={16} color={COLORS.primary} />
-            <Text style={styles.dragHint}>Long press & drag to move</Text>
-          </View>
+    <View style={styles.container}>
+      {/* Header Stats */}
+      <View style={styles.headerStats}>
+        <View style={styles.statItem}>
+          <Text style={styles.statNumber}>{contacts.length}</Text>
+          <Text style={styles.statLabel}>Total Contacts</Text>
         </View>
-
-        {/* Kanban Board */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.boardContainer}
-          contentContainerStyle={styles.boardContent}
-          decelerationRate="fast"
-          snapToInterval={COLUMN_WIDTH + 12}
-          snapToAlignment="start"
-        >
-          {PIPELINE_STAGES.map(stage => renderStageColumn(stage))}
-        </ScrollView>
-
-        {/* Dragging Overlay Info */}
-        {draggingContact && (
-          <View style={styles.draggingOverlay}>
-            <View style={styles.draggingInfo}>
-              <Ionicons name="move" size={18} color={COLORS.primary} />
-              <Text style={styles.draggingText}>
-                Moving: {draggingContact.name}
-              </Text>
-            </View>
+        {totalOverdue > 0 && (
+          <View style={[styles.statItem, styles.statItemOverdue]}>
+            <Text style={[styles.statNumber, { color: COLORS.accent }]}>{totalOverdue}</Text>
+            <Text style={styles.statLabel}>Overdue</Text>
           </View>
         )}
+        <View style={styles.dragHintContainer}>
+          <Ionicons name="hand-left-outline" size={16} color={COLORS.primary} />
+          <Text style={styles.dragHintText}>Long press to move</Text>
+        </View>
       </View>
-    </DraxProvider>
+
+      {/* Kanban Board */}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.boardContainer}
+        contentContainerStyle={styles.boardContent}
+        decelerationRate="fast"
+        snapToInterval={COLUMN_WIDTH + 12}
+        snapToAlignment="start"
+      >
+        {PIPELINE_STAGES.map(stage => renderStageColumn(stage))}
+      </ScrollView>
+
+      {/* Move Contact Modal */}
+      {showMoveModal && selectedContact && (
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalBackdrop} 
+            onPress={() => {
+              setShowMoveModal(false);
+              setSelectedContact(null);
+            }}
+            activeOpacity={1}
+          />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Move "{selectedContact.name}"</Text>
+            <Text style={styles.modalSubtitle}>Select pipeline stage</Text>
+            
+            <View style={styles.stageOptions}>
+              {PIPELINE_STAGES.map(stage => {
+                const isCurrentStage = selectedContact.pipeline_stage === stage;
+                const stageColor = getStageColor(stage);
+                
+                return (
+                  <TouchableOpacity
+                    key={stage}
+                    style={[
+                      styles.stageOption,
+                      isCurrentStage && { backgroundColor: stageColor + '15', borderColor: stageColor }
+                    ]}
+                    onPress={() => handleMoveToStage(stage)}
+                  >
+                    <View style={[styles.stageOptionDot, { backgroundColor: stageColor }]} />
+                    <Text style={[
+                      styles.stageOptionText,
+                      isCurrentStage && { color: stageColor, fontWeight: '700' }
+                    ]}>
+                      {stage}
+                    </Text>
+                    {isCurrentStage && (
+                      <Ionicons name="checkmark-circle" size={20} color={stageColor} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => {
+                setShowMoveModal(false);
+                setSelectedContact(null);
+              }}
+            >
+              <Text style={styles.modalCloseBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </View>
   );
 };
 
@@ -410,7 +414,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     gap: 6,
   },
-  dragHint: {
+  dragHintText: {
     fontSize: 12,
     color: COLORS.primary,
     fontWeight: '500',
@@ -421,21 +425,16 @@ const styles = StyleSheet.create({
   boardContent: {
     paddingHorizontal: 12,
     paddingVertical: 16,
-    gap: 12,
   },
   stageColumn: {
     width: COLUMN_WIDTH,
     backgroundColor: COLORS.surface,
     borderRadius: 20,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: COLORS.borderLight,
     overflow: 'hidden',
     marginRight: 12,
     maxHeight: '100%',
-  },
-  stageColumnReceiving: {
-    borderWidth: 2,
-    borderStyle: 'dashed',
   },
   stageHeader: {
     overflow: 'hidden',
@@ -486,18 +485,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
-  dropZoneIndicator: {
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderLight,
-    gap: 8,
-  },
-  dropZoneText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
   stageContent: {
     flex: 1,
     maxHeight: 450,
@@ -533,29 +520,13 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: 1,
     borderColor: COLORS.borderLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
   },
   contactCardOverdue: {
     borderColor: COLORS.accent + '40',
     backgroundColor: COLORS.accent + '05',
-  },
-  contactCardDragging: {
-    opacity: 0.9,
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
-    transform: [{ scale: 1.02 }],
-  },
-  contactCardReleased: {
-    opacity: 0.5,
-  },
-  contactCardHoverDragging: {
-    borderColor: COLORS.primary,
-    borderWidth: 2,
-  },
-  contactCardTouchable: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
   },
   contactCardContent: {
     flex: 1,
@@ -619,35 +590,89 @@ const styles = StyleSheet.create({
   dueTextOverdue: {
     color: COLORS.accent,
   },
-  dragHandle: {
-    paddingLeft: 8,
-    paddingRight: 4,
+  dragHint: {
+    paddingLeft: 4,
   },
-  draggingOverlay: {
+  // Modal
+  modalOverlay: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'flex-end',
   },
-  draggingInfo: {
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: COLORS.border,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  stageOptions: {
+    gap: 8,
+  },
+  stageOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-    gap: 10,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    gap: 12,
   },
-  draggingText: {
-    fontSize: 14,
-    fontWeight: '600',
+  stageOptionDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  stageOptionText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
     color: COLORS.text,
+  },
+  modalCloseBtn: {
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: COLORS.background,
+    alignItems: 'center',
+  },
+  modalCloseBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
   },
 });
 
