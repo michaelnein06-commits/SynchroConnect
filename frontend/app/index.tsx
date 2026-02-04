@@ -878,6 +878,21 @@ export default function Index() {
   );
 
   const renderGroups = () => {
+    // Use the Drag & Drop Groups view
+    return (
+      <DragDropGroups
+        contacts={contacts}
+        groups={groups}
+        onAddContactToGroup={handleDragDropAddToGroup}
+        onRemoveContactFromGroup={handleDragDropRemoveFromGroup}
+        onContactPress={(contactId) => router.push(`/contact/${contactId}`)}
+        onGroupPress={(groupId) => router.push(`/group/${groupId}`)}
+        onCreateGroup={handleDragDropCreateGroup}
+      />
+    );
+  };
+
+  const renderOldGroups = () => {
     // Filter groups by search query
     const filteredGroups = groups.filter(g => 
       g.name.toLowerCase().includes(groupSearchQuery.toLowerCase()) ||
