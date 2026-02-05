@@ -2094,7 +2094,7 @@ export default function Index() {
         >
           {/* Birthday Summary Card */}
           <View style={styles.birthdaySummaryCard}>
-            <LinearGradient colors={COLORS.accentGradient} style={styles.birthdaySummaryGradient}>
+            <LinearGradient colors={['#FF69B4', '#FF1493']} style={styles.birthdaySummaryGradient}>
               <View style={styles.birthdaySummaryContent}>
                 <Ionicons name="gift" size={28} color={COLORS.surface} />
                 <View style={styles.birthdaySummaryText}>
@@ -2103,10 +2103,10 @@ export default function Index() {
                   </Text>
                   <Text style={styles.birthdaySummarySubtitle}>
                     {upcomingBirthdays.length > 0 && upcomingBirthdays[0]?.daysUntil === 0
-                      ? `Heute: ${upcomingBirthdays[0]?.contact.name}`
+                      ? `Today: ${upcomingBirthdays[0]?.contact.name}`
                       : upcomingBirthdays.length > 0
-                        ? `Nächster in ${upcomingBirthdays[0]?.daysUntil} Tagen`
-                        : 'Keine eingetragen'}
+                        ? `Next in ${upcomingBirthdays[0]?.daysUntil} days`
+                        : 'None recorded'}
                   </Text>
                 </View>
               </View>
@@ -2122,7 +2122,7 @@ export default function Index() {
                 onPress={() => setCalendarView(view)}
               >
                 <Text style={[styles.calendarViewText, calendarView === view && styles.calendarViewTextActive]}>
-                  {view === 'week' ? 'Woche' : view === 'month' ? 'Monat' : 'Jahr'}
+                  {view === 'week' ? 'Week' : view === 'month' ? 'Month' : 'Year'}
                 </Text>
               </TouchableOpacity>
             ))}
