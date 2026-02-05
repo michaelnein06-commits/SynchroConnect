@@ -74,6 +74,15 @@ export default function Settings() {
 
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [showDraftLanguageModal, setShowDraftLanguageModal] = useState(false);
+  
+  // Google Calendar state
+  const [googleCalendarStatus, setGoogleCalendarStatus] = useState<{
+    is_configured: boolean;
+    is_connected: boolean;
+    message: string;
+    setup_instructions?: any;
+  } | null>(null);
+  const [loadingGoogleStatus, setLoadingGoogleStatus] = useState(false);
 
   useEffect(() => {
     // Sync settings with global language on mount
@@ -82,7 +91,89 @@ export default function Settings() {
 
   useEffect(() => {
     fetchProfile();
+    fetchGoogleCalendarStatus();
   }, []);
+
+  const fetchGoogleCalendarStatus = async () => {
+    setLoadingGoogleStatus(true);
+    try {
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/google-calendar/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setGoogleCalendarStatus(response.data);
+    } catch (error) {
+      console.error('Error fetching Google Calendar status:', error);
+      setGoogleCalendarStatus({
+        is_configured: false,
+        is_connected: false,
+        message: 'Google Calendar nicht konfiguriert',
+      });
+    } finally {
+      setLoadingGoogleStatus(false);
+    }
+  };
+
+  const connectGoogleCalendar = async () => {
+    if (!googleCalendarStatus?.is_configured) {
+      Alert.alert(
+        'Google Calendar Setup',
+        'Um Google Calendar zu nutzen, müssen Sie:\n\n1. Google Cloud Console öffnen\n2. Calendar API aktivieren\n3. OAuth Credentials erstellen\n4. Client ID & Secret in backend/.env eintragen',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/google-calendar/auth-url`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const { auth_url } = response.data;
+      // Open in browser for OAuth
+      const { Linking } = await import('react-native');
+      Linking.openURL(auth_url);
+    } catch (error: any) {
+      Alert.alert('Fehler', error.response?.data?.detail || 'Konnte Google Calendar nicht verbinden');
+    }
+  };
+
+  const disconnectGoogleCalendar = async () => {
+    Alert.alert(
+      'Google Calendar trennen',
+      'Möchtest du die Verbindung zu Google Calendar wirklich trennen?',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        {
+          text: 'Trennen',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`${EXPO_PUBLIC_BACKEND_URL}/api/google-calendar/disconnect`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              fetchGoogleCalendarStatus();
+              Alert.alert('✓', 'Google Calendar getrennt');
+            } catch (error) {
+              Alert.alert('Fehler', 'Konnte nicht trennen');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const importFromGoogleCalendar = async () => {
+    try {
+      const response = await axios.post(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/google-calendar/import-from-google`,
+        { days_ahead: 30 },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      Alert.alert('✓', `${response.data.imported_count} Termine importiert`);
+    } catch (error: any) {
+      Alert.alert('Fehler', error.response?.data?.detail || 'Import fehlgeschlagen');
+    }
+  };
 
   const fetchProfile = async () => {
     try {
