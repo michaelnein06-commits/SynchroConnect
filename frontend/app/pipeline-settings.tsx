@@ -206,7 +206,9 @@ export default function PipelineSettings() {
       enabled: true,
     };
     
-    setStages([...stages, newStage]);
+    // Add and sort by interval (smallest first)
+    const updatedStages = [...stages, newStage].sort((a, b) => a.interval_days - b.interval_days);
+    setStages(updatedStages);
     setShowAddModal(false);
     resetNewStageForm();
   };
