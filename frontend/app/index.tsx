@@ -1057,6 +1057,14 @@ export default function Index() {
     <ScrollView 
       style={styles.content} 
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl 
+          refreshing={refreshing} 
+          onRefresh={onRefresh}
+          tintColor={COLORS.primary}
+          colors={[COLORS.primary]}
+        />
+      }
     >
       {filteredContacts.length === 0 ? (
         <View style={styles.emptyContainer}>
