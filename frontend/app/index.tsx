@@ -3115,6 +3115,311 @@ export default function Index() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Create Calendar Event Modal */}
+      <Modal
+        visible={showCreateEventModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCreateEventModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowCreateEventModal(false)}>
+          <Pressable style={styles.createEventModal} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Neuer Termin</Text>
+            
+            <ScrollView style={styles.createEventForm} showsVerticalScrollIndicator={false}>
+              {/* Title */}
+              <Text style={styles.createGroupLabel}>Titel *</Text>
+              <TextInput
+                style={styles.createGroupInput}
+                placeholder="Termin Titel"
+                placeholderTextColor={COLORS.textLight}
+                value={newEventData.title}
+                onChangeText={(text) => setNewEventData(prev => ({ ...prev, title: text }))}
+              />
+              
+              {/* Description */}
+              <Text style={styles.createGroupLabel}>Beschreibung</Text>
+              <TextInput
+                style={[styles.createGroupInput, { height: 80, textAlignVertical: 'top' }]}
+                placeholder="Beschreibung (optional)"
+                placeholderTextColor={COLORS.textLight}
+                value={newEventData.description}
+                onChangeText={(text) => setNewEventData(prev => ({ ...prev, description: text }))}
+                multiline
+                numberOfLines={3}
+              />
+              
+              {/* Date */}
+              <Text style={styles.createGroupLabel}>Datum</Text>
+              <TouchableOpacity 
+                style={styles.createGroupInput}
+                onPress={() => {
+                  setNewEventData(prev => ({ ...prev, date: selectedDate }));
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={{ color: COLORS.text }}>{newEventData.date}</Text>
+                  <Ionicons name="calendar" size={20} color={COLORS.primary} />
+                </View>
+              </TouchableOpacity>
+              
+              {/* Time Row */}
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.createGroupLabel}>Start</Text>
+                  <TextInput
+                    style={styles.createGroupInput}
+                    placeholder="09:00"
+                    placeholderTextColor={COLORS.textLight}
+                    value={newEventData.start_time}
+                    onChangeText={(text) => setNewEventData(prev => ({ ...prev, start_time: text }))}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.createGroupLabel}>Ende</Text>
+                  <TextInput
+                    style={styles.createGroupInput}
+                    placeholder="10:00"
+                    placeholderTextColor={COLORS.textLight}
+                    value={newEventData.end_time}
+                    onChangeText={(text) => setNewEventData(prev => ({ ...prev, end_time: text }))}
+                  />
+                </View>
+              </View>
+              
+              {/* Participants */}
+              <Text style={styles.createGroupLabel}>Teilnehmer</Text>
+              <TouchableOpacity
+                style={[styles.createGroupInput, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                onPress={() => setShowParticipantPicker(true)}
+              >
+                <Text style={{ color: newEventData.participants.length > 0 ? COLORS.text : COLORS.textLight }}>
+                  {newEventData.participants.length > 0 
+                    ? `${newEventData.participants.length} Kontakt(e) ausgewählt`
+                    : 'Kontakte auswählen'}
+                </Text>
+                <Ionicons name="people" size={20} color={COLORS.primary} />
+              </TouchableOpacity>
+              
+              {/* Show selected participants */}
+              {newEventData.participants.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                  {newEventData.participants.map(pid => {
+                    const contact = contacts.find(c => c.id === pid);
+                    return contact ? (
+                      <View key={pid} style={styles.participantChip}>
+                        <Text style={styles.participantChipText}>{contact.name}</Text>
+                        <TouchableOpacity onPress={() => {
+                          setNewEventData(prev => ({
+                            ...prev,
+                            participants: prev.participants.filter(id => id !== pid)
+                          }));
+                        }}>
+                          <Ionicons name="close-circle" size={16} color={COLORS.textLight} />
+                        </TouchableOpacity>
+                      </View>
+                    ) : null;
+                  })}
+                </View>
+              )}
+              
+              {/* Color */}
+              <Text style={styles.createGroupLabel}>Farbe</Text>
+              <View style={styles.colorPicker}>
+                {['#5D3FD3', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#EC4899'].map((color) => (
+                  <TouchableOpacity
+                    key={color}
+                    style={[
+                      styles.colorOption,
+                      { backgroundColor: color },
+                      newEventData.color === color && styles.colorOptionSelected,
+                    ]}
+                    onPress={() => setNewEventData(prev => ({ ...prev, color }))}
+                  >
+                    {newEventData.color === color && (
+                      <Ionicons name="checkmark" size={16} color="#fff" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+            
+            <TouchableOpacity 
+              style={styles.createGroupButton}
+              onPress={createCalendarEvent}
+            >
+              <LinearGradient colors={COLORS.primaryGradient} style={styles.createGroupButtonGradient}>
+                <Ionicons name="calendar" size={20} color="#fff" />
+                <Text style={styles.createGroupButtonText}>Termin erstellen</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.modalCloseButton}
+              onPress={() => setShowCreateEventModal(false)}
+            >
+              <Text style={styles.modalCloseButtonText}>{t('cancel')}</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Participant Picker Modal */}
+      <Modal
+        visible={showParticipantPicker}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowParticipantPicker(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowParticipantPicker(false)}>
+          <Pressable style={styles.participantPickerModal} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Kontakte auswählen</Text>
+            
+            <ScrollView style={{ maxHeight: 400 }}>
+              {contacts.map(contact => {
+                const isSelected = newEventData.participants.includes(contact.id);
+                return (
+                  <TouchableOpacity
+                    key={contact.id}
+                    style={[styles.participantOption, isSelected && styles.participantOptionSelected]}
+                    onPress={() => {
+                      setNewEventData(prev => ({
+                        ...prev,
+                        participants: isSelected 
+                          ? prev.participants.filter(id => id !== contact.id)
+                          : [...prev.participants, contact.id]
+                      }));
+                    }}
+                  >
+                    {contact.profile_picture ? (
+                      <Image source={{ uri: contact.profile_picture }} style={styles.participantAvatar} />
+                    ) : (
+                      <View style={[styles.participantAvatarPlaceholder, { backgroundColor: COLORS.primary + '20' }]}>
+                        <Text style={{ color: COLORS.primary, fontWeight: '600' }}>{contact.name.charAt(0)}</Text>
+                      </View>
+                    )}
+                    <Text style={styles.participantName}>{contact.name}</Text>
+                    {isSelected && <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            
+            <TouchableOpacity 
+              style={styles.createGroupButton}
+              onPress={() => setShowParticipantPicker(false)}
+            >
+              <LinearGradient colors={COLORS.primaryGradient} style={styles.createGroupButtonGradient}>
+                <Ionicons name="checkmark" size={20} color="#fff" />
+                <Text style={styles.createGroupButtonText}>Fertig</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Day View Modal */}
+      <Modal
+        visible={dayViewDate !== null}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setDayViewDate(null)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setDayViewDate(null)}>
+          <Pressable style={styles.dayViewModal} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalHandle} />
+            <View style={styles.dayViewHeader}>
+              <Text style={styles.dayViewTitle}>
+                {dayViewDate ? new Date(dayViewDate).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
+              </Text>
+              <TouchableOpacity
+                style={styles.dayViewAddBtn}
+                onPress={() => {
+                  setNewEventData(prev => ({ ...prev, date: dayViewDate || selectedDate }));
+                  setDayViewDate(null);
+                  setShowCreateEventModal(true);
+                }}
+              >
+                <Ionicons name="add-circle" size={28} color={COLORS.primary} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={{ flex: 1 }}>
+              {/* Birthdays on this day */}
+              {dayViewDate && getContactsForDate(dayViewDate).length > 0 && (
+                <View style={styles.dayViewSection}>
+                  <Text style={styles.dayViewSectionTitle}>
+                    <Ionicons name="gift" size={16} color="#FF69B4" /> Geburtstage
+                  </Text>
+                  {getContactsForDate(dayViewDate).map((contact: Contact) => (
+                    <TouchableOpacity
+                      key={contact.id}
+                      style={styles.dayViewEventCard}
+                      onPress={() => {
+                        setDayViewDate(null);
+                        router.push(`/contact/${contact.id}`);
+                      }}
+                    >
+                      <View style={[styles.dayViewEventColor, { backgroundColor: '#FF69B4' }]} />
+                      <View style={styles.dayViewEventInfo}>
+                        <Text style={styles.dayViewEventTitle}>{contact.name}s Geburtstag</Text>
+                        <Text style={styles.dayViewEventTime}>Ganztägig</Text>
+                      </View>
+                      <Ionicons name="gift" size={20} color="#FF69B4" />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              
+              {/* Events on this day */}
+              <View style={styles.dayViewSection}>
+                <Text style={styles.dayViewSectionTitle}>
+                  <Ionicons name="calendar" size={16} color={COLORS.primary} /> Termine
+                </Text>
+                {dayViewEvents.length === 0 ? (
+                  <View style={styles.dayViewEmpty}>
+                    <Ionicons name="calendar-outline" size={40} color={COLORS.textLight} />
+                    <Text style={styles.dayViewEmptyText}>Keine Termine</Text>
+                  </View>
+                ) : (
+                  dayViewEvents.map(event => (
+                    <View key={event.id} style={styles.dayViewEventCard}>
+                      <View style={[styles.dayViewEventColor, { backgroundColor: event.color }]} />
+                      <View style={styles.dayViewEventInfo}>
+                        <Text style={styles.dayViewEventTitle}>{event.title}</Text>
+                        <Text style={styles.dayViewEventTime}>
+                          {event.all_day ? 'Ganztägig' : `${event.start_time}${event.end_time ? ` - ${event.end_time}` : ''}`}
+                        </Text>
+                        {event.participant_details && event.participant_details.length > 0 && (
+                          <View style={{ flexDirection: 'row', marginTop: 4 }}>
+                            <Ionicons name="people" size={14} color={COLORS.textLight} />
+                            <Text style={styles.dayViewEventParticipants}>
+                              {' '}{event.participant_details.map(p => p.name).join(', ')}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <TouchableOpacity onPress={() => deleteCalendarEvent(event.id)}>
+                        <Ionicons name="trash-outline" size={20} color={COLORS.accent} />
+                      </TouchableOpacity>
+                    </View>
+                  ))
+                )}
+              </View>
+            </ScrollView>
+            
+            <TouchableOpacity 
+              style={styles.modalCloseButton}
+              onPress={() => setDayViewDate(null)}
+            >
+              <Text style={styles.modalCloseButtonText}>Schließen</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
         </View>
       </Pressable>
     </KeyboardAvoidingView>
