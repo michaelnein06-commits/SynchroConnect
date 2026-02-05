@@ -1537,6 +1537,50 @@ const styles = StyleSheet.create({
   groupsDoneButton: { backgroundColor: COLORS.primary, padding: 16, borderRadius: 16, alignItems: 'center', marginTop: 16 },
   groupsDoneText: { fontSize: 17, fontWeight: '600', color: COLORS.surface },
   
+  // Profile Badges Row
+  profileBadgesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  profileFrequencyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    gap: 6,
+  },
+  profileFrequencyText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  profileGroupBadges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  profileGroupBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 5,
+  },
+  profileGroupDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  profileGroupText: {
+    fontSize: 12,
+    fontWeight: '600',
+    maxWidth: 80,
+  },
+  
   // Draft Modal
   draftModalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingTop: 12 },
   draftModalHeader: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 20 },
