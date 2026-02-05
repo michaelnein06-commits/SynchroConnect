@@ -23,7 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 const COLORS = {
-  primary: '#4F46E5',
+  primary: '#5D3FD3',
   accent: '#FF6B6B',
   background: '#F8FAFC',
   surface: '#FFFFFF',
