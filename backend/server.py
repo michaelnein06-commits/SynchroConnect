@@ -289,7 +289,12 @@ def calculate_target_interval(pipeline_stage: str) -> int:
     return intervals.get(pipeline_stage, 30)
 
 def calculate_next_due_with_random_factor(last_contact_date_str: str, target_interval_days: int) -> str:
-    """Calculate next due date with random factor (-5 to +5 days)"""
+    """Calculate next due date with optional random factor
+    Random factor is proportional to interval: 
+    - Short intervals (<=7 days): no random factor
+    - Medium intervals (8-30 days): ±1-2 days
+    - Long intervals (>30 days): ±3-5 days
+    """
     if not last_contact_date_str:
         last_contact_date_str = datetime.utcnow().isoformat()
     
@@ -298,8 +303,17 @@ def calculate_next_due_with_random_factor(last_contact_date_str: str, target_int
     except:
         last_contact = datetime.utcnow()
     
-    random_factor = random.randint(-5, 5)
-    next_due = last_contact + timedelta(days=target_interval_days + random_factor)
+    # Calculate proportional random factor based on interval length
+    if target_interval_days <= 7:
+        random_factor = 0  # No randomness for daily/weekly
+    elif target_interval_days <= 30:
+        random_factor = random.randint(-1, 1)  # Slight variance for bi-weekly/monthly
+    else:
+        random_factor = random.randint(-3, 3)  # More variance for quarterly/annually
+    
+    # Ensure we never go negative total days
+    total_days = max(target_interval_days + random_factor, 1)
+    next_due = last_contact + timedelta(days=total_days)
     return next_due.isoformat()
 
 async def generate_ai_draft(contact: dict, user_settings: dict, interaction_history: list) -> str:
