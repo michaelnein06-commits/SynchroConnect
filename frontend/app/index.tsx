@@ -1925,59 +1925,65 @@ export default function Index() {
   );
 
   return (
-    <View style={styles.container}>
-      {/* Enhanced Header with Gradient */}
-      <LinearGradient
-        colors={COLORS.primaryGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.headerGradient}
-      >
-        <SafeAreaView edges={['top']}>
-          <View style={styles.header}>
-            <View style={styles.headerContent}>
-              <View style={styles.headerTextContainer}>
-                <Text style={styles.headerTitle}>SynchroConnectr</Text>
-                <Text style={styles.headerSubtitle}>
-                  {activeTab === 'pipeline' && 'Organize by frequency'}
-                  {activeTab === 'contacts' && `${contacts.length} contacts`}
-                  {activeTab === 'groups' && `${groups.length} groups`}
-                  {activeTab === 'planner' && (plannerSubTab === 'calendar' ? 'Geburtstage & Events' : `${drafts.length} AI drafts`)}
-                  {activeTab === 'profile' && 'Your profile'}
-                </Text>
-              </View>
-              {/* Quick Stats Badge */}
-              {activeTab === 'pipeline' && contacts.filter(c => {
-                if (c.pipeline_stage === 'New') return false;
-                const days = getDaysUntilDue(c.next_due);
-                return days !== null && days < 0;
-              }).length > 0 && (
-                <View style={styles.headerBadge}>
-                  <Ionicons name="alert-circle" size={14} color={COLORS.surface} />
-                  <Text style={styles.headerBadgeText}>
-                    {contacts.filter(c => {
-                      if (c.pipeline_stage === 'New') return false;
-                      const days = getDaysUntilDue(c.next_due);
-                      return days !== null && days < 0;
-                    }).length} overdue
-                  </Text>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          {/* Enhanced Header with Gradient */}
+          <LinearGradient
+            colors={COLORS.primaryGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.headerGradient}
+          >
+            <SafeAreaView edges={['top']}>
+              <View style={styles.header}>
+                <View style={styles.headerContent}>
+                  <View style={styles.headerTextContainer}>
+                    <Text style={styles.headerTitle}>SynchroConnectr</Text>
+                    <Text style={styles.headerSubtitle}>
+                      {activeTab === 'pipeline' && 'Organize by frequency'}
+                      {activeTab === 'contacts' && `${contacts.length} contacts`}
+                      {activeTab === 'groups' && `${groups.length} groups`}
+                      {activeTab === 'planner' && (plannerSubTab === 'calendar' ? 'Geburtstage & Events' : `${drafts.length} AI drafts`)}
+                      {activeTab === 'profile' && 'Your profile'}
+                    </Text>
+                  </View>
+                  {/* Quick Stats Badge */}
+                  {activeTab === 'pipeline' && contacts.filter(c => {
+                    if (c.pipeline_stage === 'New') return false;
+                    const days = getDaysUntilDue(c.next_due);
+                    return days !== null && days < 0;
+                  }).length > 0 && (
+                    <View style={styles.headerBadge}>
+                      <Ionicons name="alert-circle" size={14} color={COLORS.surface} />
+                      <Text style={styles.headerBadgeText}>
+                        {contacts.filter(c => {
+                          if (c.pipeline_stage === 'New') return false;
+                          const days = getDaysUntilDue(c.next_due);
+                          return days !== null && days < 0;
+                        }).length} overdue
+                      </Text>
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+              </View>
+            </SafeAreaView>
+          </LinearGradient>
 
-      {/* Search Bar - Enhanced with shadow */}
-      {activeTab === 'contacts' && (
-        <View style={styles.searchWrapper}>
-          <View style={styles.searchContainer}>
-            <View style={styles.searchIconWrapper}>
-              <Ionicons name="search" size={18} color={COLORS.primary} />
-            </View>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search contacts..."
+          {/* Search Bar - Enhanced with shadow */}
+          {activeTab === 'contacts' && (
+            <View style={styles.searchWrapper}>
+              <View style={styles.searchContainer}>
+                <View style={styles.searchIconWrapper}>
+                  <Ionicons name="search" size={18} color={COLORS.primary} />
+                </View>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search contacts..."
               placeholderTextColor={COLORS.textLight}
               value={searchQuery}
               onChangeText={setSearchQuery}
