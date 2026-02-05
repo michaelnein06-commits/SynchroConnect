@@ -290,24 +290,29 @@ export default function PipelineSettings() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} style={styles.headerGradient}>
-        <SafeAreaView edges={['top']}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={28} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Pipeline & Briefing</Text>
-            <TouchableOpacity onPress={saveSettings} disabled={saving} style={styles.saveButton}>
-              {saving ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <View style={styles.savePill}>
-                  <Ionicons name="checkmark" size={18} color="#fff" />
-                  <Text style={styles.savePillText}>Save</Text>
-                </View>
-              )}
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <Pressable style={styles.container} onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          {/* Header */}
+          <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} style={styles.headerGradient}>
+            <SafeAreaView edges={['top']}>
+              <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                  <Ionicons name="chevron-back" size={28} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Pipeline & Briefing</Text>
+                <TouchableOpacity onPress={saveSettings} disabled={saving} style={styles.saveButton}>
+                  {saving ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <View style={styles.savePill}>
+                      <Ionicons name="checkmark" size={18} color="#fff" />
+                      <Text style={styles.savePillText}>Save</Text>
+                    </View>
+                  )}
             </TouchableOpacity>
           </View>
         </SafeAreaView>
