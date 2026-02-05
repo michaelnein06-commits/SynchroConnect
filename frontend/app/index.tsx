@@ -12,6 +12,7 @@ import * as Clipboard from 'expo-clipboard';
 import ContactSyncService from '../services/ContactSyncService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, CalendarList, Agenda } from 'react-native-calendars';
+import NotificationService from './services/notifications';
 
 // Safe haptics wrapper
 const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => {
