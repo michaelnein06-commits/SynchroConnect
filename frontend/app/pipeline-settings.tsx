@@ -318,7 +318,12 @@ export default function PipelineSettings() {
         </SafeAreaView>
       </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Morning Briefing Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
