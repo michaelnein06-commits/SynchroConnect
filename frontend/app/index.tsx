@@ -74,10 +74,19 @@ const COLORS = {
   shadow: '#6366F1',
 };
 
-// Get color for pipeline stage
-const getStageColor = (stage: string) => {
+// Get color for pipeline stage - now uses dynamic configuration
+const getStageColorFromConfig = (stage: string, stagesConfig: any[]): string => {
+  // First check if it's the special "New" stage
+  if (stage === 'New') return COLORS.new;
+  
+  // Find the stage in the config
+  const stageConfig = stagesConfig.find((s: any) => s.name === stage);
+  if (stageConfig?.color) {
+    return stageConfig.color;
+  }
+  
+  // Fallback to default colors for backward compatibility
   switch (stage) {
-    case 'New': return COLORS.new;
     case 'Weekly': return COLORS.weekly;
     case 'Bi-Weekly': return COLORS.biweekly;
     case 'Monthly': return COLORS.monthly;
@@ -87,17 +96,11 @@ const getStageColor = (stage: string) => {
   }
 };
 
-// Get gradient colors for stage
-const getStageGradient = (stage: string) => {
-  switch (stage) {
-    case 'New': return ['#3B82F6', '#60A5FA'];
-    case 'Weekly': return ['#8B5CF6', '#A78BFA'];
-    case 'Bi-Weekly': return ['#06B6D4', '#22D3EE'];
-    case 'Monthly': return ['#10B981', '#34D399'];
-    case 'Quarterly': return ['#F59E0B', '#FBBF24'];
-    case 'Annually': return ['#EC4899', '#F472B6'];
-    default: return [COLORS.primary, COLORS.primaryLight];
-  }
+// Get gradient colors for stage - now uses dynamic configuration
+const getStageGradientFromConfig = (stage: string, stagesConfig: any[]): readonly [string, string] => {
+  const baseColor = getStageColorFromConfig(stage, stagesConfig);
+  // Create a lighter version for gradient
+  return [baseColor, baseColor + 'CC'] as const;
 };
 
 const PIPELINE_STAGES = ['New', 'Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually'];
