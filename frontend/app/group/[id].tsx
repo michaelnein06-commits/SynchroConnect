@@ -296,12 +296,33 @@ export default function GroupDetail() {
           {/* Group Members */}
           {!isNew && (
             <View style={styles.membersSection}>
-              <Text style={styles.sectionTitle}>Group Members ({groupContacts.length})</Text>
+              <View style={styles.membersSectionHeader}>
+                <Text style={styles.sectionTitle}>Group Members ({groupContacts.length})</Text>
+                <TouchableOpacity 
+                  style={styles.addContactsButton}
+                  onPress={() => {
+                    setSelectedContactsToAdd([]);
+                    setShowAddContactsModal(true);
+                  }}
+                >
+                  <Ionicons name="person-add" size={18} color={COLORS.primary} />
+                  <Text style={styles.addContactsButtonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
               {groupContacts.length === 0 ? (
                 <View style={styles.emptyMembers}>
                   <Ionicons name="people-outline" size={40} color={COLORS.textLight} />
                   <Text style={styles.emptyMembersText}>No contacts in this group yet</Text>
-                  <Text style={styles.emptyMembersHint}>Add contacts to this group from their profile</Text>
+                  <TouchableOpacity 
+                    style={styles.emptyAddButton}
+                    onPress={() => {
+                      setSelectedContactsToAdd([]);
+                      setShowAddContactsModal(true);
+                    }}
+                  >
+                    <Ionicons name="add" size={20} color="#fff" />
+                    <Text style={styles.emptyAddButtonText}>Add Contacts</Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
                 groupContacts.map((contact) => (
