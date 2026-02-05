@@ -551,7 +551,22 @@ async def get_profile(current_user: dict = Depends(get_current_user)):
     """Get current user's profile"""
     user = await db.users.find_one({"_id": ObjectId(current_user["user_id"])})
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        # Return default profile if user not found in database
+        # This happens for users who logged in but didn't have a profile created yet
+        default_profile = {
+            "id": current_user["user_id"],
+            "email": current_user.get("email", ""),
+            "pipeline_stages": [
+                {"name": "Weekly", "interval_days": 7, "randomize": False, "random_variation": 0, "color": "#8B5CF6", "enabled": True},
+                {"name": "Bi-Weekly", "interval_days": 14, "randomize": False, "random_variation": 0, "color": "#06B6D4", "enabled": True},
+                {"name": "Monthly", "interval_days": 30, "randomize": False, "random_variation": 0, "color": "#10B981", "enabled": True},
+                {"name": "Quarterly", "interval_days": 90, "randomize": False, "random_variation": 0, "color": "#F59E0B", "enabled": True},
+                {"name": "Annually", "interval_days": 365, "randomize": False, "random_variation": 0, "color": "#EC4899", "enabled": True},
+            ],
+            "morning_briefing_enabled": True,
+            "morning_briefing_time": "08:00",
+        }
+        return default_profile
     return serialize_doc(user)
 
 @api_router.put("/profile")
@@ -560,9 +575,11 @@ async def update_profile(profile_update: UserProfileUpdate, current_user: dict =
     update_data = {k: v for k, v in profile_update.dict().items() if v is not None}
     update_data['updated_at'] = datetime.utcnow().isoformat()
     
+    # Use upsert to create profile if it doesn't exist
     await db.users.update_one(
         {"_id": ObjectId(current_user["user_id"])},
-        {"$set": update_data}
+        {"$set": update_data},
+        upsert=True
     )
     
     updated_user = await db.users.find_one({"_id": ObjectId(current_user["user_id"])})
