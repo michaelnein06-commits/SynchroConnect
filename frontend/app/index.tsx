@@ -381,15 +381,6 @@ export default function Index() {
     }
   }, [token]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchContacts();
-    fetchDrafts();
-    fetchGroups();
-    fetchProfile();
-    // Don't auto-sync on refresh - user can tap sync button explicitly
-  };
-
   const handleDeleteAllContacts = () => {
     Alert.alert(
       'Delete All Contacts',
