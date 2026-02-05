@@ -81,15 +81,68 @@ export default function GroupDetail() {
 
   const fetchGroupContacts = async () => {
     try {
-      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts`);
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const allContactsData = response.data;
+      setAllContacts(allContactsData);
+      
       // Filter contacts that belong to this group
-      const groupResponse = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/groups/${id}`);
+      const groupResponse = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/groups/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const groupName = groupResponse.data.name;
-      const contacts = response.data.filter((c: any) => c.groups?.includes(groupName));
+      const contacts = allContactsData.filter((c: any) => c.groups?.includes(groupName));
       setGroupContacts(contacts);
     } catch (error) {
       console.error('Error fetching group contacts:', error);
     }
+  };
+
+  const handleAddContacts = async () => {
+    if (selectedContactsToAdd.length === 0) {
+      Alert.alert('No contacts selected', 'Please select at least one contact to add');
+      return;
+    }
+
+    setAddingContacts(true);
+    try {
+      // Add group name to each selected contact
+      for (const contactId of selectedContactsToAdd) {
+        const contact = allContacts.find((c: any) => c.id === contactId);
+        if (contact) {
+          const updatedGroups = [...(contact.groups || []), formData.name];
+          await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/${contactId}`, {
+            ...contact,
+            groups: updatedGroups,
+          }, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        }
+      }
+      
+      Alert.alert('Success', `${selectedContactsToAdd.length} contact(s) added to group`);
+      setShowAddContactsModal(false);
+      setSelectedContactsToAdd([]);
+      fetchGroupContacts();
+    } catch (error) {
+      console.error('Error adding contacts:', error);
+      Alert.alert('Error', 'Failed to add contacts');
+    } finally {
+      setAddingContacts(false);
+    }
+  };
+
+  const toggleContactSelection = (contactId: string) => {
+    setSelectedContactsToAdd(prev => 
+      prev.includes(contactId)
+        ? prev.filter(id => id !== contactId)
+        : [...prev, contactId]
+    );
+  };
+
+  const getContactsNotInGroup = () => {
+    return allContacts.filter((c: any) => !c.groups?.includes(formData.name));
   };
 
   const pickImage = async () => {
