@@ -650,6 +650,28 @@ async def update_profile(profile_update: UserProfileUpdate, current_user: dict =
     updated_user = await db.users.find_one({"_id": ObjectId(current_user["user_id"])})
     return serialize_doc(updated_user)
 
+@api_router.post("/contacts/move-to-new")
+async def move_contacts_to_new(stage_name: str = None, current_user: dict = Depends(get_current_user)):
+    """Move all contacts with a specific pipeline_stage to 'New' stage"""
+    if not stage_name:
+        raise HTTPException(status_code=400, detail="stage_name is required")
+    
+    # Move all contacts with this pipeline_stage to "New"
+    result = await db.contacts.update_many(
+        {
+            "user_id": current_user["user_id"],
+            "pipeline_stage": stage_name
+        },
+        {
+            "$set": {
+                "pipeline_stage": "New",
+                "next_due": None
+            }
+        }
+    )
+    
+    return {"message": f"Moved {result.modified_count} contacts to 'New' stage", "count": result.modified_count}
+
 # ============ Contact Routes ============
 
 @api_router.post("/contacts", response_model=dict)
