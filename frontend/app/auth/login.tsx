@@ -232,19 +232,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 20,
   },
-  logoContainer: {
-    width: 130,
-    height: 130,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
+  logoWrapper: {
+    width: 140,
+    height: 140,
+    borderRadius: 35,
     overflow: 'hidden',
+    marginBottom: 20,
   },
   logo: {
-    width: 130,
-    height: 130,
-    borderRadius: 32,
+    width: 140,
+    height: 140,
   },
   title: {
     fontSize: 42,
