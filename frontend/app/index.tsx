@@ -1176,7 +1176,7 @@ export default function Index() {
         
         {/* Floating Action Button */}
         <TouchableOpacity
-          style={styles.fabButton}
+          style={styles.fabWrapper}
           onPress={() => {
             setNewGroupName('');
             Alert.prompt(
