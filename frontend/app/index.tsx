@@ -783,16 +783,171 @@ export default function Index() {
   };
 
   const renderPipeline = () => {
-    // Use the Drag & Drop Kanban Pipeline view
+    const stageContacts = contacts.filter(c => c.pipeline_stage === selectedStage);
+    const stageColor = getStageColor(selectedStage);
+    const totalOverdue = contacts.filter(c => {
+      if (c.pipeline_stage === 'New') return false;
+      const days = getDaysUntilDue(c.next_due);
+      return days !== null && days < 0;
+    }).length;
+
     return (
-      <DragDropPipeline
-        contacts={contacts}
-        onMoveContact={handleDragDropMoveContact}
-        onContactPress={(contactId) => router.push(`/contact/${contactId}`)}
-        onRefresh={onRefresh}
-        refreshing={refreshing}
-        pipelineStages={pipelineStages}
-      />
+      <View style={styles.pipelineContainer}>
+        {/* Modern Header with Stats */}
+        <View style={styles.pipelineHeaderNew}>
+          <View style={styles.pipelineHeaderLeft}>
+            <Text style={styles.pipelineHeaderTitle}>Pipeline</Text>
+            <Text style={styles.pipelineHeaderSubtitle}>{contacts.length} contacts</Text>
+          </View>
+          <View style={styles.pipelineHeaderRight}>
+            {totalOverdue > 0 && (
+              <View style={styles.overdueChip}>
+                <Ionicons name="alert-circle" size={14} color="#fff" />
+                <Text style={styles.overdueChipText}>{totalOverdue}</Text>
+              </View>
+            )}
+            <TouchableOpacity 
+              style={styles.pipelineSettingsBtn}
+              onPress={() => router.push('/pipeline-settings')}
+            >
+              <Ionicons name="settings-outline" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Stage Chips - Horizontal Scroll */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          style={styles.stageChipsContainer}
+          contentContainerStyle={styles.stageChipsContent}
+        >
+          {pipelineStages.map((stage) => {
+            const count = contacts.filter(c => c.pipeline_stage === stage).length;
+            const isActive = selectedStage === stage;
+            const color = getStageColor(stage);
+            const hasOverdue = stage !== 'New' && contacts.filter(c => {
+              if (c.pipeline_stage !== stage) return false;
+              const days = getDaysUntilDue(c.next_due);
+              return days !== null && days < 0;
+            }).length > 0;
+            
+            return (
+              <TouchableOpacity
+                key={stage}
+                style={[
+                  styles.stageChip,
+                  isActive && styles.stageChipActive,
+                  isActive && { backgroundColor: color }
+                ]}
+                onPress={() => setSelectedStage(stage)}
+              >
+                <Text style={[
+                  styles.stageChipText,
+                  isActive && styles.stageChipTextActive
+                ]}>
+                  {stage}
+                </Text>
+                <View style={[
+                  styles.stageChipCount,
+                  isActive && styles.stageChipCountActive,
+                  hasOverdue && !isActive && styles.stageChipCountOverdue
+                ]}>
+                  <Text style={[
+                    styles.stageChipCountText,
+                    isActive && styles.stageChipCountTextActive,
+                    hasOverdue && !isActive && styles.stageChipCountTextOverdue
+                  ]}>{count}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Current Stage Info Bar */}
+        <LinearGradient 
+          colors={[stageColor, stageColor + 'DD']} 
+          style={styles.stageInfoBar}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <View style={styles.stageInfoContent}>
+            <Text style={styles.stageInfoTitle}>{selectedStage}</Text>
+            <Text style={styles.stageInfoCount}>{stageContacts.length} contacts</Text>
+          </View>
+        </LinearGradient>
+
+        {/* Contacts List */}
+        <ScrollView 
+          style={styles.pipelineContactsList}
+          showsVerticalScrollIndicator={false}
+        >
+          {stageContacts.length === 0 ? (
+            <View style={styles.emptyPipelineNew}>
+              <LinearGradient 
+                colors={[stageColor + '20', stageColor + '10']} 
+                style={styles.emptyPipelineIconNew}
+              >
+                <Ionicons name="people-outline" size={36} color={stageColor} />
+              </LinearGradient>
+              <Text style={styles.emptyPipelineTitleNew}>No contacts in {selectedStage}</Text>
+              <Text style={styles.emptyPipelineSubtitle}>Add contacts to this pipeline stage</Text>
+            </View>
+          ) : (
+            stageContacts.map((contact, index) => {
+              const daysUntil = getDaysUntilDue(contact.next_due);
+              const isOverdue = daysUntil !== null && daysUntil < 0 && contact.pipeline_stage !== 'New';
+              
+              return (
+                <TouchableOpacity
+                  key={contact.id}
+                  style={[styles.pipelineContactCardNew, isOverdue && styles.pipelineContactCardOverdue]}
+                  onPress={() => router.push(`/contact/${contact.id}`)}
+                >
+                  {contact.profile_picture ? (
+                    <Image source={{ uri: contact.profile_picture }} style={styles.pipelineContactAvatarNew} />
+                  ) : (
+                    <LinearGradient 
+                      colors={[stageColor, stageColor + 'CC']} 
+                      style={styles.pipelineContactAvatarPlaceholderNew}
+                    >
+                      <Text style={styles.pipelineContactAvatarTextNew}>
+                        {contact.name.charAt(0).toUpperCase()}
+                      </Text>
+                    </LinearGradient>
+                  )}
+                  <View style={styles.pipelineContactInfoNew}>
+                    <Text style={styles.pipelineContactNameNew}>{contact.name}</Text>
+                    {contact.job && (
+                      <Text style={styles.pipelineContactJobNew} numberOfLines={1}>{contact.job}</Text>
+                    )}
+                  </View>
+                  {daysUntil !== null && contact.pipeline_stage !== 'New' && (
+                    <View style={[
+                      styles.dueBadgeNew,
+                      isOverdue ? styles.dueBadgeOverdueNew : styles.dueBadgeOkNew
+                    ]}>
+                      <Ionicons 
+                        name={isOverdue ? "alert-circle" : "time-outline"} 
+                        size={12} 
+                        color={isOverdue ? '#fff' : COLORS.success} 
+                      />
+                      <Text style={[
+                        styles.dueBadgeTextNew,
+                        isOverdue && styles.dueBadgeTextOverdueNew
+                      ]}>
+                        {isOverdue ? `${Math.abs(daysUntil)}d overdue` : `${daysUntil}d`}
+                      </Text>
+                    </View>
+                  )}
+                  <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+                </TouchableOpacity>
+              );
+            })
+          )}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </View>
     );
   };
 
