@@ -310,7 +310,7 @@ const DragDropGroups: React.FC<DragDropGroupsProps> = ({
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <Pressable style={styles.container} onPress={Keyboard.dismiss}>
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
