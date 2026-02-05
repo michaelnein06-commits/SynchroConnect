@@ -494,6 +494,42 @@ export default function Index() {
     }
   };
 
+  // Initialize push notifications
+  useEffect(() => {
+    const initNotifications = async () => {
+      try {
+        const pushToken = await NotificationService.registerForPushNotifications();
+        if (pushToken && token) {
+          await NotificationService.registerTokenWithBackend(pushToken, token);
+        }
+        
+        // Handle notification taps
+        const subscription = NotificationService.addNotificationResponseListener((response) => {
+          const eventId = response.notification.request.content.data?.eventId;
+          if (eventId) {
+            // Navigate to the event or show event details
+            console.log('Notification tapped for event:', eventId);
+          }
+        });
+        
+        return () => subscription.remove();
+      } catch (error) {
+        console.log('Notifications not available:', error);
+      }
+    };
+    
+    if (token) {
+      initNotifications();
+    }
+  }, [token]);
+
+  // Schedule reminders when calendar events change
+  useEffect(() => {
+    if (calendarEvents.length > 0) {
+      NotificationService.scheduleRemindersForEvents(calendarEvents);
+    }
+  }, [calendarEvents]);
+
   useEffect(() => {
     if (token) {
       fetchContacts();
