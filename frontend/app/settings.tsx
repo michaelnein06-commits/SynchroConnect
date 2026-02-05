@@ -365,6 +365,81 @@ export default function Settings() {
               </TouchableOpacity>
             </View>
 
+            {/* Google Calendar Integration Section */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={[styles.sectionIconWrapper, { backgroundColor: '#4285F4' + '20' }]}>
+                  <Ionicons name="logo-google" size={18} color="#4285F4" />
+                </View>
+                <Text style={styles.sectionTitle}>Google Calendar</Text>
+              </View>
+              
+              <View style={styles.settingCard}>
+                <View style={styles.settingCardContent}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.settingLabel}>Synchronisierung</Text>
+                    <Text style={[styles.settingValue, { color: googleCalendarStatus?.is_connected ? COLORS.success : COLORS.textLight }]}>
+                      {loadingGoogleStatus 
+                        ? 'Lädt...' 
+                        : googleCalendarStatus?.is_connected 
+                          ? '✓ Verbunden' 
+                          : googleCalendarStatus?.is_configured 
+                            ? 'Nicht verbunden'
+                            : 'Nicht konfiguriert'}
+                    </Text>
+                  </View>
+                  {googleCalendarStatus?.is_connected ? (
+                    <TouchableOpacity 
+                      onPress={disconnectGoogleCalendar}
+                      style={{ padding: 8 }}
+                    >
+                      <Ionicons name="close-circle" size={24} color={COLORS.accent} />
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity 
+                      onPress={connectGoogleCalendar}
+                      style={{ 
+                        backgroundColor: '#4285F4', 
+                        paddingHorizontal: 16, 
+                        paddingVertical: 8, 
+                        borderRadius: 20 
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontWeight: '600' }}>Verbinden</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+              
+              {googleCalendarStatus?.is_connected && (
+                <TouchableOpacity 
+                  style={styles.settingCard}
+                  onPress={importFromGoogleCalendar}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.settingCardContent}>
+                    <View>
+                      <Text style={styles.settingLabel}>Von Google importieren</Text>
+                      <Text style={styles.settingValue}>Nächsten 30 Tage importieren</Text>
+                    </View>
+                    <Ionicons name="download-outline" size={24} color={COLORS.primary} />
+                  </View>
+                </TouchableOpacity>
+              )}
+              
+              {!googleCalendarStatus?.is_configured && (
+                <View style={[styles.settingCard, { backgroundColor: '#FEF3C7' }]}>
+                  <View style={{ padding: 4 }}>
+                    <Text style={[styles.settingLabel, { color: '#92400E' }]}>Setup erforderlich</Text>
+                    <Text style={[styles.settingValue, { color: '#B45309', fontSize: 12, marginTop: 4 }]}>
+                      GOOGLE_CLIENT_ID und GOOGLE_CLIENT_SECRET{'\n'}
+                      in backend/.env eintragen
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+
             {/* About Section */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
