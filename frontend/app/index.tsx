@@ -2500,9 +2500,18 @@ export default function Index() {
       {activeTab === 'planner' && renderPlanner()}
       {activeTab === 'profile' && renderProfile()}
 
-      {/* Enhanced FAB with gradient */}
+      {/* Enhanced FAB with gradient - Contacts */}
       {activeTab === 'contacts' && (
         <TouchableOpacity style={styles.fabWrapper} onPress={() => router.push('/contact/new')} activeOpacity={0.9}>
+          <LinearGradient colors={COLORS.primaryGradient} style={styles.fab}>
+            <Ionicons name="add" size={28} color={COLORS.surface} />
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
+
+      {/* Enhanced FAB with gradient - Groups */}
+      {activeTab === 'groups' && (
+        <TouchableOpacity style={styles.fabWrapper} onPress={() => setShowCreateGroupModal(true)} activeOpacity={0.9}>
           <LinearGradient colors={COLORS.primaryGradient} style={styles.fab}>
             <Ionicons name="add" size={28} color={COLORS.surface} />
           </LinearGradient>
