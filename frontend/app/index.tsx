@@ -625,68 +625,86 @@ export default function Index() {
     const isOverdue = daysUntil !== null && daysUntil < 0;
     const isNewContact = contact.pipeline_stage === 'New';
     const stageColor = getStageColor(contact.pipeline_stage);
+    const isGenerating = generatingDraftForId === contact.id;
 
     return (
-      <TouchableOpacity
+      <View
         key={contact.id}
-        style={[styles.contactCard, isOverdue && !isNewContact && styles.contactCardOverdue]}
-        onPress={() => router.push(`/contact/${contact.id}`)}
-        onLongPress={() => handleLongPressContact(contact)}
-        delayLongPress={300}
-        activeOpacity={0.7}
+        style={[styles.contactCardEnhanced, isOverdue && !isNewContact && styles.contactCardOverdueEnhanced]}
       >
-        <View style={styles.contactCardHeader}>
+        <TouchableOpacity
+          style={styles.contactCardMainArea}
+          onPress={() => router.push(`/contact/${contact.id}`)}
+          onLongPress={() => handleLongPressContact(contact)}
+          delayLongPress={300}
+          activeOpacity={0.7}
+        >
           {contact.profile_picture ? (
-            <Image source={{ uri: contact.profile_picture }} style={styles.contactAvatar} />
+            <Image source={{ uri: contact.profile_picture }} style={styles.contactAvatarEnhanced} />
           ) : (
             <LinearGradient 
               colors={getStageGradient(contact.pipeline_stage)} 
-              style={styles.contactAvatarPlaceholder}
+              style={styles.contactAvatarPlaceholderEnhanced}
             >
-              <Text style={styles.contactAvatarText}>{contact.name.charAt(0).toUpperCase()}</Text>
+              <Text style={styles.contactAvatarTextEnhanced}>{contact.name.charAt(0).toUpperCase()}</Text>
             </LinearGradient>
           )}
-          <View style={{ flex: 1, marginLeft: 14 }}>
-            <Text style={styles.contactName}>{contact.name}</Text>
-            {contact.job && <Text style={styles.contactJob}>{contact.job}</Text>}
-            {contact.phone && <Text style={styles.contactPhone}>{contact.phone}</Text>}
-            {activeTab === 'contacts' && (
-              <View style={[styles.contactStageBadge, { backgroundColor: stageColor + '15' }]}>
-                <View style={[styles.contactStageDot, { backgroundColor: stageColor }]} />
-                <Text style={[styles.contactStageText, { color: stageColor }]}>{contact.pipeline_stage}</Text>
-              </View>
-            )}
+          <View style={styles.contactInfoEnhanced}>
+            <Text style={styles.contactNameEnhanced}>{contact.name}</Text>
+            {contact.job && <Text style={styles.contactJobEnhanced}>{contact.job}</Text>}
+            {contact.phone && <Text style={styles.contactPhoneEnhanced}>{contact.phone}</Text>}
           </View>
+        </TouchableOpacity>
+        
+        <View style={styles.contactCardActionsEnhanced}>
+          {/* Pipeline Stage Badge */}
+          <View style={[styles.contactStageBadgeEnhanced, { backgroundColor: stageColor + '15' }]}>
+            <View style={[styles.contactStageDotEnhanced, { backgroundColor: stageColor }]} />
+            <Text style={[styles.contactStageTextEnhanced, { color: stageColor }]}>{contact.pipeline_stage}</Text>
+          </View>
+          
+          {/* Due Badge for contacts tab */}
+          {daysUntil !== null && !isNewContact && (
+            <View style={[
+              styles.contactDueBadgeEnhanced,
+              isOverdue ? styles.contactDueBadgeOverdueEnhanced : styles.contactDueBadgeOkEnhanced
+            ]}>
+              <Ionicons 
+                name={isOverdue ? "alert-circle" : "time-outline"} 
+                size={11} 
+                color={isOverdue ? '#fff' : COLORS.success} 
+              />
+              <Text style={[
+                styles.contactDueBadgeTextEnhanced,
+                isOverdue && styles.contactDueBadgeTextOverdueEnhanced
+              ]}>
+                {isOverdue ? `${Math.abs(daysUntil)}d` : `${daysUntil}d`}
+              </Text>
+            </View>
+          )}
+          
+          {/* AI Draft Button */}
           {showDraftButton && (
             <TouchableOpacity
-              style={styles.draftButton}
-              onPress={() => generateDraft(contact.id, contact.name)}
+              style={[styles.contactAIDraftBtn, isGenerating && styles.contactAIDraftBtnLoading]}
+              onPress={() => {
+                setGeneratingDraftForId(contact.id);
+                generateDraft(contact.id, contact.name).finally(() => setGeneratingDraftForId(null));
+              }}
+              disabled={isGenerating}
             >
-              <Ionicons name="sparkles" size={18} color={COLORS.primary} />
+              {isGenerating ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="sparkles" size={14} color="#fff" />
+                  <Text style={styles.contactAIDraftBtnText}>AI Draft</Text>
+                </>
+              )}
             </TouchableOpacity>
           )}
         </View>
-        {/* Don't show countdown for "New" stage contacts */}
-        {daysUntil !== null && activeTab === 'pipeline' && !isNewContact && (
-          <View style={[styles.dueBadge, isOverdue && styles.dueBadgeOverdue]}>
-            <Ionicons 
-              name={isOverdue ? "alert-circle" : "time-outline"} 
-              size={14} 
-              color={isOverdue ? COLORS.accent : COLORS.textLight} 
-            />
-            <Text style={[styles.dueText, isOverdue && styles.dueTextOverdue]}>
-              {isOverdue ? `${Math.abs(daysUntil)}d overdue` : `Due in ${daysUntil}d`}
-            </Text>
-          </View>
-        )}
-        {/* Show "New" badge instead */}
-        {isNewContact && activeTab === 'pipeline' && (
-          <View style={[styles.dueBadge, { backgroundColor: COLORS.new + '15' }]}>
-            <Ionicons name="add-circle-outline" size={14} color={COLORS.new} />
-            <Text style={[styles.dueText, { color: COLORS.new }]}>New - Assign to pipeline</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+      </View>
     );
   };
 
