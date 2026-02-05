@@ -1847,7 +1847,6 @@ export default function Index() {
         <ScrollView 
           style={styles.content} 
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           keyboardShouldPersistTaps="handled"
         >
           {/* Birthday Summary Card */}
