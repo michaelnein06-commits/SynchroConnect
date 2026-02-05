@@ -1559,17 +1559,20 @@ export default function Index() {
     const overdueContacts = contacts.filter(c => {
       if (c.pipeline_stage === 'New') return false;
       const days = getDaysUntilDue(c.next_due);
-      return days !== null && days <= 0;
+      return days !== null && days < 0;
     });
     
+    // Due today: contacts where days <= 1 (today or tomorrow)
     const dueTodayContacts = contacts.filter(c => {
+      if (c.pipeline_stage === 'New') return false;
       const days = getDaysUntilDue(c.next_due);
-      return days !== null && days === 0;
+      return days !== null && days >= 0 && days <= 1;
     });
     
     const dueThisWeekContacts = contacts.filter(c => {
+      if (c.pipeline_stage === 'New') return false;
       const days = getDaysUntilDue(c.next_due);
-      return days !== null && days > 0 && days <= 7;
+      return days !== null && days > 1 && days <= 7;
     });
     
     const todayBirthdays = upcomingBirthdays.filter(b => b.daysUntil === 0);
