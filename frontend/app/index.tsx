@@ -313,7 +313,6 @@ export default function Index() {
       console.error('Error fetching contacts:', error);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
