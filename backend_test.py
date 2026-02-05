@@ -29,10 +29,36 @@ class SynchroConnectrTester:
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         })
+        self.auth_token = None
         
     def log(self, message, level="INFO"):
         timestamp = datetime.now().strftime("%H:%M:%S")
         print(f"[{timestamp}] {level}: {message}")
+        
+    def authenticate(self):
+        """Authenticate using Google auth with test session_id"""
+        self.log("Authenticating with Google OAuth...")
+        try:
+            # Use a test session ID for authentication
+            auth_data = {"session_id": "test_session_calendar_events_2025"}
+            
+            response = self.session.post(f"{self.base_url}/auth/google", json=auth_data)
+            if response.status_code == 200:
+                data = response.json()
+                self.auth_token = data.get('access_token')
+                # Add auth header to session
+                self.session.headers.update({
+                    'Authorization': f'Bearer {self.auth_token}'
+                })
+                self.log(f"✅ Authentication successful: {self.auth_token[:20]}...")
+                return True
+            else:
+                error_text = response.text
+                self.log(f"❌ Authentication failed: {response.status_code} - {error_text}", "ERROR")
+                return False
+        except Exception as e:
+            self.log(f"❌ Authentication exception: {str(e)}", "ERROR")
+            return False
         
     def test_api_health(self):
         """Test if API is accessible"""
