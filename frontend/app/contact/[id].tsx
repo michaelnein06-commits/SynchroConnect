@@ -116,7 +116,7 @@ const COLORS = {
   gradientWarm: ['#F59E0B', '#FBBF24'],
 };
 
-const PIPELINE_STAGES = ['Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually'];
+const PIPELINE_STAGES_DEFAULT = ['Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually'];
 const INTERACTION_TYPES = [
   { id: 'Personal Meeting', icon: 'people', color: COLORS.meeting },
   { id: 'Phone Call', icon: 'call', color: COLORS.phone },
