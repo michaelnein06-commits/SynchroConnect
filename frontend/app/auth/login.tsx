@@ -136,12 +136,8 @@ export default function Login() {
         <View style={styles.content}>
           {/* Logo and Brand Section */}
           <View style={styles.heroSection}>
-            <View style={styles.logoWrapper}>
-              <Image 
-                source={require('../../assets/images/convo-logo.png')} 
-                style={styles.logo}
-                resizeMode="cover"
-              />
+            <View style={styles.logoCircle}>
+              <Ionicons name="chatbubbles" size={60} color="#fff" />
             </View>
             <Text style={styles.title}>Convo</Text>
             <Text style={styles.subtitle}>
