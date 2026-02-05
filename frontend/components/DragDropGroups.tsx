@@ -548,8 +548,7 @@ const DragDropGroups: React.FC<DragDropGroupsProps> = ({
           </View>
         </View>
       </Modal>
-        </View>
-      </Pressable>
+      </View>
     </KeyboardAvoidingView>
   );
 };
