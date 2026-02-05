@@ -787,6 +787,13 @@ class SynchroConnectrTester:
             self.log("❌ API is not accessible. Stopping tests.", "ERROR")
             return test_results
         
+        # Authenticate first
+        test_results['authentication'] = self.authenticate()
+        
+        if not test_results['authentication']:
+            self.log("❌ Authentication failed. Stopping tests.", "ERROR")
+            return test_results
+        
         # Run all tests
         test_results['contact_crud'] = self.test_contact_crud()
         test_results['pipeline_management'] = self.test_pipeline_management()
