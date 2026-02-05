@@ -1038,7 +1038,6 @@ export default function Index() {
         <ScrollView 
           style={styles.pipelineContactsList}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
           {stageContacts.length === 0 ? (
             <View style={styles.emptyPipeline}>
