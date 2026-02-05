@@ -499,6 +499,7 @@ export default function Index() {
       fetchDrafts();
       fetchGroups();
       fetchProfile();
+      fetchCalendarEvents();
       // Don't auto-sync on startup - let user tap the sync button
       // This avoids race conditions with the contacts API
     }
@@ -512,6 +513,7 @@ export default function Index() {
         fetchDrafts();
         fetchGroups();
         fetchProfile(); // Also refresh pipeline stages
+        fetchCalendarEvents();
       }
     }, [token])
   );
