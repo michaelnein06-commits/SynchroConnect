@@ -1242,7 +1242,6 @@ export default function Index() {
         
         <ScrollView 
           style={styles.content} 
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
           showsVerticalScrollIndicator={false}
         >
           {filteredGroups.length === 0 ? (
