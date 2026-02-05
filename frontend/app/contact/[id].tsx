@@ -281,6 +281,24 @@ export default function ContactDetail() {
     }
   };
 
+  const fetchPipelineStages = async () => {
+    try {
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const profile = response.data;
+      if (profile.pipeline_stages && profile.pipeline_stages.length > 0) {
+        const stageNames = profile.pipeline_stages
+          .filter((s: any) => s.enabled !== false)
+          .sort((a: any, b: any) => a.interval_days - b.interval_days)
+          .map((s: any) => s.name);
+        setPipelineStages(stageNames);
+      }
+    } catch (error) {
+      console.error('Error fetching pipeline stages:', error);
+    }
+  };
+
   const handleBirthdayChange = (event: any, date?: Date) => {
     if (Platform.OS === 'android') {
       setShowBirthdayPicker(false);
