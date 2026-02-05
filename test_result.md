@@ -328,6 +328,54 @@ test_plan:
           agent: "testing"
           comment: "✅ TESTED: Morning Briefing with Calendar Events integration fully working. POST /api/morning-briefing/generate now includes: 1) Calendar event stats (today_events_count, week_events_count) in response stats, 2) today_events and week_events arrays with full event details, 3) AI briefing text mentions today's appointments when events exist, 4) Proper integration with existing contact briefing functionality. All calendar event data properly included in morning briefing response."
 
+  - task: "API: Google Calendar Integration (MOCKED)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "NEW: Google Calendar Integration with placeholders for credentials. Endpoints: GET /api/google-calendar/status, GET /api/google-calendar/auth-url, GET /api/google-calendar/callback, POST /api/google-calendar/sync-to-google/{event_id}, POST /api/google-calendar/import-from-google, DELETE /api/google-calendar/disconnect. Will work once GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are added to backend/.env"
+
+  - task: "API: Push Notifications Backend"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "NEW: Push notification endpoints - POST /api/push-token to register device tokens, GET /api/reminders/pending for upcoming reminders, POST /api/reminders/schedule to create reminders"
+
+  - task: "Frontend: Push Notifications Service"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/services/notifications.ts"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "NEW: NotificationService class with methods for registering push tokens, scheduling local notifications for calendar events, automatic reminder scheduling when events change"
+
+  - task: "Frontend: Google Calendar Settings UI"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/settings.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "NEW: Google Calendar section in Settings with connect/disconnect buttons, import functionality, and setup instructions when credentials not configured"
+
 agent_communication:
     - agent: "main"
       message: "PHASE 2 MAJOR REFACTOR COMPLETE. Backend completely rewritten with: 1) Google-only auth (removed email/password), 2) New Contact schema with fields: location, academic_degree, hobbies, how_we_met, example_message, 3) NEW Interaction History system (log interactions with type/date/notes), 4) Groups now user-scoped with contact counts, 5) Enhanced AI drafts using interaction history and contact's example_message for personalized tone, 6) User Profile endpoints. Please test all new endpoints. Note: All contacts/groups/drafts are now user-scoped requiring auth token."
