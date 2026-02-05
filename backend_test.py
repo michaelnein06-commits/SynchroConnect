@@ -416,6 +416,321 @@ class SynchroConnectrTester:
             self.log(f"❌ Exception in draft management test: {str(e)}", "ERROR")
             return False
     
+    def test_calendar_events_crud(self):
+        """Test Calendar Events CRUD operations"""
+        self.log("Testing Calendar Events CRUD operations...")
+        
+        try:
+            # Ensure we have a test contact for participants
+            if not self.test_contacts:
+                self.log("❌ No test contacts available for calendar events", "ERROR")
+                return False
+            
+            test_contact = self.test_contacts[0]
+            test_events = []
+            
+            # Test 1: Create event without participants
+            event_data = {
+                "title": "Team Meeting",
+                "description": "Weekly team sync meeting",
+                "date": "2025-01-20",
+                "start_time": "10:00",
+                "end_time": "11:00",
+                "participants": [],
+                "reminder_minutes": 15,
+                "color": "#FF5733",
+                "all_day": False
+            }
+            
+            response = self.session.post(f"{self.base_url}/calendar-events", json=event_data)
+            if response.status_code == 200:
+                event = response.json()
+                test_events.append(event)
+                self.log(f"✅ Created event without participants: {event['title']} (ID: {event['id']})")
+            else:
+                self.log(f"❌ Failed to create event without participants: {response.status_code} - {response.text}", "ERROR")
+                return False
+            
+            # Test 2: Create event with participants
+            event_with_participants = {
+                "title": "Client Meeting with Sarah",
+                "description": "Quarterly business review",
+                "date": "2025-01-21",
+                "start_time": "14:00",
+                "end_time": "15:30",
+                "participants": [test_contact['id']],
+                "reminder_minutes": 30,
+                "color": "#4CAF50",
+                "all_day": False
+            }
+            
+            response = self.session.post(f"{self.base_url}/calendar-events", json=event_with_participants)
+            if response.status_code == 200:
+                event = response.json()
+                test_events.append(event)
+                self.log(f"✅ Created event with participants: {event['title']} (ID: {event['id']})")
+                
+                # Verify interaction history was created
+                interactions_response = self.session.get(f"{self.base_url}/contacts/{test_contact['id']}/interactions")
+                if interactions_response.status_code == 200:
+                    interactions = interactions_response.json()
+                    scheduled_meetings = [i for i in interactions if i.get('interaction_type') == 'Scheduled Meeting']
+                    if scheduled_meetings:
+                        self.log("✅ Interaction history automatically created for event participants")
+                    else:
+                        self.log("⚠️ No scheduled meeting interaction found in history")
+            else:
+                self.log(f"❌ Failed to create event with participants: {response.status_code} - {response.text}", "ERROR")
+                return False
+            
+            # Test 3: Create all-day event
+            all_day_event = {
+                "title": "Company Holiday",
+                "description": "New Year's Day",
+                "date": "2025-01-01",
+                "start_time": "00:00",
+                "participants": [],
+                "all_day": True,
+                "color": "#9C27B0"
+            }
+            
+            response = self.session.post(f"{self.base_url}/calendar-events", json=all_day_event)
+            if response.status_code == 200:
+                event = response.json()
+                test_events.append(event)
+                self.log(f"✅ Created all-day event: {event['title']} (ID: {event['id']})")
+            else:
+                self.log(f"❌ Failed to create all-day event: {response.status_code} - {response.text}", "ERROR")
+                return False
+            
+            # Test 4: Get all events
+            response = self.session.get(f"{self.base_url}/calendar-events")
+            if response.status_code == 200:
+                events = response.json()
+                self.log(f"✅ Retrieved all events: {len(events)} events found")
+                
+                # Verify participant_details are included
+                events_with_participants = [e for e in events if e.get('participants')]
+                if events_with_participants:
+                    first_event = events_with_participants[0]
+                    if 'participant_details' in first_event:
+                        self.log("✅ Participant details included in event responses")
+                    else:
+                        self.log("⚠️ Participant details missing from event responses")
+            else:
+                self.log(f"❌ Failed to get all events: {response.status_code} - {response.text}", "ERROR")
+                return False
+            
+            # Test 5: Get events with date range filter
+            start_date = "2025-01-20"
+            end_date = "2025-01-25"
+            response = self.session.get(f"{self.base_url}/calendar-events?start_date={start_date}&end_date={end_date}")
+            if response.status_code == 200:
+                filtered_events = response.json()
+                self.log(f"✅ Retrieved events with date filter: {len(filtered_events)} events for {start_date} to {end_date}")
+            else:
+                self.log(f"❌ Failed to get filtered events: {response.status_code} - {response.text}", "ERROR")
+                return False
+            
+            # Test 6: Get today's events
+            response = self.session.get(f"{self.base_url}/calendar-events/today")
+            if response.status_code == 200:
+                today_events = response.json()
+                self.log(f"✅ Retrieved today's events: {len(today_events)} events")
+            else:
+                self.log(f"❌ Failed to get today's events: {response.status_code} - {response.text}", "ERROR")
+                return False
+            
+            # Test 7: Get week's events
+            response = self.session.get(f"{self.base_url}/calendar-events/week")
+            if response.status_code == 200:
+                week_events = response.json()
+                self.log(f"✅ Retrieved week's events: {len(week_events)} events")
+            else:
+                self.log(f"❌ Failed to get week's events: {response.status_code} - {response.text}", "ERROR")
+                return False
+            
+            # Test 8: Get events by specific date
+            test_date = "2025-01-21"
+            response = self.session.get(f"{self.base_url}/calendar-events/by-date/{test_date}")
+            if response.status_code == 200:
+                date_events = response.json()
+                self.log(f"✅ Retrieved events for {test_date}: {len(date_events)} events")
+            else:
+                self.log(f"❌ Failed to get events by date: {response.status_code} - {response.text}", "ERROR")
+                return False
+            
+            # Test 9: Get single event with participant details
+            if test_events:
+                event_id = test_events[1]['id']  # Event with participants
+                response = self.session.get(f"{self.base_url}/calendar-events/{event_id}")
+                if response.status_code == 200:
+                    event = response.json()
+                    self.log(f"✅ Retrieved single event: {event['title']}")
+                    if event.get('participants') and 'participant_details' in event:
+                        self.log(f"✅ Single event includes participant details: {len(event['participant_details'])} participants")
+                    elif event.get('participants'):
+                        self.log("⚠️ Single event missing participant details")
+                else:
+                    self.log(f"❌ Failed to get single event: {response.status_code} - {response.text}", "ERROR")
+                    return False
+            
+            # Test 10: Update event
+            if test_events:
+                event_id = test_events[0]['id']
+                update_data = {
+                    "title": "Updated Team Meeting",
+                    "description": "Updated weekly team sync with new agenda",
+                    "start_time": "10:30",
+                    "end_time": "11:30",
+                    "reminder_minutes": 20
+                }
+                
+                response = self.session.put(f"{self.base_url}/calendar-events/{event_id}", json=update_data)
+                if response.status_code == 200:
+                    updated_event = response.json()
+                    self.log(f"✅ Updated event: {updated_event['title']}")
+                else:
+                    self.log(f"❌ Failed to update event: {response.status_code} - {response.text}", "ERROR")
+                    return False
+            
+            # Test 11: Get contact's events
+            response = self.session.get(f"{self.base_url}/contacts/{test_contact['id']}/calendar-events")
+            if response.status_code == 200:
+                contact_events = response.json()
+                self.log(f"✅ Retrieved contact's events: {len(contact_events)} events for {test_contact['name']}")
+            else:
+                self.log(f"❌ Failed to get contact's events: {response.status_code} - {response.text}", "ERROR")
+                return False
+            
+            # Test 12: Delete events
+            for event in test_events:
+                response = self.session.delete(f"{self.base_url}/calendar-events/{event['id']}")
+                if response.status_code == 200:
+                    self.log(f"✅ Deleted event: {event['title']}")
+                else:
+                    self.log(f"⚠️ Failed to delete event {event['title']}: {response.status_code}")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ Exception in calendar events test: {str(e)}", "ERROR")
+            return False
+    
+    def test_morning_briefing_with_events(self):
+        """Test Morning Briefing with Calendar Events integration"""
+        self.log("Testing Morning Briefing with Calendar Events...")
+        
+        try:
+            # Create a test event for today to verify briefing includes it
+            today = datetime.now().strftime("%Y-%m-%d")
+            test_event = {
+                "title": "Test Meeting for Briefing",
+                "description": "Test event to verify morning briefing integration",
+                "date": today,
+                "start_time": "09:00",
+                "end_time": "10:00",
+                "participants": [],
+                "reminder_minutes": 15,
+                "color": "#2196F3"
+            }
+            
+            # Create the test event
+            create_response = self.session.post(f"{self.base_url}/calendar-events", json=test_event)
+            test_event_id = None
+            if create_response.status_code == 200:
+                created_event = create_response.json()
+                test_event_id = created_event['id']
+                self.log(f"✅ Created test event for briefing: {created_event['title']}")
+            
+            # Generate morning briefing
+            response = self.session.post(f"{self.base_url}/morning-briefing/generate")
+            if response.status_code == 200:
+                briefing = response.json()
+                self.log("✅ Morning briefing generated successfully")
+                
+                # Check if calendar event stats are included
+                stats = briefing.get('stats', {})
+                if 'today_events_count' in stats and 'week_events_count' in stats:
+                    self.log(f"✅ Calendar event stats included: Today: {stats['today_events_count']}, Week: {stats['week_events_count']}")
+                else:
+                    self.log("⚠️ Calendar event stats missing from briefing")
+                
+                # Check if event lists are included
+                if 'today_events' in briefing and 'week_events' in briefing:
+                    today_count = len(briefing['today_events'])
+                    week_count = len(briefing['week_events'])
+                    self.log(f"✅ Calendar event lists included: Today events: {today_count}, Week events: {week_count}")
+                else:
+                    self.log("⚠️ Calendar event lists missing from briefing")
+                
+                # Verify briefing content mentions events if any exist
+                briefing_text = briefing.get('briefing', '')
+                if stats.get('today_events_count', 0) > 0 and 'appointment' in briefing_text.lower():
+                    self.log("✅ Briefing text mentions today's appointments")
+                
+            else:
+                self.log(f"❌ Failed to generate morning briefing: {response.status_code} - {response.text}", "ERROR")
+                return False
+            
+            # Cleanup test event
+            if test_event_id:
+                delete_response = self.session.delete(f"{self.base_url}/calendar-events/{test_event_id}")
+                if delete_response.status_code == 200:
+                    self.log("✅ Cleaned up test event")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ Exception in morning briefing with events test: {str(e)}", "ERROR")
+            return False
+    
+    def test_calendar_events_error_handling(self):
+        """Test Calendar Events error handling"""
+        self.log("Testing Calendar Events error handling...")
+        
+        try:
+            # Test 1: Create event with invalid date format
+            invalid_event = {
+                "title": "Invalid Event",
+                "date": "invalid-date",
+                "start_time": "10:00"
+            }
+            
+            response = self.session.post(f"{self.base_url}/calendar-events", json=invalid_event)
+            if response.status_code != 200:
+                self.log(f"✅ Correctly rejected invalid date format with status {response.status_code}")
+            else:
+                self.log("⚠️ Should have rejected invalid date format")
+            
+            # Test 2: Get non-existent event
+            fake_event_id = "507f1f77bcf86cd799439011"
+            response = self.session.get(f"{self.base_url}/calendar-events/{fake_event_id}")
+            if response.status_code == 404:
+                self.log("✅ Correctly returned 404 for non-existent event")
+            else:
+                self.log(f"⚠️ Expected 404 for non-existent event, got {response.status_code}")
+            
+            # Test 3: Unauthorized access (without auth token)
+            temp_headers = self.session.headers.copy()
+            if 'Authorization' in self.session.headers:
+                del self.session.headers['Authorization']
+            
+            response = self.session.get(f"{self.base_url}/calendar-events")
+            if response.status_code in [401, 403]:
+                self.log(f"✅ Correctly rejected unauthorized access with status {response.status_code}")
+            else:
+                self.log(f"⚠️ Should have rejected unauthorized access, got {response.status_code}")
+            
+            # Restore headers
+            self.session.headers.update(temp_headers)
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ Exception in calendar events error handling test: {str(e)}", "ERROR")
+            return False
+    
     def cleanup_test_data(self):
         """Clean up test data"""
         self.log("Cleaning up test data...")
