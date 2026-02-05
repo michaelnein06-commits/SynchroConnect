@@ -233,16 +233,18 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   logoContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 30,
+    width: 130,
+    height: 130,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    overflow: 'hidden',
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 130,
+    height: 130,
+    borderRadius: 32,
   },
   title: {
     fontSize: 42,
