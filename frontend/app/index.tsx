@@ -392,6 +392,7 @@ export default function Index() {
         fetchContacts();
         fetchDrafts();
         fetchGroups();
+        fetchProfile(); // Also refresh pipeline stages
       }
     }, [token])
   );
@@ -403,6 +404,7 @@ export default function Index() {
         fetchContacts();
         fetchDrafts();
         fetchGroups();
+        fetchProfile(); // Also refresh pipeline stages
       }
     });
     return () => subscription?.remove();
