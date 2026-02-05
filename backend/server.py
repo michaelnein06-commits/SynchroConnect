@@ -247,8 +247,8 @@ class Draft(BaseModel):
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
 # ============ Utility Functions ============
-async def calculate_target_interval_async(pipeline_stage: str, user_id: str = None) -> int:
-    """Convert pipeline stage to days based on user's custom pipeline settings"""
+async def calculate_target_interval_async(pipeline_stage: str, user_id: str = None, apply_randomization: bool = True) -> int:
+    """Convert pipeline stage to days based on user's custom pipeline settings with randomization support"""
     # Default intervals for backward compatibility
     default_intervals = {
         "New": 0,
@@ -272,9 +272,19 @@ async def calculate_target_interval_async(pipeline_stage: str, user_id: str = No
             print(f"Found user pipeline_stages: {[s.get('name') for s in user['pipeline_stages']]}")
             for stage in user['pipeline_stages']:
                 if stage.get('name') == pipeline_stage:
-                    interval = stage.get('interval_days', 30)
-                    print(f"Found custom interval for {pipeline_stage}: {interval} days")
-                    return interval
+                    base_interval = stage.get('interval_days', 30)
+                    
+                    # Apply randomization if enabled and requested
+                    if apply_randomization and stage.get('randomize', False):
+                        variation = stage.get('random_variation', 0)
+                        if variation > 0:
+                            random_offset = random.randint(-variation, variation)
+                            final_interval = max(1, base_interval + random_offset)  # Ensure at least 1 day
+                            print(f"Applied randomization to {pipeline_stage}: base={base_interval}, variation=±{variation}, offset={random_offset}, final={final_interval}")
+                            return final_interval
+                    
+                    print(f"Found custom interval for {pipeline_stage}: {base_interval} days (no randomization)")
+                    return base_interval
             print(f"Pipeline stage {pipeline_stage} not found in user's custom stages, checking defaults")
         else:
             print(f"User found but no pipeline_stages, checking defaults")
