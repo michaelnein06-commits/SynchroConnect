@@ -772,7 +772,7 @@ export default function ContactDetail() {
             </View>
             <View style={styles.card}>
               <View style={styles.pipelineGrid}>
-                {PIPELINE_STAGES.map((stage) => {
+                {pipelineStages.map((stage) => {
                   const isSelected = formData.pipeline_stage === stage;
                   return (
                     <TouchableOpacity
