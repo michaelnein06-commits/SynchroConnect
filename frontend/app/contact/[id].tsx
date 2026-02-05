@@ -857,22 +857,42 @@ export default function ContactDetail() {
             </View>
             <View style={styles.card}>
               {isEditing ? (
-                <TouchableOpacity style={styles.groupSelector} onPress={() => setShowGroupsModal(true)}>
-                  <View style={styles.groupSelectorLeft}>
-                    <Ionicons name="add-circle-outline" size={22} color={COLORS.primary} />
-                    <Text style={styles.groupSelectorText}>
-                      {formData.groups.length > 0 
-                        ? `${formData.groups.length} group(s) selected`
-                        : 'Tap to select groups'}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
-                </TouchableOpacity>
+                <View style={styles.groupChipsContainer}>
+                  {availableGroups.length === 0 ? (
+                    <Text style={styles.emptyText}>No groups created yet</Text>
+                  ) : (
+                    availableGroups.map((group) => {
+                      const isSelected = formData.groups.includes(group.id) || formData.groups.includes(group.name);
+                      return (
+                        <TouchableOpacity
+                          key={group.id}
+                          style={[
+                            styles.groupChipSelectable,
+                            { borderColor: group.color || COLORS.primary },
+                            isSelected && { backgroundColor: (group.color || COLORS.primary) + '20' }
+                          ]}
+                          onPress={() => toggleGroup(group.id)}
+                        >
+                          <View style={[styles.groupDot, { backgroundColor: group.color || COLORS.primary }]} />
+                          <Text style={[
+                            styles.groupChipSelectableText,
+                            { color: isSelected ? (group.color || COLORS.primary) : COLORS.textLight }
+                          ]}>
+                            {group.name}
+                          </Text>
+                          {isSelected && (
+                            <Ionicons name="checkmark-circle" size={16} color={group.color || COLORS.primary} />
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })
+                  )}
+                </View>
               ) : (
                 <View style={styles.groupsDisplay}>
                   {formData.groups.length > 0 ? (
                     formData.groups.map((groupId) => {
-                      const group = availableGroups.find(g => g.id === groupId);
+                      const group = availableGroups.find(g => g.id === groupId || g.name === groupId);
                       return group ? (
                         <View key={groupId} style={[styles.groupChip, { backgroundColor: (group.color || COLORS.primary) + '20' }]}>
                           <View style={[styles.groupDot, { backgroundColor: group.color || COLORS.primary }]} />
