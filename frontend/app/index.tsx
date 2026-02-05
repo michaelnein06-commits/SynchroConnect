@@ -4849,6 +4849,141 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   
+  // Enhanced Contact Card Styles for Contacts Tab
+  contactCardEnhanced: {
+    backgroundColor: COLORS.surface,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#5D3FD3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  contactCardOverdueEnhanced: {
+    borderColor: COLORS.accent + '40',
+    backgroundColor: '#FFF5F5',
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.accent,
+  },
+  contactCardMainArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  contactAvatarEnhanced: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+  },
+  contactAvatarPlaceholderEnhanced: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contactAvatarTextEnhanced: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  contactInfoEnhanced: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  contactNameEnhanced: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  contactJobEnhanced: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  contactPhoneEnhanced: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  contactCardActionsEnhanced: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 10,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
+    flexWrap: 'wrap',
+  },
+  contactStageBadgeEnhanced: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 6,
+  },
+  contactStageDotEnhanced: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  contactStageTextEnhanced: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  contactDueBadgeEnhanced: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+  },
+  contactDueBadgeOkEnhanced: {
+    backgroundColor: COLORS.success + '15',
+  },
+  contactDueBadgeOverdueEnhanced: {
+    backgroundColor: COLORS.accent,
+  },
+  contactDueBadgeTextEnhanced: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.success,
+  },
+  contactDueBadgeTextOverdueEnhanced: {
+    color: '#fff',
+  },
+  contactAIDraftBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#5D3FD3',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    gap: 6,
+    marginLeft: 'auto',
+    shadowColor: '#5D3FD3',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  contactAIDraftBtnLoading: {
+    paddingHorizontal: 20,
+  },
+  contactAIDraftBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  
   // FAB Button
   fabButton: {
     position: 'absolute',
