@@ -35,12 +35,17 @@ const COLORS = {
 export default function GroupDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { token } = useAuth();
   const isNew = id === 'new';
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [profileImage, setProfileImage] = useState('');
   const [groupContacts, setGroupContacts] = useState<any[]>([]);
+  const [allContacts, setAllContacts] = useState<any[]>([]);
+  const [showAddContactsModal, setShowAddContactsModal] = useState(false);
+  const [selectedContactsToAdd, setSelectedContactsToAdd] = useState<string[]>([]);
+  const [addingContacts, setAddingContacts] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
