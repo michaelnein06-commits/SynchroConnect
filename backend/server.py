@@ -1305,6 +1305,44 @@ OVERDUE CONTACTS ({len(overdue_contacts)} people need attention):
             for c in upcoming_birthdays[:5]:
                 briefing_context += f"- {c.get('name', 'Unknown')} in {c.get('days_until', '?')} days\n"
         
+        # Get today's calendar events
+        today_date = today.strftime("%Y-%m-%d")
+        today_events = await db.calendar_events.find({
+            "user_id": current_user["user_id"],
+            "date": today_date
+        }).sort("start_time", 1).to_list(20)
+        
+        # Get this week's calendar events
+        week_end = (today + timedelta(days=7)).strftime("%Y-%m-%d")
+        week_events = await db.calendar_events.find({
+            "user_id": current_user["user_id"],
+            "date": {"$gt": today_date, "$lte": week_end}
+        }).sort("date", 1).to_list(20)
+        
+        if today_events:
+            briefing_context += f"\n📅 TODAY'S APPOINTMENTS ({len(today_events)} scheduled):\n"
+            for event in today_events:
+                time_str = event.get('start_time', '')
+                briefing_context += f"- {time_str}: {event.get('title', 'Untitled')}"
+                if event.get('participants'):
+                    # Get participant names
+                    participant_names = []
+                    for pid in event['participants'][:3]:
+                        try:
+                            contact = await db.contacts.find_one({"_id": ObjectId(pid)})
+                            if contact:
+                                participant_names.append(contact.get('name', 'Unknown'))
+                        except:
+                            pass
+                    if participant_names:
+                        briefing_context += f" (with {', '.join(participant_names)})"
+                briefing_context += "\n"
+        
+        if week_events:
+            briefing_context += f"\n📆 UPCOMING THIS WEEK ({len(week_events)} events):\n"
+            for event in week_events[:5]:
+                briefing_context += f"- {event.get('date', '')}: {event.get('title', 'Untitled')}\n"
+        
         # Generate AI briefing
         prompt = f"""Write a warm, motivating morning briefing for {user_name} about their contact management for today.
 
