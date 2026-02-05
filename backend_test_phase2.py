@@ -15,7 +15,7 @@ from bson import ObjectId
 import jwt
 
 # Use the production URL from frontend/.env
-BASE_URL = "https://app-priority-fix.preview.emergentagent.com/api"
+BASE_URL = "https://sleek-interface-86.preview.emergentagent.com/api"
 
 # MongoDB connection for creating test user
 MONGO_URL = "mongodb://localhost:27017"
