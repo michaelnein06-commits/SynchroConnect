@@ -182,6 +182,10 @@ export default function Index() {
   const [pipelineStages, setPipelineStages] = useState<string[]>(['New', 'Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually']);
   const [pipelineStagesConfig, setPipelineStagesConfig] = useState<any[]>([]);
 
+  // Helper functions that use the state
+  const getStageColor = (stage: string) => getStageColorFromConfig(stage, pipelineStagesConfig);
+  const getStageGradient = (stage: string) => getStageGradientFromConfig(stage, pipelineStagesConfig);
+
   // API headers with auth token
   const getAuthHeaders = () => ({
     headers: { Authorization: `Bearer ${token}` }
