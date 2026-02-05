@@ -1164,6 +1164,58 @@ export default function Index() {
     </ScrollView>
   );
 
+  // State for group actions modal
+  const [showGroupActionsModal, setShowGroupActionsModal] = useState(false);
+  const [selectedGroupForAction, setSelectedGroupForAction] = useState<any>(null);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [newGroupData, setNewGroupData] = useState({ name: '', description: '', color: '#5D3FD3' });
+
+  const groupColors = ['#5D3FD3', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#8B5CF6', '#06B6D4'];
+
+  const handleCreateGroup = async () => {
+    if (!newGroupData.name.trim()) {
+      Alert.alert('Error', 'Please enter a group name');
+      return;
+    }
+    try {
+      await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/groups`, {
+        name: newGroupData.name.trim(),
+        description: newGroupData.description.trim(),
+        color: newGroupData.color,
+      }, getAuthHeaders());
+      triggerHaptic('success');
+      setShowCreateGroupModal(false);
+      setNewGroupData({ name: '', description: '', color: '#5D3FD3' });
+      fetchGroups();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create group');
+    }
+  };
+
+  const handleDeleteGroup = async (groupId: string, groupName: string) => {
+    Alert.alert(
+      'Delete Group',
+      `Are you sure you want to delete "${groupName}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`${EXPO_PUBLIC_BACKEND_URL}/api/groups/${groupId}`, getAuthHeaders());
+              triggerHaptic('success');
+              fetchGroups();
+              setShowGroupActionsModal(false);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete group');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderGroups = () => {
     const filteredGroups = groups.filter(g => 
       g.name.toLowerCase().includes(groupSearchQuery.toLowerCase()) ||
@@ -1196,6 +1248,9 @@ export default function Index() {
         <ScrollView 
           style={styles.content} 
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+          }
         >
           {filteredGroups.length === 0 && groups.length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -1214,82 +1269,97 @@ export default function Index() {
             </View>
           ) : (
             filteredGroups.map((group) => {
-              const groupContacts = contacts.filter(c => c.groups?.includes(group.id));
+              const groupContacts = contacts.filter(c => c.groups?.includes(group.id) || c.groups?.includes(group.name));
+              const groupColor = group.color || COLORS.primary;
+              
               return (
-                <TouchableOpacity
-                  key={group.id}
-                  style={styles.groupCardNew}
-                  onPress={() => router.push(`/group/${group.id}`)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.groupColorBarNew, { backgroundColor: group.color || COLORS.primary }]} />
-                  {group.profile_picture ? (
-                    <Image source={{ uri: group.profile_picture }} style={styles.groupAvatarNew} />
-                  ) : (
-                    <LinearGradient 
-                      colors={[group.color || COLORS.primary, (group.color || COLORS.primary) + 'CC']} 
-                      style={styles.groupAvatarPlaceholderNew}
-                    >
-                      <Ionicons name="people" size={22} color={COLORS.surface} />
-                    </LinearGradient>
-                  )}
-                  <View style={styles.groupInfoNew}>
-                    <Text style={styles.groupNameNew}>{group.name}</Text>
-                    {group.description && (
-                      <Text style={styles.groupDescriptionNew} numberOfLines={1}>
-                        {group.description}
-                      </Text>
+                <View key={group.id} style={styles.groupCardEnhanced}>
+                  <TouchableOpacity
+                    style={styles.groupCardMainArea}
+                    onPress={() => router.push(`/group/${group.id}`)}
+                    onLongPress={() => {
+                      setSelectedGroupForAction(group);
+                      setShowGroupActionsModal(true);
+                    }}
+                    delayLongPress={400}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.groupColorAccent, { backgroundColor: groupColor }]} />
+                    {group.profile_picture ? (
+                      <Image source={{ uri: group.profile_picture }} style={styles.groupAvatarEnhanced} />
+                    ) : (
+                      <LinearGradient 
+                        colors={[groupColor, groupColor + 'CC']} 
+                        style={styles.groupAvatarPlaceholderEnhanced}
+                      >
+                        <Ionicons name="people" size={24} color={COLORS.surface} />
+                      </LinearGradient>
                     )}
-                    <View style={styles.groupStatsNew}>
-                      <Ionicons name="people-outline" size={14} color={COLORS.textLight} />
-                      <Text style={styles.groupContactCountNew}>
-                        {groupContacts.length} {groupContacts.length === 1 ? 'contact' : 'contacts'}
+                    <View style={styles.groupInfoEnhanced}>
+                      <Text style={styles.groupNameEnhanced}>{group.name}</Text>
+                      {group.description && (
+                        <Text style={styles.groupDescriptionEnhanced} numberOfLines={2}>
+                          {group.description}
+                        </Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                  
+                  <View style={styles.groupCardActionsEnhanced}>
+                    {/* Member count badge */}
+                    <View style={[styles.groupMemberBadge, { backgroundColor: groupColor + '15' }]}>
+                      <Ionicons name="people" size={14} color={groupColor} />
+                      <Text style={[styles.groupMemberBadgeText, { color: groupColor }]}>
+                        {groupContacts.length} {groupContacts.length === 1 ? 'member' : 'members'}
                       </Text>
                     </View>
+                    
+                    {/* Quick Actions */}
+                    <TouchableOpacity
+                      style={styles.groupQuickAction}
+                      onPress={() => router.push(`/group/${group.id}`)}
+                    >
+                      <Ionicons name="person-add" size={18} color={COLORS.primary} />
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={styles.groupQuickAction}
+                      onPress={() => {
+                        setSelectedGroupForAction(group);
+                        setShowGroupActionsModal(true);
+                      }}
+                    >
+                      <Ionicons name="ellipsis-horizontal" size={18} color={COLORS.textLight} />
+                    </TouchableOpacity>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
-                </TouchableOpacity>
+                  
+                  {/* Mini member avatars */}
+                  {groupContacts.length > 0 && (
+                    <View style={styles.groupMemberPreview}>
+                      {groupContacts.slice(0, 5).map((contact, idx) => (
+                        <View key={contact.id} style={[styles.groupMemberMiniAvatar, { marginLeft: idx > 0 ? -8 : 0, zIndex: 5 - idx }]}>
+                          {contact.profile_picture ? (
+                            <Image source={{ uri: contact.profile_picture }} style={styles.groupMemberMiniImg} />
+                          ) : (
+                            <View style={[styles.groupMemberMiniPlaceholder, { backgroundColor: groupColor }]}>
+                              <Text style={styles.groupMemberMiniText}>{contact.name.charAt(0)}</Text>
+                            </View>
+                          )}
+                        </View>
+                      ))}
+                      {groupContacts.length > 5 && (
+                        <View style={[styles.groupMemberMiniAvatar, { marginLeft: -8, backgroundColor: COLORS.background }]}>
+                          <Text style={styles.groupMemberMiniMoreText}>+{groupContacts.length - 5}</Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
               );
             })
           )}
           <View style={{ height: 100 }} />
         </ScrollView>
-        
-        {/* Floating Action Button */}
-        <TouchableOpacity
-          style={styles.fabWrapper}
-          onPress={() => {
-            setNewGroupName('');
-            Alert.prompt(
-              'New Group',
-              'Enter group name',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Create',
-                  onPress: async (name) => {
-                    if (name && name.trim()) {
-                      try {
-                        await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/groups`, {
-                          name: name.trim()
-                        }, getAuthHeaders());
-                        triggerHaptic('success');
-                        fetchGroups();
-                      } catch (error) {
-                        Alert.alert('Error', 'Failed to create group');
-                      }
-                    }
-                  }
-                }
-              ],
-              'plain-text'
-            );
-          }}
-        >
-          <LinearGradient colors={COLORS.primaryGradient} style={styles.fab}>
-            <Ionicons name="add" size={28} color="#fff" />
-          </LinearGradient>
-        </TouchableOpacity>
       </View>
     );
   };
