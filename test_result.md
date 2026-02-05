@@ -300,27 +300,33 @@ test_plan:
 
   - task: "API: Calendar Events CRUD"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "NEW: Calendar Events system - POST/GET/PUT/DELETE /api/calendar-events, GET /api/calendar-events/by-date/{date} for day view, GET /api/calendar-events/today and /week for quick access. Events include title, description, date, start_time, end_time, participants (contact IDs), reminder_minutes, color. Auto-adds to interaction history of participants."
+        - working: true
+          agent: "testing"
+          comment: "✅ TESTED: Calendar Events CRUD API fully functional. All 17 test scenarios passed: 1) Create events with/without participants working correctly, 2) Auto-creates interaction history for participants (Scheduled Meeting type), 3) All GET endpoints working: /api/calendar-events (with date range filters), /today, /week, /by-date/{date}, /{event_id}, 4) Participant details properly included in responses with contact names and profile pictures, 5) PUT /api/calendar-events/{event_id} update working, 6) DELETE /api/calendar-events/{event_id} working, 7) GET /api/contacts/{contact_id}/calendar-events working, 8) Error handling working (404 for non-existent events, 403 for unauthorized access). All endpoints properly authenticated and user-scoped."
 
   - task: "API: Morning Briefing with Calendar Events"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Enhanced AI briefing to include today's calendar events and upcoming events this week. Stats now include today_events_count and week_events_count."
+        - working: true
+          agent: "testing"
+          comment: "✅ TESTED: Morning Briefing with Calendar Events integration fully working. POST /api/morning-briefing/generate now includes: 1) Calendar event stats (today_events_count, week_events_count) in response stats, 2) today_events and week_events arrays with full event details, 3) AI briefing text mentions today's appointments when events exist, 4) Proper integration with existing contact briefing functionality. All calendar event data properly included in morning briefing response."
 
 agent_communication:
     - agent: "main"
