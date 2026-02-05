@@ -237,22 +237,6 @@ export default function PipelineSettings() {
     setStages(updatedStages);
   };
 
-  const handleTimeChange = (event: any, selectedTime?: Date) => {
-    setShowTimePicker(Platform.OS === 'ios');
-    if (selectedTime) {
-      const hours = selectedTime.getHours().toString().padStart(2, '0');
-      const minutes = selectedTime.getMinutes().toString().padStart(2, '0');
-      setMorningBriefingTime(`${hours}:${minutes}`);
-    }
-  };
-
-  const getTimeDate = () => {
-    const [hours, minutes] = morningBriefingTime.split(':').map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes, 0, 0);
-    return date;
-  };
-
   const formatIntervalText = (stage: PipelineStage) => {
     const days = stage.interval_days;
     let text = '';
