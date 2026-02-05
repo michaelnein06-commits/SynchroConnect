@@ -256,7 +256,7 @@ export default function PipelineSettings() {
     setNewStageColor(PRESET_COLORS[0]);
   };
 
-  const toggleStageEnabled = (index: number) => {
+  const toggleStageEnabled = async (index: number) => {
     const enabledCount = stages.filter(s => s.enabled).length;
     if (stages[index].enabled && enabledCount <= 1) {
       Alert.alert('Error', 'You must have at least one enabled pipeline stage');
@@ -266,6 +266,17 @@ export default function PipelineSettings() {
     const updatedStages = [...stages];
     updatedStages[index] = { ...updatedStages[index], enabled: !updatedStages[index].enabled };
     setStages(updatedStages);
+    
+    // Auto-save after toggle
+    try {
+      await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/profile`, {
+        pipeline_stages: updatedStages,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (error) {
+      console.error('Failed to auto-save:', error);
+    }
   };
 
   const formatIntervalText = (stage: PipelineStage) => {
