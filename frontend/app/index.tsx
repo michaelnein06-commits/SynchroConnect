@@ -5261,6 +5261,47 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: 2,
   },
+  
+  // Contact Groups Badges
+  contactGroupsBadges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 6,
+  },
+  contactGroupBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 4,
+    maxWidth: 100,
+  },
+  contactGroupDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  contactGroupBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  
+  // Frequency Badge
+  contactFrequencyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 5,
+  },
+  contactFrequencyText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  
   pipelineContactActions: {
     flexDirection: 'row',
     alignItems: 'center',
