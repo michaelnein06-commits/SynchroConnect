@@ -336,11 +336,46 @@ export default function Index() {
     }
   };
 
+  // Fetch profile to get dynamic pipeline stages
+  const fetchProfile = async () => {
+    if (!token) return;
+    try {
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/profile`, getAuthHeaders());
+      const profile = response.data;
+      
+      if (profile.pipeline_stages && profile.pipeline_stages.length > 0) {
+        // Sort by interval and add "New" at the beginning
+        const sorted = [...profile.pipeline_stages]
+          .filter((s: any) => s.enabled !== false)
+          .sort((a: any, b: any) => a.interval_days - b.interval_days);
+        const stageNames = ['New', ...sorted.map((s: any) => s.name)];
+        setPipelineStages(stageNames);
+        setPipelineStagesConfig(sorted);
+      }
+    } catch (error) {
+      // Use default stages if profile not found
+      console.log('Using default pipeline stages');
+    }
+  };
+
+  // Copy text to clipboard
+  const copyToClipboard = async (text: string) => {
+    try {
+      await Clipboard.setStringAsync(text);
+      triggerHaptic('success');
+      Alert.alert('✓', 'Copied to clipboard');
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      Alert.alert('Error', 'Failed to copy');
+    }
+  };
+
   useEffect(() => {
     if (token) {
       fetchContacts();
       fetchDrafts();
       fetchGroups();
+      fetchProfile();
       // Don't auto-sync on startup - let user tap the sync button
       // This avoids race conditions with the contacts API
     }
@@ -351,6 +386,7 @@ export default function Index() {
     fetchContacts();
     fetchDrafts();
     fetchGroups();
+    fetchProfile();
     // Don't auto-sync on refresh - user can tap sync button explicitly
   };
 
