@@ -291,6 +291,7 @@ def calculate_target_interval(pipeline_stage: str) -> int:
     Note: This is a sync version for backward compatibility. Use calculate_target_interval_async when possible."""
     intervals = {
         "New": 0,  # New contacts have no countdown
+        "Daily": 1,
         "Weekly": 7,
         "Bi-Weekly": 14,
         "Monthly": 30,
