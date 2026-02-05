@@ -182,16 +182,26 @@ export default function PipelineSettings() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             const updatedStages = stages.filter((_, i) => i !== index);
             setStages(updatedStages);
+            // Auto-save after delete
+            try {
+              await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/profile`, {
+                pipeline_stages: updatedStages,
+              }, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+            } catch (error) {
+              console.error('Failed to auto-save:', error);
+            }
           }
         }
       ]
     );
   };
 
-  const handleAddStage = () => {
+  const handleAddStage = async () => {
     if (!newStageName.trim()) {
       Alert.alert('Error', 'Stage name is required');
       return;
@@ -214,6 +224,17 @@ export default function PipelineSettings() {
     setStages(updatedStages);
     setShowAddModal(false);
     resetNewStageForm();
+    
+    // Auto-save after add
+    try {
+      await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/profile`, {
+        pipeline_stages: updatedStages,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (error) {
+      console.error('Failed to auto-save:', error);
+    }
   };
 
   const resetNewStageForm = () => {
