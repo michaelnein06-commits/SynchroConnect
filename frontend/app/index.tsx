@@ -632,7 +632,9 @@ export default function Index() {
       await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/drafts/generate/${contactId}`, {}, getAuthHeaders());
       Alert.alert('Success', `AI draft generated for ${contactName}!`);
       fetchDrafts();
-      setActiveTab('drafts');
+      // Navigate to Planner tab and show drafts sub-tab
+      setActiveTab('planner');
+      setPlannerSubTab('drafts');
     } catch (error) {
       Alert.alert('Error', 'Failed to generate draft');
     }
