@@ -2126,7 +2126,7 @@ export default function Index() {
                     <View style={styles.upcomingInfo}>
                       <Text style={styles.upcomingName}>{contact.name}</Text>
                       <Text style={styles.upcomingDate}>
-                        {date.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}
+                        {date.toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
                       </Text>
                     </View>
                     <View style={[
@@ -2139,7 +2139,7 @@ export default function Index() {
                         daysUntil <= 7 && styles.upcomingBadgeTextSoon,
                         daysUntil === 0 && styles.upcomingBadgeTextToday
                       ]}>
-                        {daysUntil === 0 ? '🎂 Heute!' : daysUntil === 1 ? 'Morgen' : `in ${daysUntil}d`}
+                        {daysUntil === 0 ? '🎂 Today!' : daysUntil === 1 ? 'Tomorrow' : `in ${daysUntil}d`}
                       </Text>
                     </View>
                   </TouchableOpacity>
