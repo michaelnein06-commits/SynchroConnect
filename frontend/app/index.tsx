@@ -1419,7 +1419,7 @@ export default function Index() {
               <View style={[styles.briefingSectionIcon, { backgroundColor: '#FF69B4' + '15' }]}>
                 <Ionicons name="gift-outline" size={18} color="#FF69B4" />
               </View>
-              <Text style={styles.briefingSectionTitle}>Kommende Geburtstage</Text>
+              <Text style={styles.briefingSectionTitle}>Upcoming Birthdays</Text>
             </View>
             
             {thisWeekBirthdays.slice(0, 3).map(({ contact, daysUntil }) => (
@@ -1439,7 +1439,7 @@ export default function Index() {
                 )}
                 <View style={styles.briefingContactInfo}>
                   <Text style={styles.briefingContactName}>{contact.name}</Text>
-                  <Text style={styles.briefingContactMeta}>Geburtstag in {daysUntil} Tagen</Text>
+                  <Text style={styles.briefingContactMeta}>Birthday in {daysUntil} days</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
               </TouchableOpacity>
@@ -1453,9 +1453,9 @@ export default function Index() {
             <View style={styles.briefingAllGoodIcon}>
               <Ionicons name="checkmark-circle" size={48} color={COLORS.success} />
             </View>
-            <Text style={styles.briefingAllGoodTitle}>Alles erledigt!</Text>
+            <Text style={styles.briefingAllGoodTitle}>All caught up!</Text>
             <Text style={styles.briefingAllGoodText}>
-              Du hast heute keine überfälligen Kontakte. Weiter so!
+              You have no overdue contacts today. Keep it up!
             </Text>
           </View>
         )}
