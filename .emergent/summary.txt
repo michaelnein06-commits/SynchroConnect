@@ -1,345 +1,230 @@
 <analysis>
 <original_problem_statement>
-The user wants to enhance the existing SynchroConnectr mobile application. The request consists of two main parts:
+The user wants to enhance a personal CRM Expo mobile application.
 
-1.  **Feature Request: Planner Tab**
-    *   Replace the current Drafts tab in the bottom navigation with a new Planner tab.
-    *   This Planner tab should be a container with two sub-views:
-        *   The existing Drafts view.
-        *   A new Calendar view.
-    *   The Calendar should have switchable views for Week, Month, and Year.
-    *   The Calendar must automatically display the birthdays of all contacts stored in the app.
+Initial feature requests:
+- Advanced AI features.
+- Google Calendar and Mail integration.
+- A nicer UI and UX.
+- A drag-and-drop interface for the Pipeline and Group sections.
 
-2.  **Bug Fix/Enhancement: Contact Import**
-    *   The current contact import from the user's iPhone only extracts , , , and .
-    *   The import functionality must be extended to also extract , , , and the contact's  (hero/profile image).
-
+Subsequent user requests and bug reports during the session:
+1.  **Keyboard Issues:** The on-screen keyboard consistently covers input fields (e.g., search, create group), preventing the user from seeing what they are typing. The desired behavior is for the view to shift up. Clicking outside the input/keyboard should also dismiss it.
+2.  **Morning Briefing Feature:** Add a Morning Briefing tab to the Planner section with a configurable time for daily notifications. This was later requested to be accessible *only* from the Planner.
+3.  **Customizable Pipelines:** Users should be able to define their own pipeline stages (e.g., Daily, Weekly), set custom intervals (e.g., 1 day, 7 days), and have the app sort them correctly by interval.
+4.  **Bug: Dynamic Pipelines Not Updating:** A critical bug where new pipeline stages created in settings are not reflected in the main pipeline navigation tab. The UI continues to show the old, hardcoded stages.
+5.  **UI/UX Feedback:**
+    - The entire app should be in **English**.
+    - Remove redundant buttons (Create Group and New should be a single button).
+    - The long press to move hint should be removed.
+    - The Create Group button should be a Floating Action Button (FAB) at the bottom-right.
+    - AI draft copy button must copy the text to the device clipboard.
+6.  **Change of Direction:** The user later requested to **remove the drag-and-drop functionality** and **remove all pull-to-refresh features**. They asked for a fresher pipeline navigation instead.
+7.  **Performance:** The user reported that the app feels slow and hangs sometimes.
 </original_problem_statement>
-<User_s_preferred_language>German</User_s_preferred_language>
-<what_currently_exists>
-The application is a full-stack mobile CRM called SynchroConnectr built with Expo (React Native) and a FastAPI backend with MongoDB.
 
-**Backend:**
-*   Handles Google-only authentication.
-*   Provides full CRUD APIs for Contacts, Interactions, and Groups.
-*   Features an AI endpoint () using GPT-4.1 to create personalized messages.
-*   Supports pipeline management, morning briefings, and bidirectional contact synchronization with the device.
-*   The  model in the database already includes fields for , , , and .
+**User's preferred language**: The user initially communicated in German but has explicitly requested that the entire app and all future communication be in **English**.
 
-**Frontend:**
-*   A multi-tab application with views for Pipeline, Contacts, Groups, and Profile.
-*   The UI was recently enhanced with gradients, improved card layouts, and better visual hierarchy.
-*   A Planner tab has been implemented to replace the Drafts tab. It contains sub-navigation for Drafts and Calendar.
-*   The Calendar view is implemented using  and is designed to show upcoming birthdays, but the data is not being imported correctly.
-*   A contact import service () exists but is failing to extract extended fields like birthdays, notes, location, and images from iOS contacts.
-*   A contact sync service () is able to *write* contact data (including birthdays) from the app *to* the user's iPhone contacts, but the reading part relies on the broken import service.
+**what currently exists?**
+The application is a full-stack personal CRM with a React Native (Expo) frontend and a FastAPI backend. It features Google authentication, contact and group management, and a planner section. A Morning Briefing feature and a settings page for custom pipelines have been added. The backend supports custom pipeline stages. The previously implemented drag-and-drop and pull-to-refresh features are currently being removed as per the user's latest request.
 
-</what_currently_exists>
-<Last_working_item>
-<Last_item_agent_was_working>
-The agent was attempting to fix the critical and recurring issue where extended contact details (birthday, notes, location, image) are not being imported from iOS contacts, despite the user granting Full Access permissions. The agent observed that *writing* data to iOS contacts works, but *reading* fails. Based on this, the agent rewrote the  function in  to mimic the logic of the working sync service, hoping this would resolve the reading issue.
+**Last working item**:
+    - Last item agent was working: The agent was in the middle of a major UI refactor based on the user's latest feedback. This involved removing the drag-and-drop functionality and pull-to-refresh features, and redesigning the UI for the Pipeline and Groups sections in . The  and  functions were replaced, but the work is incomplete and untested.
+    - Status: IN PROGRESS
+    - Agent Testing Done: N
+    - Which testing method agent to use? Frontend testing agent
+    - User Testing Done: N
 
-</Last_item_agent_was_working>
-<Status>IN PROGRESS</Status>
-<Agent_Testing_Done>N</Agent_Testing_Done>
-<Which_testing_method_agent_to_use>manual testing by curl</Which_testing_method_agent_to_use>
-<User_Testing_Done>N</User_Testing_Done>
-</Last_working_item>
-<All_Pending/In_progress_Issue_list>
-<Issue_1>Contact import from iOS does not extract extended fields (P0)</Issue_1>
-<Issue_2>Birthdays are not correctly displayed in the calendar (P1)</Issue_2>
-<Issue_3>The contact import screen sometimes breaks, preventing selection (P1)</Issue_3>
-<Issues_Detail>
-<Issue_1>
-<Attempted_fixes>
-The agent has been stuck on this issue for a significant amount of time and has tried numerous fixes, all of which have failed:
-*   **Initial Fix:** Corrected a 0-indexed vs 1-indexed month parsing error for birthdays. This did not solve the core problem.
-*   **Individual Fetch:** Rewrote the function to fetch a list of contact IDs and then fetch each contact's full details individually using . This also failed to retrieve the extended fields.
-*   **Robust Field Filtering:** Added logic to filter out any  or  values from the  array before calling , as this was causing the entire call to fail and break the import screen. This fixed the screen breakage but not the data import.
-*   **Reverting Code:** Reverted the file to a supposedly working previous version from git history, which did not help and re-introduced prior bugs.
-*   **Isolating Problematic Fields:** Attempted to request fields one by one to see which one was causing the failure. This was inconclusive due to severe Metro bundler caching issues preventing the new code from running on the client.
-*   **Final Attempt (In Progress):** The agent just overwrote  again with logic that tries to fetch contacts without extended fields first, then enriches them individually, mimicking the (working) write-logic from .
-
-The root cause is highly suspected to be a limitation or bug within Expo Go on iOS, where even with Full Access permissions, the  API call does not return sensitive fields like birthday, notes, or images. Metro bundler caching issues have severely hampered debugging efforts, making it difficult to know if fixes are even being tested.
-
-</Attempted_fixes>
-<Next_debug_checklist>
-1.  **Confirm Latest Code is Running:** The immediate next step is to have the user test the latest changes. It is CRITICAL to ensure the Metro cache is cleared and the user force-restarts the Expo Go app to load the new bundle. The logs should be checked for the new  messages added in the latest version of .
-2.  **Analyze Logs from Latest Attempt:** Carefully examine the console logs from the user's device after they attempt the import. The code was last modified to include extensive logging around the fetch process. The goal is to see if the new enrichment logic is being executed and what the  call returns for a single contact.
-3.  **Check  utility:** The file  contains a  helper function that was part of one of the attempted fixes. Verify if this is correctly implemented and used.
-4.  **Permissions Check:** Re-confirm the permission status via logs. A  log was seen previously, which was a major blocker. Although the user says they granted full access, this needs to be programmatically verified at the start of the import flow.
-
-</Next_debug_checklist>
-<Why_fix_this_issue_and_what_will_be_achieved_with_the_fix>
-This is the primary blocker for the user's feature request. Fixing this will allow the app to import all necessary contact data, which is essential for populating the birthday calendar and enriching the CRM data as requested. It is a core functionality that is currently broken.
-
-</Why_fix_this_issue_and_what_will_be_achieved_with_the_fix>
-<Status>IN PROGRESS</Status>
-<Is_recurring_issue>Y</Is_recurring_issue>
-<Should_Test_frontend/backend/both_after_fix>frontend</Should_Test_frontend/backend/both_after_fix>
-<Blocked_on_other_issue>None</Blocked_on_other_issue>
-</Issue_1>
-<Issue_2>
-<Attempted_fixes>
-The agent implemented the UI for displaying birthdays in the calendar in , including custom markers for birthday dates and an Upcoming Birthdays list. However, this feature cannot be fully verified or improved until Issue #1 is resolved, as no birthday data is being imported into the app.
-
-</Attempted_fixes>
-<Next_debug_checklist>
-1.  Once Issue #1 is resolved and birthdays are successfully imported, navigate to the Planner tab.
-2.  Verify that dates with birthdays are marked correctly in the calendar view.
-3.  Check the Upcoming Birthdays list to ensure it populates with the correct contacts and dates.
-4.  Refine the visual representation as per the user's feedback (graphisch dargestellt. das soll besser sein).
-
-</Next_debug_checklist>
-<Why_fix_this_issue_and_what_will_be_achieved_with_the_fix>
-This is part of the user's core feature request. Fixing it will complete the Planner tab functionality.
-
-</Why_fix_this_issue_and_what_will_be_achieved_with_the_fix>
-<Status>BLOCKED</Status>
-<Is_recurring_issue>N</Is_recurring_issue>
-<Should_Test_frontend/backend/both_after_fix>frontend</Should_Test_frontend/backend/both_after_fix>
-<Blocked_on_other_issue>Issue 1: Contact import from iOS does not extract extended fields</Blocked_on_other_issue>
-</Issue_2>
-<Issue_3>
-<Attempted_fixes>
-This issue appeared multiple times. The agent identified that the  call was failing when the  array contained  or  values, which broke the import screen. A fix was implemented in  to filter the  array for valid values before making the API call. This seemed to resolve the screen breakage.
-
-</Attempted_fixes>
-<Next_debug_checklist>
-1.  After the next fix for Issue #1, ensure this regression does not reappear.
-2.  The code that filters the  array should be maintained in all future attempts to fix the import.
-
-</Next_debug_checklist>
-<Why_fix_this_issue_and_what_will_be_achieved_with_the_fix>
-This is a critical bug that makes the import feature unusable. Preventing its recurrence is essential.
-
-</Why_fix_this_issue_and_what_will_be_achieved_with_the_fix>
-<Status>TESTING PENDING</Status>
-<Is_recurring_issue>Y</Is_recurring_issue>
-<Should_Test_frontend/backend/both_after_fix>frontend</Should_Test_frontend/backend/both_after_fix>
-<Blocked_on_other_issue>Issue 1: Contact import from iOS does not extract extended fields</Blocked_on_other_issue>
-</Issue_3>
-</Issues_Detail>
-</All_Pending/In_progress_Issue_list>
-<In_progress_Task_List>
-<Task_1>Implement Planner Tab with Calendar (P0)</Task_1>
-<Task_Detail>
-<Task_1>
-<Where_to_resume>The UI for the Planner tab and Calendar is largely complete in . The main work remaining is to successfully populate it with data.</Where_to_resume>
-<What_will_be_achieved_with_this>This will complete the user's primary feature request.</What_will_be_achieved_with_this>
-<Status>BLOCKED</Status>
-<Should_Test_frontend/backend/both_after_fix>frontend</Should_Test_frontend/backend/both_after_fix>
-<Blocked_on_something>Issue 1: Contact import from iOS does not extract extended fields</Blocked_on_something>
-</Task_1>
-</Task_Detail>
-</In_progress_Task_List>
-<Upcoming_and_Future_Tasks>
-N/A - All requested work is currently in progress or blocked.
-</Upcoming_and_Future_Tasks>
-<Completed_work_in_this_session>
-<List_of_all_completed_tasks_with_file_and_method_name>
-- **UI Design Enhancement:**
-  - Applied a comprehensive design overhaul to the main application screen.
-  - Edited  to add gradient headers, improved contact cards, an enhanced tab bar, better empty states, and chat-like bubbles for the drafts section.
-- **Initial Planner Tab Implementation:**
-  - Replaced the Drafts tab with a new Planner tab.
-  - Added sub-navigation within the planner to switch between Drafts and a new Calendar view.
-  - Integrated the  library.
-  - All changes were made in .
-
-</List_of_all_completed_tasks_with_file_and_method_name>
-</Completed_work_in_this_session>
-<Earlier_issues_found/mentioned_but_not_fixed>
-N/A
-</Earlier_issues_found/mentioned_but_not_fixed>
-<Known_issue_recurrence_from_previous_fork>
-N/A
-</Known_issue_recurrence_from_previous_fork>
-<Code_Architecture>
-/app
-├── backend
-│   ├── .env
-│   ├── requirements.txt
-│   └── server.py
-└── frontend
-    ├── .env
-    ├── app
-    │   ├── import-contacts.tsx
-    │   └── index.tsx
-    ├── components
-    │   └── ContactImportPrompt.tsx
-    ├── services
-    │   ├── ContactSyncService.ts
-    │   └── contactImportService.ts
-    ├── package.json
-    └── ... (other expo config files)
-</Code_Architecture>
-<Key_Technical_Concepts>
-*   **Frontend:** Expo (React Native), TypeScript
-*   **Backend:** FastAPI (Python)
-*   **Database:** MongoDB
-*   **State Management:** React Hooks (, , etc.)
-*   **UI Libraries:** , 
-*   **Device API:**  for reading/writing phone contacts.
-
-</Key_Technical_Concepts>
-<key_DB_schema>
-*   **contacts:** , , , , ,  (string, for base64),  (string),  (string), , , , , , etc.
-*   **interactions:** , , Wed Feb  4 16:21:01 UTC 2026, .
-*   **groups:** , , .
-*   **users:** , , , .
-
-</key_DB_schema>
-<changes_in_tech_stack>
-N/A
-</changes_in_tech_stack>
-<All_files_of_reference>
-*   : **(CRITICAL)** This file contains the broken contact import logic and has been edited numerous times. It is the focal point of the main unresolved issue.
-*   : The main screen of the application. It was heavily modified to add the new Planner tab, the Calendar component, and all the new UI styles.
-*   : The UI screen for the contact import process. It was modified to try and force a cache refresh.
-*   : Contains the logic for syncing contacts between the app and the device. Its working *write* logic was used as a reference for the latest attempt to fix the *read* logic.
-
-</All_files_of_reference>
-<Areas_that_need_refactoring>
-*   The  file is currently very messy due to numerous failed attempts and debugging code. Once the import issue is solved, it should be cleaned up to remove extensive  statements and commented-out code.
-*   The main application file  has grown to over 3000 lines. It contains the logic and rendering for all tabs, multiple modals, and several helper functions. It should be broken down into smaller, more manageable components (e.g., , , , etc.) to improve maintainability.
-
-</Areas_that_need_refactoring>
-<key_api_endpoints>
-*    (GET, POST)
-*    (GET, PUT, DELETE)
-*    (POST)
-*    (POST)
-*    (POST)
-*    (GET, POST)
-*    (POST)
-*    (GET)
-
-</key_api_endpoints>
-<Critical_Info_for_New_Agent>
-*   **Main Blocker:** You are inheriting a job stuck in a loop. The primary issue is that 's  method is failing to retrieve extended fields (birthday, notes, image, location) on iOS, likely due to Expo Go limitations, even with Full Access. Do not assume previous attempts were wrong; this is a very difficult platform-specific issue.
-*   **Metro Cache:** The previous agent wasted a lot of time fighting the Metro bundler cache. New code was not being loaded on the client. **ALWAYS** ensure the user has fully closed and reopened the Expo Go app after you restart the server. Use [16:21:02] Starting project at /app/frontend or [16:21:03] Starting project at /app/frontend aggressively if you suspect caching issues. Add unique  messages in your new code to be 100% sure it's being executed.
-*   **Recurrence:** The bug where the contact import screen breaks (cannot select contacts) is a recurring regression. It's caused by the  call failing completely. The fix is to robustly filter the  array for  values before the call. Be mindful not to reintroduce this bug.
-*   **Working vs. Non-Working:** A key piece of information is that *writing* contacts to the device works (), but *reading* does not. The last attempt was to align the reading logic with the working writing logic. Your first step should be to see if this last attempt worked.
-
-</Critical_Info_for_New_Agent>
-<documents_created_in_this_job>
-N/A
-</documents_created_in_this_job>
-<Last_10_User_Messages_and_any_pending_HUMAN_messages>
-1.  **ok wenn ich aber in der app den geburtstag eintrage... (Msg 447):** User points out that writing a birthday from the app to iOS contacts works, questioning why reading doesn't. (IN PROGRESS - led to latest fix attempt)
-2.  **Es funktioniert weiterhin nicht (Msg 438):** User reports the import is still broken after a fix. (IN PROGRESS)
-3.  **Also es funktioniert immernoch nicht. Probier mal das korrekte mapping... (Msg 427):** User reports failure and provides detailed suggestions about permissions, field mapping, and API limitations. (IN PROGRESS)
-4.  **was meinst du mit logs. die anderen felder werden nicht mitgegeben immernoch nicht (Msg 408):** User is confused about logs and reiterates that fields are not being imported. (RESOLVED - agent explained and got logs)
-5.  **ok leider werden immernoch nicht die birthday... (Msg 385):** User reports failure again and provides a screenshot of a contact card showing all the data that *should* be imported. (IN PROGRESS)
-6.  **Wieder Problem! fix das (Msg 354):** User reports a problem and provides a screenshot of an error. (IN PROGRESS)
-7.  **jetzt ist es wieder so dass ich nichts auswählen kann... (Msg 337):** User reports a critical regression: the contact selection screen is broken again. (IN PROGRESS)
-8.  **Alss die kontakte kann man wieder importierebn... (Msg 320):** User says contacts can be imported again, but birthdays are still missing. (IN PROGRESS)
-9.  **leider steht immernoch die warnung, obowhl ich full access gemacht habe (Msg 291):** User reports the limited access warning is still showing despite granting full access. (IN PROGRESS)
-10. **ok full access ist da, jetzt kann ich aber gar keine kontakte auswählen (Msg 268):** User reports that after granting full access, the import screen is broken and they can't select any contacts. (IN PROGRESS)
-
-</Last_10_User_Messages_and_any_pending_HUMAN_messages>
-<Project_Health_Check>
-*   **Broken:** The core feature requested by the user, Enhanced Contact Import, is fundamentally broken and has been for most of the session. This blocks the completion of the Planner feature. The agent is stuck in a debugging loop.
-
-</Project_Health_Check>
-<3rd_Party_Integrations>
-*   
-  Usage: expo [command] [options]
-
-  Options:
+**All Pending/In progress Issue list**:
+  - Issue 1: Dynamic pipeline stages do not update in the main UI (P0 - CRITICAL)
+  - Issue 2: Keyboard consistently hides input fields across the app (P0 - CRITICAL)
+  - Issue 3: Move pipeline settings access point from Briefing to Pipeline tab (P1)
+  - Issue 4: Ensure the entire application UI is in English (P2)
+  - Issue 5: General performance optimization (P3)
   
-    -V, --version                     output the version number
-    --non-interactive                 Fail, if an interactive prompt would be required to continue.
-    -h, --help                        output usage information
-  
-  Commands:
+  Issues Detail:
+  - Issue 1: 
+     - Description: New pipeline stages created in  are saved to the user's profile in the database but are not displayed on the main Pipeline tab in . The UI still shows a hardcoded list of stages.
+     - Attempted fixes: A  state and a  function were added to  to load the stages dynamically. This did not solve the problem, indicating an issue with either the state update, the re-rendering logic, or the data fetching itself.
+     - Next debug checklist:
+        1. Verify  in  is being called correctly on app load and after settings are saved.
+        2.  the response from the  endpoint to ensure it contains the  array.
+        3. Check if the  state update is triggering a re-render of the component.
+        4. Examine the new  function to ensure it correctly maps over the  state variable to create the navigation tabs/pills.
+     - Why fix this issue and what will be achieved with the fix? This is a core feature requested by the user. Fixing it will allow users to customize their contact management workflow as intended.
+     - Status:  IN PROGRESS
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Both. Backend to confirm profile data is served; frontend to confirm UI updates.
+     - Blocked on other issue: None.
 
-    init [name]                       Create a new Expo project
-    start [path]                      Start a local dev server for the app
-    start:web [path]                  Start a Webpack dev server for the web app
-    export [path]                     Export the static files of the app for hosting it on a web server
-    install [packages...]             Install a module or other package to a project
-    run:android [path]                Run the Android app binary locally
-    run:ios [path]                    Run the iOS app binary locally
-    send [path]                       Share the project's URL to an email address
+  - Issue 2:
+     - Description: On multiple screens, especially when creating a new group or using search fields, the keyboard appears and covers the , making it impossible for the user to see what they're typing. Clicking outside the keyboard should also dismiss it.
+     - Attempted fixes:  was added at various levels, including wrapping individual components and the entire app in .  was used to wrap content to dismiss the keyboard. These fixes have been inconsistent and ineffective.
+     - Next debug checklist:
+        1. Remove the global  from  as it might be interfering with more specific implementations.
+        2. Use  from  for screens with forms and inputs, as it provides more robust handling.
+        3. For the Create Group modal, ensure it is wrapped in  with the correct  prop () and a .
+        4. Ensure  and  components have the  prop to allow interaction while the keyboard is up and dismiss it correctly.
+     - Why fix this issue and what will be achieved with the fix? This is a critical usability bug that makes parts of the app unusable. Fixing it will provide a standard, professional user experience.
+     - Status:  IN PROGRESS
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Frontend.
+     - Blocked on other issue: None.
 
-    login                             Login to an Expo account
-    logout                            Logout of an Expo account
-    register                          Sign up for a new Expo account
-    whoami                            Return the currently authenticated account
+  - Issue 3:
+     - Description: The user wants the link/icon to access the pipeline settings page () to be located within the Pipeline tab, not the Briefing tab.
+     - Attempted fixes: The agent removed the settings icon from the Briefing tab but has not yet added it to the Pipeline tab.
+     - Next debug checklist:
+        1. In , locate the new  function.
+        2. Add a settings icon button ( with an  icon) to the header of the pipeline section.
+        3. The  handler for this button should navigate to the pipeline settings page using .
+     - Why fix this issue and what will be achieved with the fix? Improves UI logic and navigation intuitiveness, placing settings where the user expects them.
+     - Status: NOT STARTED
+     - Should Test frontend/backend/both after fix? Frontend.
+     - Blocked on other issue: None.
 
-    client:install:ios                Install Expo Go for iOS on the simulator
-    client:install:android            Install Expo Go for Android on a connected device or emulator
+  - Issue 4:
+     - Description: The app still contains German text, for example in the planner tabs (Kalender). The user wants the entire app to be in English.
+     - Attempted fixes: The agent manually translated some text in .
+     - Next debug checklist:
+        1. Globally search the project for any remaining German strings.
+        2. Focus on  and  to find hardcoded strings.
+        3. Translate all identified strings to English.
+     - Why fix this issue and what will be achieved with the fix? Fulfills a direct user requirement for language consistency.
+     - Status:  IN PROGRESS
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? Frontend.
+     - Blocked on other issue: None.
 
-    config [path]                     Show the project config
-    doctor [path]                     Diagnose issues with the project
-    upgrade [sdk-version]             Upgrade the project packages and config for the given SDK version
+  - Issue 5:
+     - Description: The user reported general slowness and hanging.
+     - Attempted fixes: None.
+     - Next debug checklist:
+        1. Review  for performance bottlenecks. The entire app logic is in one massive file, which is a likely cause.
+        2. Check for expensive calculations or redundant re-renders inside the main component. Use  for components that render frequently with the same props.
+        3. Use  for functions passed as props to child components to prevent unnecessary re-renders.
+        4. Consider using  instead of  or  for long lists of contacts.
+     - Why fix this issue and what will be achieved with the fix? Improves the overall user experience and makes the app feel more responsive.
+     - Status: NOT STARTED
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? Frontend.
+     - Blocked on other issue: None.
 
-    customize:web [path]              Eject the default web files for customization
-    prebuild [path]                   Create native iOS and Android project files before building natively.
-                                      Learn more: https://docs.expo.dev/workflow/customizing/
+**In progress Task List**:
+  - Task 1: Complete the UI refactor to remove Drag & Drop and Pull-to-Refresh (P0)
+   - Where to resume:
+      1.  Verify the new  and  functions in  are working as expected.
+      2.  Remove the  dependency from  and run yarn install v1.22.22
+[1/4] Resolving packages...
+success Already up-to-date.
+Done in 0.39s..
+      3.  Delete the now-unused files:  and .
+      4.  Remove all  components and related  logic from  and .
+      5.  Clean up any unused state variables () and imports related to these removed features.
+   - What will be achieved with this? The application will align with the user's new design direction, simplifying the UI and removing unwanted features.
+   - Status: IN PROGRESS
+   - Should Test frontend/backend/both after fix? Frontend.
+   - Blocked on something: None.
 
-    build:web [path]                  Build the web app for production
+**Upcoming and Future Tasks**
+  - Upcoming Tasks:
+    - (P1) Google Calendar Integration: Either read-only or two-way sync for contact reminders.
+    - (P1) Google Mail Integration: View emails from contacts or send emails directly.
+    - (P2) AI Features: Implement AI-driven features like relationship insights, smart contact recommendations, or meeting summarizers.
 
-    credentials:manager [path]        Superseded by eas credentials in eas-cli
+**Completed work in this session**
+- List of all completed tasks with file and method name:
+  - Backend support for custom pipeline stages and morning briefing time ( in  model).
+  - Creation of a settings page for pipeline customization ().
+  - Implementation of a Morning Briefing tab within the Planner section ().
+  - Implemented AI draft copy-to-clipboard functionality using  ( function in ).
 
-    url [path]                        Log a URL for opening the project in Expo Go
-    url:ipa [path]                    Log the download URL for the standalone iOS binary
-    url:apk [path]                    Log the download URL for the standalone Android binary
+- Recently completed:
+  - Logic to fetch dynamic pipeline stages from the backend ( in ), although it is not yet working correctly in the UI.
+  - Initial (unsuccessful) refactor to remove Drag & Drop from Pipeline and Groups views.
 
-    webhooks [path]                   List all webhooks for a project
-    webhooks:add [path]               Add a webhook to a project
-    webhooks:remove [path]            Delete a webhook
-    webhooks:update [path]            Update an existing webhook
+**Earlier issues found/mentioned but not fixed**
+   - All known unfixed issues are listed in the **All Pending/In progress Issue list** section. The most critical recurring issues are the keyboard bug and the failure of dynamic pipeline stages to update the UI.
 
-    build:ios [path]                  Superseded by eas build in eas-cli
-    build:android [path]              Superseded by eas build in eas-cli
-    build:status [path]               Superseded by eas build:list in eas-cli
-    eject [path]                      Superseded by expo prebuild
-    fetch:ios:certs [path]            Superseded by eas credentials in eas-cli
-    fetch:android:keystore [path]     Superseded by eas credentials in eas-cli
-    fetch:android:hashes [path]       Superseded by eas credentials in eas-cli
-    fetch:android:upload-cert [path]  Superseded by eas credentials in eas-cli
-    publish [path]                    Superseded by eas update in eas-cli
-    publish:set [path]                Superseded by eas update:republish in eas-cli
-    publish:rollback [path]           Superseded by eas update:republish in eas-cli
-    publish:history [path]            Superseded by eas update:list in eas-cli
-    publish:details [path]            Superseded by eas update:view in eas-cli
-    push:android:upload [path]        Superseded by eas credentials in eas-cli
-    push:android:show [path]          Superseded by eas credentials in eas-cli
-    push:android:clear [path]         Superseded by eas credentials in eas-cli
-    upload:android [path]             Superseded by eas submit in eas-cli
-    upload:ios [path]                 Superseded by eas submit in eas-cli
-    client:ios [path]                 Superseded by Expo Dev Clients
+**Known issue recurrence from previous fork**
+  - Not applicable, this is the first summary for this job.
 
-[16:21:03]   Run a command with --help for more info 💡
-[16:21:03]     $ expo start --help
-[16:21:03]: ~51.0.18
-*   : 18.2.0
-*   : 0.74.3
-*   To use the fastapi command, please install "fastapi[standard]":
+**Code Architecture**
 
-	pip install "fastapi[standard]": (from )
-*   : (from )
-*   : ~13.0.4
-*   : 1.1314.0
-*   : ^15.0.8
+The application follows a monorepo structure with a  Expo app and a  FastAPI app. However, the frontend has a significant architectural issue where  has become a monolithic god component containing state and rendering logic for almost every feature, making it hard to maintain and debug.
 
-</3rd_Party_Integrations>
-<Testing_status>
-*   **Testing agent used after significant changes:** NO
-*   **Troubleshoot agent used after agent stuck in loop:** NO (This is a major oversight. The agent got stuck in a loop for over 200 messages and should have called the .)
-*   **Test files created:** N/A
-*   **Known regressions:** The import screen breaking and preventing contact selection is a known, recurring regression.
+**Key Technical Concepts**
+- **Frontend:** React Native, Expo, Expo Router,  (being removed), .
+- **Backend:** FastAPI, Python.
+- **Database:** MongoDB.
+- **State Management:** React state (, ) managed within a single large component.
 
-</Testing_status>
-<Credentials_to_test_flow>
-N/A - The flow requires connecting to the user's real device and contact list. No mock credentials are used.
-</Credentials_to_test_flow>
-<What_agent_forgot_to_execute>
-*   **Call :** The agent spent an excessive amount of time (over 200 messages) stuck on the same issue with contact imports and Metro caching. The system prompt explicitly mandates calling the  after 3 consecutive failures or getting stuck. This was a critical failure in following the development workflow.
-*   **Refactor :** While not an explicit user request, the agent made a mental note that the  file was becoming too large but did not act on it. The file now exceeds 3000 lines and is a significant source of technical debt.
+**key DB schema**
+  - **users (profiles)**: 
+  - **contacts**: 
+  - **groups**: 
 
-</What_agent_forgot_to_execute>
+**changes in tech stack**
+  -  was installed for drag-and-drop but is being removed.
+  -  was installed to handle copying text to the device clipboard.
+
+**All files of reference**
+- : **CRITICAL**. This file contains the logic for almost the entire application. It's where the pending bugs (pipeline loading, keyboard) and the current UI refactor are located.
+- : The page for managing custom pipelines. Needs keyboard and pull-to-refresh fixes.
+- : Defines the backend API and data models. The  endpoint is relevant for the dynamic pipeline bug.
+
+**Areas that need refactoring**:
+- ** is a god component**: This >2500 line file manages state, rendering, and logic for contacts, groups, pipeline, planner, modals, and data fetching. It urgently needs to be broken down into smaller, reusable components with their own state management (e.g., using React Context or Zustand) to improve performance and maintainability.
+- **Component Deletion**:  and  should be deleted after the UI refactor is complete.
+
+**key api endpoints**
+- : Fetches user profile, including custom .
+- : Updates user profile.
+- : Fetches all contacts.
+- : Creates a contact.
+- : Updates a contact.
+- : Fetches all groups.
+- : Creates a group.
+
+**Critical Info for New Agent**
+- The user has made a significant change in direction: **REMOVE drag-and-drop and pull-to-refresh**. Focus on building a clean, simple, and fast UI.
+- The two most critical bugs to solve are the **dynamic pipeline stages not updating** and the **keyboard obscuring inputs**. Address these with highest priority.
+- The entire application and your responses must be in **English**.
+- The frontend architecture is poor. The  file is monolithic. While a full refactor might be out of scope, be aware that this is the root cause of many performance and state management issues. Create new components for new features instead of adding more to .
+
+**documents created in this job**
+  - None.
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User (Chat 297):** Reports keyboard still not working, duplicate create group buttons, wants pull-to-refresh everywhere, pipeline stages not updating in the navigator, wants long press hints removed, and wants AI drafts to copy to the clipboard properly. (Status: Partially addressed)
+2.  **Agent (Chat 298):** Acknowledges the list of issues and plans to fix them.
+3.  **... (Chat 299-363):** Agent implements fixes for clipboard, dynamic pipeline loading (unsuccessfully), and removes hints/duplicate buttons.
+4.  **User (Chat 364):** **Major change of direction.** Asks to *remove* pull-to-refresh and drag-and-drop. Wants a fresher pipeline UI, a FAB for creating groups, confirms pipelines are still not updating, and wants pipeline settings moved to the pipeline tab. (Status: In Progress)
+5.  **Agent (Chat 365):** Acknowledges the new plan.
+6.  **... (Chat 366-393):** Agent begins removing drag-and-drop and redesigning the UI in . The session ends during this process.
+
+**Project Health Check:**
+- Broken:
+  - Dynamic pipeline stage loading is non-functional.
+  - Keyboard handling is critically broken, impacting usability.
+  - The UI is in a half-refactored state.
+
+**3rd Party Integrations**
+ - Google OAuth (via Expo) - used for authentication.
+ -  - used for copying text to the clipboard.
+
+**Testing status**
+  - Testing agent used after significant changes: NO
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: []
+  - Known regressions: The dynamic pipeline loading feature was attempted but does not work, which can be considered a regression from the user's expectation after the settings page was built.
+
+**Credentials to test flow:**
+- Google OAuth is required. The agent should use the existing flow. No explicit credentials are needed.
+
+**What agent forgot to execute**
+- The agent correctly identified the root cause of the dynamic pipeline issue (hardcoded constant) but its fix was not successful, and it didn't fully verify it before moving on.
+- The agent repeatedly failed to fix the keyboard issue, indicating a need for a different approach (e.g., ) rather than reapplying the same  wrapper.
+- The agent removed the pipeline settings link from the Briefing tab but forgot to add it to the Pipeline tab as requested.
+
 </analysis>
