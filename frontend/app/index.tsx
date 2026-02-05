@@ -3772,4 +3772,162 @@ const styles = StyleSheet.create({
   upcomingBadgeTextToday: {
     color: COLORS.surface,
   },
+  
+  // Morning Briefing Styles
+  briefingGreetingCard: {
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  briefingGreetingText: {
+    flex: 1,
+  },
+  briefingGreetingTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  briefingGreetingDate: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  briefingSettingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  briefingStatsRow: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    gap: 10,
+  },
+  briefingStat: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  briefingStatNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+  },
+  briefingStatLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textLight,
+    marginTop: 4,
+  },
+  briefingSection: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  briefingSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    gap: 12,
+  },
+  briefingSectionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  briefingSectionTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  briefingSectionBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  briefingSectionBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  briefingContactCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: COLORS.background,
+    borderRadius: 14,
+    marginBottom: 8,
+    gap: 12,
+  },
+  briefingContactAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+  },
+  briefingContactAvatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  briefingContactAvatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  briefingContactInfo: {
+    flex: 1,
+  },
+  briefingContactName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  briefingContactMeta: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  briefingMoreText: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  briefingAllGood: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  briefingAllGoodIcon: {
+    marginBottom: 16,
+  },
+  briefingAllGoodTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  briefingAllGoodText: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
 });
