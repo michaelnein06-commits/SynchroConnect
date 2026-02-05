@@ -2275,9 +2275,9 @@ export default function Index() {
     >
       <Pressable style={styles.container} onPress={Keyboard.dismiss}>
         <View style={styles.container}>
-          {/* Enhanced Header with Gradient */}
+          {/* Enhanced Header with Gradient and Logo */}
           <LinearGradient
-            colors={COLORS.primaryGradient}
+            colors={['#5D3FD3', '#7B68EE']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.headerGradient}
@@ -2285,15 +2285,22 @@ export default function Index() {
             <SafeAreaView edges={['top']}>
               <View style={styles.header}>
                 <View style={styles.headerContent}>
-                  <View style={styles.headerTextContainer}>
-                    <Text style={styles.headerTitle}>SynchroConnectr</Text>
-                    <Text style={styles.headerSubtitle}>
-                      {activeTab === 'pipeline' && 'Organize by frequency'}
-                      {activeTab === 'contacts' && `${contacts.length} contacts`}
-                      {activeTab === 'groups' && `${groups.length} groups`}
-                      {activeTab === 'planner' && (plannerSubTab === 'calendar' ? 'Birthdays & Events' : `${drafts.length} AI drafts`)}
-                      {activeTab === 'profile' && 'Your profile'}
-                    </Text>
+                  <View style={styles.headerLogoContainer}>
+                    <Image 
+                      source={require('../assets/images/convo-logo.png')} 
+                      style={styles.headerLogo}
+                      resizeMode="contain"
+                    />
+                    <View style={styles.headerTextContainer}>
+                      <Text style={styles.headerTitle}>Convo</Text>
+                      <Text style={styles.headerSubtitle}>
+                        {activeTab === 'pipeline' && 'Organize by frequency'}
+                        {activeTab === 'contacts' && `${contacts.length} contacts`}
+                        {activeTab === 'groups' && `${groups.length} groups`}
+                        {activeTab === 'planner' && (plannerSubTab === 'calendar' ? 'Birthdays & Events' : `${drafts.length} AI drafts`)}
+                        {activeTab === 'profile' && 'Your profile'}
+                      </Text>
+                    </View>
                   </View>
                   {/* Quick Stats Badge */}
                   {activeTab === 'pipeline' && contacts.filter(c => {
