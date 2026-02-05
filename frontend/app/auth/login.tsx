@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -15,19 +16,23 @@ import { useAuth } from '../../context/AuthContext';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import axios from 'axios';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const EMERGENT_AUTH_URL = 'https://auth.emergentagent.com';
+const { width, height } = Dimensions.get('window');
 
 const COLORS = {
   primary: '#5D3FD3',
+  primaryLight: '#7B68EE',
+  primaryDark: '#4B32A8',
   accent: '#F43F5E',
   background: '#F1F5F9',
   surface: '#FFFFFF',
   text: '#0F172A',
   textLight: '#64748B',
   border: '#E2E8F0',
-  google: '#4285F4',
+  google: '#FFFFFF',
 };
 
 export default function Login() {
@@ -121,161 +126,221 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {/* Logo/Brand */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/images/convo-logo.png')} 
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-          <Text style={styles.title}>Convo</Text>
-          <Text style={styles.subtitle}>
-            Your AI-powered personal CRM to stay meaningfully connected
-          </Text>
-        </View>
-
-        {/* Features */}
-        <View style={styles.features}>
-          <View style={styles.featureItem}>
-            <View style={styles.featureIcon}>
-              <Ionicons name="git-branch-outline" size={24} color={COLORS.primary} />
+    <LinearGradient
+      colors={['#5D3FD3', '#7B68EE', '#9B87F5']}
+      style={styles.container}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.content}>
+          {/* Logo and Brand Section */}
+          <View style={styles.heroSection}>
+            <View style={styles.logoContainer}>
+              <Image 
+                source={require('../../assets/images/convo-logo.png')} 
+                style={styles.logo}
+                resizeMode="contain"
+              />
             </View>
-            <Text style={styles.featureText}>Smart Pipeline Management</Text>
+            <Text style={styles.title}>Convo</Text>
+            <Text style={styles.subtitle}>
+              Stay meaningfully connected with everyone who matters
+            </Text>
           </View>
-          <View style={styles.featureItem}>
-            <View style={styles.featureIcon}>
-              <Ionicons name="sparkles-outline" size={24} color={COLORS.primary} />
+
+          {/* Features Card */}
+          <View style={styles.featuresCard}>
+            <View style={styles.featureRow}>
+              <View style={styles.featureItem}>
+                <View style={[styles.featureIcon, { backgroundColor: '#5D3FD3' + '20' }]}>
+                  <Ionicons name="git-branch-outline" size={22} color="#5D3FD3" />
+                </View>
+                <Text style={styles.featureText}>Smart Pipeline</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <View style={[styles.featureIcon, { backgroundColor: '#10B981' + '20' }]}>
+                  <Ionicons name="sparkles-outline" size={22} color="#10B981" />
+                </View>
+                <Text style={styles.featureText}>AI Drafts</Text>
+              </View>
             </View>
-            <Text style={styles.featureText}>AI Message Drafts</Text>
+            <View style={styles.featureRow}>
+              <View style={styles.featureItem}>
+                <View style={[styles.featureIcon, { backgroundColor: '#F59E0B' + '20' }]}>
+                  <Ionicons name="time-outline" size={22} color="#F59E0B" />
+                </View>
+                <Text style={styles.featureText}>Track History</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <View style={[styles.featureIcon, { backgroundColor: '#EC4899' + '20' }]}>
+                  <Ionicons name="people-outline" size={22} color="#EC4899" />
+                </View>
+                <Text style={styles.featureText}>Groups</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.featureItem}>
-            <View style={styles.featureIcon}>
-              <Ionicons name="time-outline" size={24} color={COLORS.primary} />
-            </View>
-            <Text style={styles.featureText}>Interaction History</Text>
+
+          {/* Auth Section */}
+          <View style={styles.authSection}>
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={handleGoogleSignIn}
+              disabled={loading}
+              activeOpacity={0.9}
+            >
+              {loading ? (
+                <ActivityIndicator color="#5D3FD3" />
+              ) : (
+                <>
+                  <View style={styles.googleIconWrapper}>
+                    <Image 
+                      source={{ uri: 'https://www.google.com/favicon.ico' }}
+                      style={styles.googleIcon}
+                    />
+                  </View>
+                  <Text style={styles.googleButtonText}>Continue with Google</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.disclaimer}>
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </Text>
           </View>
         </View>
-
-        {/* Google Sign In Button */}
-        <View style={styles.authContainer}>
-          <TouchableOpacity
-            style={styles.googleButton}
-            onPress={handleGoogleSignIn}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={COLORS.surface} />
-            ) : (
-              <>
-                <Ionicons name="logo-google" size={24} color={COLORS.surface} />
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <Text style={styles.disclaimer}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
-          </Text>
-        </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+  },
+  safeArea: {
+    flex: 1,
   },
   content: {
     flex: 1,
     justifyContent: 'space-between',
     padding: 24,
-    paddingTop: 60,
+    paddingTop: 40,
+    paddingBottom: 40,
   },
-  header: {
+  heroSection: {
     alignItems: 'center',
+    paddingTop: 20,
   },
   logoContainer: {
-    marginBottom: 16,
+    width: 120,
+    height: 120,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
   },
   logo: {
     width: 100,
     height: 100,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#5D3FD3',
+    fontSize: 42,
+    fontWeight: '800',
+    color: '#FFFFFF',
     marginBottom: 12,
     textAlign: 'center',
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 16,
-    color: COLORS.textLight,
+    fontSize: 17,
+    color: 'rgba(255,255,255,0.9)',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 26,
     paddingHorizontal: 20,
+    fontWeight: '500',
   },
-  features: {
+  featuresCard: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 24,
+    padding: 20,
     gap: 16,
-    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
   featureItem: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: '#F8FAFC',
+    padding: 14,
+    borderRadius: 16,
+    gap: 10,
   },
   featureIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.primary + '15',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
   },
   featureText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    color: COLORS.text,
+    color: '#1E293B',
+    flex: 1,
   },
-  authContainer: {
+  authSection: {
     gap: 16,
   },
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.google,
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 18,
     gap: 12,
-    shadowColor: COLORS.google,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  googleIconWrapper: {
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
   },
   googleButtonText: {
-    color: COLORS.surface,
+    color: '#1E293B',
     fontSize: 18,
     fontWeight: '600',
   },
   disclaimer: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
     lineHeight: 18,
   },
