@@ -20,7 +20,7 @@ const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const EMERGENT_AUTH_URL = 'https://auth.emergentagent.com';
 
 const COLORS = {
-  primary: '#6366F1',
+  primary: '#5D3FD3',
   accent: '#F43F5E',
   background: '#F1F5F9',
   surface: '#FFFFFF',
