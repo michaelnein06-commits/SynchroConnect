@@ -1077,15 +1077,27 @@ export default function Index() {
   };
 
   const copyDraftToClipboard = async (message: string) => {
-    // @ts-ignore
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      await navigator.clipboard.writeText(message);
+    try {
+      await Clipboard.setStringAsync(message);
+      triggerHaptic('success');
+      Alert.alert('✓', 'Copied to clipboard - paste in WhatsApp or any app');
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      // Fallback for web
+      // @ts-ignore
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(message);
+        Alert.alert('✓', 'Copied to clipboard');
+      }
     }
-    Alert.alert('✓', 'Copied to clipboard');
   };
 
   const renderDrafts = () => (
-    <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+    <ScrollView 
+      style={styles.content} 
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      keyboardShouldPersistTaps="handled"
+    >
       {drafts.length > 0 && (
         <TouchableOpacity style={styles.deleteAllDraftsBtn} onPress={handleDeleteAllDrafts}>
           <Ionicons name="trash-outline" size={18} color={COLORS.accent} />
