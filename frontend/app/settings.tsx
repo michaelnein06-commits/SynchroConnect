@@ -272,22 +272,6 @@ export default function Settings() {
                   </View>
                 </View>
               </TouchableOpacity>
-
-              <View style={styles.settingCard}>
-                <View style={styles.settingCardContent}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.settingLabel}>{t('morningBriefingTime')}</Text>
-                    <TextInput
-                      style={styles.timeInput}
-                      value={settings.notification_time}
-                      onChangeText={(text) => setSettings({ ...settings, notification_time: text })}
-                      placeholder="09:00"
-                      placeholderTextColor={COLORS.textLight}
-                    />
-                  </View>
-                  <Ionicons name="time-outline" size={24} color={COLORS.textLight} />
-                </View>
-              </View>
             </View>
 
             {/* About Section */}
