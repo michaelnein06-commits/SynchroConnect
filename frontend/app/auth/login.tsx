@@ -126,9 +126,13 @@ export default function Login() {
         {/* Logo/Brand */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Ionicons name="people-circle" size={100} color={COLORS.primary} />
+            <Image 
+              source={require('../../assets/images/convo-logo.png')} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
           </View>
-          <Text style={styles.title}>SynchroConnectr</Text>
+          <Text style={styles.title}>Convo</Text>
           <Text style={styles.subtitle}>
             Your AI-powered personal CRM to stay meaningfully connected
           </Text>
