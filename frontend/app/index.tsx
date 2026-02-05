@@ -1577,7 +1577,6 @@ export default function Index() {
     return (
       <ScrollView 
         style={styles.content} 
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
