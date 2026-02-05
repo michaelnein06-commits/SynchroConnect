@@ -2051,12 +2051,12 @@ export default function Index() {
           {/* Selected Date Birthdays */}
           <View style={styles.birthdaySection}>
             <Text style={styles.birthdaySectionTitle}>
-              <Ionicons name="gift" size={18} color={COLORS.accent} /> Geburtstage am {new Date(selectedDate).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}
+              <Ionicons name="gift" size={18} color={COLORS.accent} /> Birthdays on {new Date(selectedDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
             </Text>
             {getContactsForDate(selectedDate).length === 0 ? (
               <View style={styles.noBirthdayContainer}>
                 <Ionicons name="calendar-outline" size={40} color={COLORS.textLight} />
-                <Text style={styles.noBirthdayText}>Keine Geburtstage an diesem Tag</Text>
+                <Text style={styles.noBirthdayText}>No birthdays on this day</Text>
               </View>
             ) : (
               getContactsForDate(selectedDate).map((contact: Contact) => (
@@ -2076,7 +2076,7 @@ export default function Index() {
                     <View style={styles.birthdayInfo}>
                       <Text style={styles.birthdayName}>{contact.name}</Text>
                       <Text style={styles.birthdayDate}>
-                        <Ionicons name="gift-outline" size={12} color={COLORS.accent} /> Geburtstag
+                        <Ionicons name="gift-outline" size={12} color={COLORS.accent} /> Birthday
                       </Text>
                     </View>
                   </View>
@@ -2097,13 +2097,13 @@ export default function Index() {
           {/* Upcoming Birthdays */}
           <View style={styles.birthdaySection}>
             <Text style={styles.birthdaySectionTitle}>
-              <Ionicons name="calendar" size={18} color={COLORS.primary} /> Kommende Geburtstage
+              <Ionicons name="calendar" size={18} color={COLORS.primary} /> Upcoming Birthdays
             </Text>
             {upcomingBirthdays.length === 0 ? (
               <View style={styles.noBirthdayContainer}>
                 <Ionicons name="gift-outline" size={40} color={COLORS.textLight} />
-                <Text style={styles.noBirthdayText}>Keine Geburtstage eingetragen</Text>
-                <Text style={styles.noBirthdayHint}>Füge Geburtstage zu deinen Kontakten hinzu</Text>
+                <Text style={styles.noBirthdayText}>No birthdays recorded</Text>
+                <Text style={styles.noBirthdayHint}>Add birthdays to your contacts</Text>
               </View>
             ) : (
               upcomingBirthdays.map((item) => {
