@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import ContactImportPrompt from '../components/ContactImportPrompt';
 import * as ImagePicker from 'expo-image-picker';
+import * as Clipboard from 'expo-clipboard';
 import ContactSyncService from '../services/ContactSyncService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, CalendarList, Agenda } from 'react-native-calendars';
