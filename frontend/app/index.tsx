@@ -2769,6 +2769,18 @@ export default function Index() {
         </TouchableOpacity>
       )}
 
+      {/* FAB for Calendar - Create Event */}
+      {activeTab === 'planner' && plannerSubTab === 'calendar' && (
+        <TouchableOpacity style={styles.fabWrapper} onPress={() => {
+          setNewEventData(prev => ({ ...prev, date: selectedDate }));
+          setShowCreateEventModal(true);
+        }} activeOpacity={0.9}>
+          <LinearGradient colors={COLORS.primaryGradient} style={styles.fab}>
+            <Ionicons name="add" size={28} color={COLORS.surface} />
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
+
       {/* Enhanced Bottom Tab Bar */}
       <View style={styles.tabBarWrapper}>
         <View style={styles.tabBar}>
