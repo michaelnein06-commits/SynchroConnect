@@ -106,8 +106,6 @@ export default function PipelineSettings() {
         const sorted = [...profile.pipeline_stages].sort((a: PipelineStage, b: PipelineStage) => a.interval_days - b.interval_days);
         setStages(sorted);
       }
-      setMorningBriefingEnabled(profile.morning_briefing_enabled ?? true);
-      setMorningBriefingTime(profile.morning_briefing_time || '08:00');
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
