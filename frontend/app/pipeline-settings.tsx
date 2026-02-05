@@ -382,17 +382,6 @@ export default function PipelineSettings() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Time Picker */}
-      {showTimePicker && (
-        <DateTimePicker
-          value={getTimeDate()}
-          mode="time"
-          is24Hour={true}
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleTimeChange}
-        />
-      )}
-
       {/* Edit Stage Modal */}
       <Modal visible={showEditModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
