@@ -903,6 +903,8 @@ export default function Index() {
                   key={contact.id}
                   style={[styles.pipelineContactCardNew, isOverdue && styles.pipelineContactCardOverdue]}
                   onPress={() => router.push(`/contact/${contact.id}`)}
+                  onLongPress={() => handleLongPressContact(contact)}
+                  delayLongPress={400}
                 >
                   {contact.profile_picture ? (
                     <Image source={{ uri: contact.profile_picture }} style={styles.pipelineContactAvatarNew} />
