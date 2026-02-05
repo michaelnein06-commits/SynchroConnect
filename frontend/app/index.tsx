@@ -1930,7 +1930,7 @@ export default function Index() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <Pressable style={styles.container} onPress={Keyboard.dismiss}>
         <View style={styles.container}>
           {/* Enhanced Header with Gradient */}
           <LinearGradient
