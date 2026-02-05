@@ -293,8 +293,17 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Frontend: Calendar Events UI"
+    - "Frontend: Google Calendar Settings UI"
+    - "Main Kanban pipeline view with drag & drop"
+    - "Morning briefing story-style view"
+    - "Contact detail/edit screen"
+    - "AI Drafts screen"
+    - "Settings screen"
+    - "Frontend: Push Notifications Service"
+  stuck_tasks:
+    - "Authentication Required for Frontend Testing"
   test_all: false
   test_priority: "high_first"
 
