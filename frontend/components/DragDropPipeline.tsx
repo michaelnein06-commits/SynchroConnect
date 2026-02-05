@@ -95,6 +95,8 @@ interface DragDropPipelineProps {
   onMoveContact: (contactId: string, newStage: string) => Promise<void>;
   onContactPress: (contactId: string) => void;
   onRefresh?: () => void;
+  refreshing?: boolean;
+  pipelineStages?: string[];
 }
 
 const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
@@ -102,6 +104,8 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
   onMoveContact,
   onContactPress,
   onRefresh,
+  refreshing = false,
+  pipelineStages = ['New', 'Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually'],
 }) => {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showMoveModal, setShowMoveModal] = useState(false);
