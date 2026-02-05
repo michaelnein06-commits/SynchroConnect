@@ -1323,7 +1323,7 @@ export default function Index() {
                   )}
                   <View style={styles.briefingContactInfo}>
                     <Text style={styles.briefingContactName}>{contact.name}</Text>
-                    <Text style={styles.briefingContactMeta}>{contact.pipeline_stage} • {days} Tage überfällig</Text>
+                    <Text style={styles.briefingContactMeta}>{contact.pipeline_stage} • {days} days overdue</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
                 </TouchableOpacity>
@@ -1331,7 +1331,7 @@ export default function Index() {
             })}
             
             {overdueContacts.length > 5 && (
-              <Text style={styles.briefingMoreText}>+{overdueContacts.length - 5} weitere</Text>
+              <Text style={styles.briefingMoreText}>+{overdueContacts.length - 5} more</Text>
             )}
           </View>
         )}
@@ -1343,7 +1343,7 @@ export default function Index() {
               <View style={[styles.briefingSectionIcon, { backgroundColor: '#FF69B4' + '15' }]}>
                 <Ionicons name="gift" size={18} color="#FF69B4" />
               </View>
-              <Text style={styles.briefingSectionTitle}>Geburtstage heute!</Text>
+              <Text style={styles.briefingSectionTitle}>Birthdays Today!</Text>
             </View>
             
             {todayBirthdays.map(({ contact }) => (
@@ -1363,7 +1363,7 @@ export default function Index() {
                 )}
                 <View style={styles.briefingContactInfo}>
                   <Text style={styles.briefingContactName}>{contact.name}</Text>
-                  <Text style={styles.briefingContactMeta}>Hat heute Geburtstag! 🎂</Text>
+                  <Text style={styles.briefingContactMeta}>Birthday today! 🎂</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
               </TouchableOpacity>
@@ -1378,7 +1378,7 @@ export default function Index() {
               <View style={[styles.briefingSectionIcon, { backgroundColor: COLORS.primary + '15' }]}>
                 <Ionicons name="calendar" size={18} color={COLORS.primary} />
               </View>
-              <Text style={styles.briefingSectionTitle}>Diese Woche kontaktieren</Text>
+              <Text style={styles.briefingSectionTitle}>Contact This Week</Text>
               <View style={[styles.briefingSectionBadge, { backgroundColor: COLORS.primary }]}>
                 <Text style={styles.briefingSectionBadgeText}>{dueThisWeekContacts.length}</Text>
               </View>
@@ -1403,7 +1403,7 @@ export default function Index() {
                   )}
                   <View style={styles.briefingContactInfo}>
                     <Text style={styles.briefingContactName}>{contact.name}</Text>
-                    <Text style={styles.briefingContactMeta}>{contact.pipeline_stage} • in {days} Tagen</Text>
+                    <Text style={styles.briefingContactMeta}>{contact.pipeline_stage} • in {days} days</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
                 </TouchableOpacity>
