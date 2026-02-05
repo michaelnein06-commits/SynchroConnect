@@ -196,6 +196,23 @@ export default function Index() {
   // Dynamic pipeline stages
   const [pipelineStages, setPipelineStages] = useState<string[]>(['New', 'Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually']);
   const [pipelineStagesConfig, setPipelineStagesConfig] = useState<any[]>([]);
+  // Calendar Events state
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [showCreateEventModal, setShowCreateEventModal] = useState(false);
+  const [newEventData, setNewEventData] = useState({
+    title: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+    start_time: '09:00',
+    end_time: '10:00',
+    participants: [] as string[],
+    reminder_minutes: 30,
+    color: '#5D3FD3',
+    all_day: false,
+  });
+  const [showParticipantPicker, setShowParticipantPicker] = useState(false);
+  const [dayViewDate, setDayViewDate] = useState<string | null>(null);
+  const [dayViewEvents, setDayViewEvents] = useState<CalendarEvent[]>([]);
 
   // Helper functions that use the state
   const getStageColor = (stage: string) => getStageColorFromConfig(stage, pipelineStagesConfig);
