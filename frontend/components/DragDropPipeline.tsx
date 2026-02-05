@@ -273,7 +273,6 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
             <View style={styles.emptyStage}>
               <Ionicons name="people-outline" size={32} color={COLORS.textLight} />
               <Text style={styles.emptyStageText}>No contacts</Text>
-              <Text style={styles.emptyStageHint}>Long press to move</Text>
             </View>
           ) : (
             stageContacts.map(contact => renderContactCard(contact, stage))
@@ -297,10 +296,6 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
             <Text style={styles.statLabel}>Overdue</Text>
           </View>
         )}
-        <View style={styles.dragHintContainer}>
-          <Ionicons name="hand-left-outline" size={16} color={COLORS.primary} />
-          <Text style={styles.dragHintText}>Long press to move</Text>
-        </View>
       </View>
 
       {/* Kanban Board */}
@@ -312,8 +307,9 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
         decelerationRate="fast"
         snapToInterval={COLUMN_WIDTH + 12}
         snapToAlignment="start"
+        refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined}
       >
-        {PIPELINE_STAGES.map(stage => renderStageColumn(stage))}
+        {pipelineStages.map(stage => renderStageColumn(stage))}
       </ScrollView>
 
       {/* Move Contact Modal */}
