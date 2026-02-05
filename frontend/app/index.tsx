@@ -34,11 +34,11 @@ const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const COLORS = {
-  // Primary colors with gradient support
-  primary: '#6366F1',
-  primaryDark: '#4F46E5',
-  primaryLight: '#A5B4FC',
-  primaryGradient: ['#6366F1', '#8B5CF6'] as const,
+  // Primary colors with gradient support - Purple theme for Convo
+  primary: '#5D3FD3',
+  primaryDark: '#4B32A8',
+  primaryLight: '#9B87F5',
+  primaryGradient: ['#5D3FD3', '#7B68EE'] as const,
   
   // Accent colors
   accent: '#F43F5E',
