@@ -1253,6 +1253,7 @@ export default function Index() {
         style={styles.content} 
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Greeting Card */}
         <LinearGradient 
@@ -1263,7 +1264,7 @@ export default function Index() {
         >
           <Ionicons name="sunny" size={36} color="#fff" />
           <View style={styles.briefingGreetingText}>
-            <Text style={styles.briefingGreetingTitle}>Guten Morgen!</Text>
+            <Text style={styles.briefingGreetingTitle}>Good Morning!</Text>
             <Text style={styles.briefingGreetingDate}>{formattedDate}</Text>
           </View>
           <TouchableOpacity 
@@ -1278,15 +1279,15 @@ export default function Index() {
         <View style={styles.briefingStatsRow}>
           <View style={[styles.briefingStat, { backgroundColor: COLORS.accent + '15' }]}>
             <Text style={[styles.briefingStatNumber, { color: COLORS.accent }]}>{overdueContacts.length}</Text>
-            <Text style={styles.briefingStatLabel}>Überfällig</Text>
+            <Text style={styles.briefingStatLabel}>Overdue</Text>
           </View>
           <View style={[styles.briefingStat, { backgroundColor: COLORS.warning + '15' }]}>
             <Text style={[styles.briefingStatNumber, { color: COLORS.warning }]}>{dueTodayContacts.length}</Text>
-            <Text style={styles.briefingStatLabel}>Heute</Text>
+            <Text style={styles.briefingStatLabel}>Today</Text>
           </View>
           <View style={[styles.briefingStat, { backgroundColor: COLORS.primary + '15' }]}>
             <Text style={[styles.briefingStatNumber, { color: COLORS.primary }]}>{dueThisWeekContacts.length}</Text>
-            <Text style={styles.briefingStatLabel}>Diese Woche</Text>
+            <Text style={styles.briefingStatLabel}>This Week</Text>
           </View>
         </View>
         
@@ -1297,7 +1298,7 @@ export default function Index() {
               <View style={[styles.briefingSectionIcon, { backgroundColor: COLORS.accent + '15' }]}>
                 <Ionicons name="alert-circle" size={18} color={COLORS.accent} />
               </View>
-              <Text style={styles.briefingSectionTitle}>Überfällige Kontakte</Text>
+              <Text style={styles.briefingSectionTitle}>Overdue Contacts</Text>
               <View style={[styles.briefingSectionBadge, { backgroundColor: COLORS.accent }]}>
                 <Text style={styles.briefingSectionBadgeText}>{overdueContacts.length}</Text>
               </View>
