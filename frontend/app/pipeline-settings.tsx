@@ -74,11 +74,6 @@ export default function PipelineSettings() {
   
   // Pipeline stages
   const [stages, setStages] = useState<PipelineStage[]>(DEFAULT_STAGES);
-  
-  // Morning Briefing settings
-  const [morningBriefingEnabled, setMorningBriefingEnabled] = useState(true);
-  const [morningBriefingTime, setMorningBriefingTime] = useState('08:00');
-  const [showTimePicker, setShowTimePicker] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   
   // Edit stage modal
