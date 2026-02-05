@@ -330,7 +330,7 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
             <Text style={styles.modalSubtitle}>Select pipeline stage</Text>
             
             <View style={styles.stageOptions}>
-              {PIPELINE_STAGES.map(stage => {
+              {pipelineStages.map(stage => {
                 const isCurrentStage = selectedContact.pipeline_stage === stage;
                 const stageColor = getStageColor(stage);
                 
