@@ -154,7 +154,7 @@ export default function PipelineSettings() {
     setShowEditModal(true);
   };
 
-  const handleSaveStageEdit = () => {
+  const handleSaveStageEdit = async () => {
     if (!editingStage) return;
     
     const updatedStages = [...stages];
@@ -165,6 +165,17 @@ export default function PipelineSettings() {
     setShowEditModal(false);
     setEditingStage(null);
     setEditingIndex(-1);
+    
+    // Auto-save after edit
+    try {
+      await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/profile`, {
+        pipeline_stages: updatedStages,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (error) {
+      console.error('Failed to auto-save:', error);
+    }
   };
 
   const handleDeleteStage = (index: number) => {
