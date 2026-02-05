@@ -373,11 +373,14 @@ test_plan:
     file: "/app/frontend/app/services/notifications.ts"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: "NEW: NotificationService class with methods for registering push tokens, scheduling local notifications for calendar events, automatic reminder scheduling when events change"
+        - working: "NA"
+          agent: "testing"
+          comment: "⚠️ AUTHENTICATION REQUIRED: Cannot test push notifications without login. Code review shows NotificationService implementation is present in services/notifications.ts."
 
   - task: "Frontend: Google Calendar Settings UI"
     implemented: true
@@ -385,11 +388,29 @@ test_plan:
     file: "/app/frontend/app/settings.tsx"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: "NEW: Google Calendar section in Settings with connect/disconnect buttons, import functionality, and setup instructions when credentials not configured"
+        - working: "NA"
+          agent: "testing"
+          comment: "⚠️ AUTHENTICATION REQUIRED: Cannot test Google Calendar settings without login. Code review shows Google Calendar integration UI is present in settings.tsx with proper status checking, connect/disconnect functionality, and setup instructions."
+
+  - task: "Frontend: Calendar Events UI"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/index.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "NEW: Calendar Events frontend implementation with tab navigation to Planner->Calendar, view selector buttons (Woche/Monat/Tag), create event modal with FAB button, day view with long press, events display as colored dots, and events section below calendar"
+        - working: "NA"
+          agent: "testing"
+          comment: "⚠️ AUTHENTICATION REQUIRED: Cannot test Calendar Events UI without Google OAuth login. App loads correctly showing proper login screen with 'Continue with Google' button. Code review confirms comprehensive calendar implementation: 1) Tab navigation with 'planner' tab and 'calendar' sub-tab, 2) Calendar view selector buttons (calendarView state with 'week'/'month'/'day'), 3) Create event modal (showCreateEventModal state) with FAB button, 4) Day view functionality (dayViewDate, dayViewEvents states), 5) Event display on calendar with colored dots, 6) Full event CRUD operations with proper API integration. All calendar functionality appears properly implemented but requires authentication to test."
 
 agent_communication:
     - agent: "main"
