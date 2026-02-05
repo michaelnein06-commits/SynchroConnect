@@ -2588,6 +2588,16 @@ const styles = StyleSheet.create({
   headerTextContainer: {
     flex: 1,
   },
+  headerLogoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  headerLogo: {
+    width: 44,
+    height: 44,
+    marginRight: 12,
+  },
   headerTitle: {
     fontSize: 32,
     fontWeight: '800',
