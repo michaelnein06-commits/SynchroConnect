@@ -1061,7 +1061,6 @@ export default function Index() {
   const renderContacts = () => (
     <ScrollView 
       style={styles.content} 
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
       showsVerticalScrollIndicator={false}
     >
       {filteredContacts.length === 0 ? (
