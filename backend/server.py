@@ -252,6 +252,7 @@ async def calculate_target_interval_async(pipeline_stage: str, user_id: str = No
     # Default intervals for backward compatibility
     default_intervals = {
         "New": 0,
+        "Daily": 1,
         "Weekly": 7,
         "Bi-Weekly": 14,
         "Monthly": 30,
@@ -274,12 +275,13 @@ async def calculate_target_interval_async(pipeline_stage: str, user_id: str = No
                     interval = stage.get('interval_days', 30)
                     print(f"Found custom interval for {pipeline_stage}: {interval} days")
                     return interval
-            print(f"Pipeline stage {pipeline_stage} not found in user's custom stages")
+            print(f"Pipeline stage {pipeline_stage} not found in user's custom stages, checking defaults")
         else:
-            print(f"User found but no pipeline_stages: {user.get('email') if user else 'No user'}")
+            print(f"User found but no pipeline_stages, checking defaults")
     except Exception as e:
         print(f"Error getting user pipeline stages: {e}")
     
+    # Return default for known stages, or 30 for unknown
     result = default_intervals.get(pipeline_stage, 30)
     print(f"Using default interval for {pipeline_stage}: {result} days")
     return result
