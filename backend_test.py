@@ -64,9 +64,9 @@ class SynchroConnectrTester:
                 JWT_SECRET = "synchroconnectr_secret_key_2025_super_secure_random_string"
                 JWT_ALGORITHM = "HS256"
                 
-                # Create test user data
+                # Create test user data with valid ObjectId
                 test_user_data = {
-                    "user_id": "test_user_calendar_events_2025",
+                    "user_id": "507f1f77bcf86cd799439011",  # Valid ObjectId format
                     "email": "test@example.com",
                     "exp": datetime.utcnow() + timedelta(hours=24)
                 }
