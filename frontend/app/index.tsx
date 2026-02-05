@@ -152,6 +152,7 @@ export default function Index() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedStage, setSelectedStage] = useState('Monthly');
   const [showImportPrompt, setShowImportPrompt] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
