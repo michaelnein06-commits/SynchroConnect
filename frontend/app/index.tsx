@@ -945,6 +945,7 @@ export default function Index() {
               const isOverdue = daysUntil !== null && daysUntil < 0 && contact.pipeline_stage !== 'New';
               const isNewContact = contact.pipeline_stage === 'New';
               const isGenerating = generatingDraftForId === contact.id;
+              const contactGroups = groups.filter(g => contact.groups?.includes(g.id) || contact.groups?.includes(g.name));
               
               return (
                 <View key={contact.id} style={[styles.pipelineContactCardEnhanced, isOverdue && styles.pipelineContactCardOverdueEnhanced]}>
@@ -972,13 +973,36 @@ export default function Index() {
                       {contact.job && (
                         <Text style={styles.pipelineContactJobEnhanced} numberOfLines={1}>{contact.job}</Text>
                       )}
-                      {contact.phone && (
-                        <Text style={styles.pipelineContactPhoneEnhanced} numberOfLines={1}>{contact.phone}</Text>
+                      {/* Groups badges */}
+                      {contactGroups.length > 0 && (
+                        <View style={styles.contactGroupsBadges}>
+                          {contactGroups.slice(0, 3).map((group) => (
+                            <View key={group.id} style={[styles.contactGroupBadge, { backgroundColor: (group.color || COLORS.primary) + '20' }]}>
+                              <View style={[styles.contactGroupDot, { backgroundColor: group.color || COLORS.primary }]} />
+                              <Text style={[styles.contactGroupBadgeText, { color: group.color || COLORS.primary }]} numberOfLines={1}>
+                                {group.name}
+                              </Text>
+                            </View>
+                          ))}
+                          {contactGroups.length > 3 && (
+                            <View style={[styles.contactGroupBadge, { backgroundColor: COLORS.textLight + '20' }]}>
+                              <Text style={[styles.contactGroupBadgeText, { color: COLORS.textLight }]}>
+                                +{contactGroups.length - 3}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
                       )}
                     </View>
                   </TouchableOpacity>
                   
                   <View style={styles.pipelineContactActions}>
+                    {/* Frequency Badge */}
+                    <View style={[styles.contactFrequencyBadge, { backgroundColor: stageColor + '15' }]}>
+                      <Ionicons name="repeat" size={12} color={stageColor} />
+                      <Text style={[styles.contactFrequencyText, { color: stageColor }]}>{contact.pipeline_stage}</Text>
+                    </View>
+                    
                     {/* Due Badge */}
                     {daysUntil !== null && !isNewContact && (
                       <View style={[
