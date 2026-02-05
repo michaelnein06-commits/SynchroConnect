@@ -790,6 +790,8 @@ export default function Index() {
         onMoveContact={handleDragDropMoveContact}
         onContactPress={(contactId) => router.push(`/contact/${contactId}`)}
         onRefresh={onRefresh}
+        refreshing={refreshing}
+        pipelineStages={pipelineStages}
       />
     );
   };
