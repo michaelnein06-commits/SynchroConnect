@@ -298,6 +298,30 @@ test_plan:
           agent: "testing"
           comment: "✅ TESTED: Contact synchronization functionality fully working. All 4 test scenarios passed: 1) Contact CRUD with device_contact_id field - create with/without device_contact_id, update to add device_contact_id, persistence verified, 2) Contact creation for sync - all sync-relevant fields (name, phone, email, device_contact_id, pipeline_stage) saved and retrieved correctly, 3) Contact update for sync - field updates and linking (adding device_contact_id) working perfectly, 4) Contact query for sync matching - all contacts returned with correct sync fields for matching algorithms. device_contact_id field properly handled throughout all CRUD operations."
 
+  - task: "API: Calendar Events CRUD"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "NEW: Calendar Events system - POST/GET/PUT/DELETE /api/calendar-events, GET /api/calendar-events/by-date/{date} for day view, GET /api/calendar-events/today and /week for quick access. Events include title, description, date, start_time, end_time, participants (contact IDs), reminder_minutes, color. Auto-adds to interaction history of participants."
+
+  - task: "API: Morning Briefing with Calendar Events"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Enhanced AI briefing to include today's calendar events and upcoming events this week. Stats now include today_events_count and week_events_count."
+
 agent_communication:
     - agent: "main"
       message: "PHASE 2 MAJOR REFACTOR COMPLETE. Backend completely rewritten with: 1) Google-only auth (removed email/password), 2) New Contact schema with fields: location, academic_degree, hobbies, how_we_met, example_message, 3) NEW Interaction History system (log interactions with type/date/notes), 4) Groups now user-scoped with contact counts, 5) Enhanced AI drafts using interaction history and contact's example_message for personalized tone, 6) User Profile endpoints. Please test all new endpoints. Note: All contacts/groups/drafts are now user-scoped requiring auth token."
@@ -305,3 +329,5 @@ agent_communication:
       message: "✅ PHASE 2 BACKEND TESTING COMPLETE - ALL TESTS PASSED! Fixed minor Pydantic model issues (ContactCreate, GroupCreate) for proper API usage. Comprehensive testing completed: 1) Google auth endpoint working with proper error handling, 2) User Profile CRUD fully functional, 3) Contact CRUD with new schema working perfectly (new fields: location, academic_degree, hobbies, how_we_met, example_message), 4) NEW Interaction History system fully operational with all interaction types and auto-updates, 5) Groups with contact_count working correctly, 6) Enhanced AI Draft Generation producing excellent personalized drafts using contact context and interaction history, 7) Pipeline management and Morning Briefing working. All endpoints properly user-scoped and authenticated. Backend API is production-ready for Phase 2."
     - agent: "testing"
       message: "✅ CONTACT SYNCHRONIZATION TESTING COMPLETE - ALL TESTS PASSED! Comprehensive testing of device_contact_id functionality for bidirectional sync: 1) Contact CRUD with device_contact_id field working perfectly - can create contacts with/without device_contact_id, update to add device_contact_id, all changes persist correctly, 2) Contact creation for sync verified - all sync-relevant fields (name, phone, email, device_contact_id, pipeline_stage, job, location, birthday, hobbies, how_we_met) saved and retrieved correctly, 3) Contact update for sync working - field updates and linking (adding device_contact_id) functioning perfectly, 4) Contact query for sync matching verified - all contacts returned with correct sync fields for matching algorithms. The device_contact_id field is properly handled throughout all CRUD operations and is ready for iPhone device contact synchronization."
+    - agent: "main"
+      message: "NEW: Calendar Events Feature implemented. Added: 1) Calendar Events CRUD API with full endpoints, 2) Day view support via /api/calendar-events/by-date/{date}, 3) Participant system linking events to contacts, 4) Auto-creates interaction history entries for participants, 5) Enhanced AI briefing includes today's events and week's upcoming events, 6) Frontend: Create Event modal, Day View modal, events displayed on calendar as colored dots, events section in calendar view. Please test the new calendar event endpoints."
