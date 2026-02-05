@@ -2328,13 +2328,6 @@ export default function Index() {
           </LinearGradient>
         </TouchableOpacity>
       )}
-      {activeTab === 'groups' && (
-        <TouchableOpacity style={styles.fabWrapper} onPress={() => router.push('/group/new')} activeOpacity={0.9}>
-          <LinearGradient colors={COLORS.primaryGradient} style={styles.fab}>
-            <Ionicons name="add" size={28} color={COLORS.surface} />
-          </LinearGradient>
-        </TouchableOpacity>
-      )}
 
       {/* Enhanced Bottom Tab Bar */}
       <View style={styles.tabBarWrapper}>
