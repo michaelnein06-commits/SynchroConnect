@@ -185,26 +185,38 @@ export default function PipelineSettings() {
       return;
     }
     
+    const stageName = stages[index].name;
+    
     Alert.alert(
       'Delete Stage',
-      `Are you sure you want to delete "${stages[index].name}"?`,
+      `Are you sure you want to delete "${stageName}"? All contacts in this stage will be moved to "New".`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            const updatedStages = stages.filter((_, i) => i !== index);
-            setStages(updatedStages);
-            // Auto-save after delete
             try {
+              // First, move all contacts in this stage to "New"
+              await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/contacts/move-to-new?stage_name=${encodeURIComponent(stageName)}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              
+              // Then delete the stage
+              const updatedStages = stages.filter((_, i) => i !== index);
+              setStages(updatedStages);
+              
+              // Auto-save after delete
               await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/profile`, {
                 pipeline_stages: updatedStages,
               }, {
                 headers: { Authorization: `Bearer ${token}` }
               });
+              
+              Alert.alert('Success', `Stage "${stageName}" deleted. Contacts moved to "New".`);
             } catch (error) {
-              console.error('Failed to auto-save:', error);
+              console.error('Failed to delete stage:', error);
+              Alert.alert('Error', 'Failed to delete stage');
             }
           }
         }
