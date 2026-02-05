@@ -1148,6 +1148,127 @@ async def get_morning_briefing(current_user: dict = Depends(get_current_user)):
     }).to_list(100)
     return [serialize_doc(c) for c in contacts]
 
+@api_router.post("/morning-briefing/generate")
+async def generate_ai_briefing(current_user: dict = Depends(get_current_user)):
+    """Generate AI-written morning briefing for all contacts due today or overdue"""
+    try:
+        today = datetime.utcnow()
+        today_iso = today.isoformat()
+        
+        # Get user profile for name
+        user = await db.users.find_one({"_id": ObjectId(current_user["user_id"])})
+        user_name = user.get('name', 'there') if user else 'there'
+        
+        # Get all contacts for this user
+        all_contacts = await db.contacts.find({
+            "user_id": current_user["user_id"],
+            "pipeline_stage": {"$ne": "New"}  # Exclude New contacts
+        }).to_list(500)
+        
+        # Categorize contacts
+        overdue_contacts = []
+        due_today_contacts = []
+        due_this_week_contacts = []
+        birthdays_today = []
+        upcoming_birthdays = []
+        
+        for contact in all_contacts:
+            # Check due dates
+            if contact.get('next_due'):
+                due_date = datetime.fromisoformat(contact['next_due'].replace('Z', '+00:00'))
+                days_until = (due_date - today).days
+                
+                if days_until < 0:
+                    overdue_contacts.append({**contact, 'days_overdue': abs(days_until)})
+                elif days_until <= 1:
+                    due_today_contacts.append(contact)
+                elif days_until <= 7:
+                    due_this_week_contacts.append({**contact, 'days_until': days_until})
+            
+            # Check birthdays
+            if contact.get('birthday'):
+                try:
+                    bday = datetime.fromisoformat(contact['birthday'].replace('Z', '+00:00'))
+                    bday_this_year = bday.replace(year=today.year)
+                    days_to_bday = (bday_this_year - today).days
+                    
+                    if days_to_bday == 0:
+                        birthdays_today.append(contact)
+                    elif 0 < days_to_bday <= 7:
+                        upcoming_birthdays.append({**contact, 'days_until': days_to_bday})
+                except:
+                    pass
+        
+        # Build context for AI
+        briefing_context = f"""Today's date: {today.strftime('%A, %B %d, %Y')}
+        
+OVERDUE CONTACTS ({len(overdue_contacts)} people need attention):
+"""
+        for c in overdue_contacts[:10]:
+            briefing_context += f"- {c.get('name', 'Unknown')}: {c.get('days_overdue', 0)} days overdue, {c.get('pipeline_stage', 'Unknown')} frequency"
+            if c.get('job'): briefing_context += f", works as {c['job']}"
+            if c.get('hobbies'): briefing_context += f", enjoys {c['hobbies']}"
+            briefing_context += "\n"
+        
+        briefing_context += f"\nDUE TODAY ({len(due_today_contacts)} people to reach out to):\n"
+        for c in due_today_contacts[:10]:
+            briefing_context += f"- {c.get('name', 'Unknown')}: {c.get('pipeline_stage', 'Unknown')} contact"
+            if c.get('job'): briefing_context += f", works as {c['job']}"
+            briefing_context += "\n"
+        
+        briefing_context += f"\nCOMING UP THIS WEEK ({len(due_this_week_contacts)} people):\n"
+        for c in due_this_week_contacts[:10]:
+            briefing_context += f"- {c.get('name', 'Unknown')}: due in {c.get('days_until', '?')} days\n"
+        
+        if birthdays_today:
+            briefing_context += f"\n🎂 BIRTHDAYS TODAY:\n"
+            for c in birthdays_today:
+                briefing_context += f"- {c.get('name', 'Unknown')}'s birthday is TODAY!\n"
+        
+        if upcoming_birthdays:
+            briefing_context += f"\n🎁 UPCOMING BIRTHDAYS:\n"
+            for c in upcoming_birthdays[:5]:
+                briefing_context += f"- {c.get('name', 'Unknown')} in {c.get('days_until', '?')} days\n"
+        
+        # Generate AI briefing
+        prompt = f"""Write a warm, motivating morning briefing for {user_name} about their contact management for today.
+
+{briefing_context}
+
+Write a personalized morning briefing that:
+1. Greets them warmly based on the time of day
+2. Summarizes what's important today (overdue contacts, due today, birthdays)
+3. Suggests 2-3 priority contacts to reach out to first
+4. Gives a brief tip for maintaining relationships
+5. Ends with an encouraging note
+
+Keep it friendly, helpful, and motivating. Use emojis sparingly. Maximum 200 words."""
+
+        chat = LlmChat(
+            api_key=os.environ.get('EMERGENT_LLM_KEY', ''),
+            session_id=f"briefing_{current_user['user_id']}_{today.timestamp()}",
+            system_message="You are a friendly personal relationship coach helping someone stay connected with their network."
+        ).with_model("openai", "gpt-4.1")
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        
+        return {
+            "briefing": response.strip(),
+            "stats": {
+                "overdue_count": len(overdue_contacts),
+                "due_today_count": len(due_today_contacts),
+                "due_this_week_count": len(due_this_week_contacts),
+                "birthdays_today": len(birthdays_today),
+                "upcoming_birthdays": len(upcoming_birthdays)
+            },
+            "generated_at": today.isoformat()
+        }
+    except Exception as e:
+        logging.error(f"Error generating AI briefing: {str(e)}")
+        import traceback
+        logging.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ============ Include Router & Middleware ============
 
 app.include_router(api_router)
