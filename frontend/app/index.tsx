@@ -2402,7 +2402,7 @@ export default function Index() {
                 {/* Pipeline Stages */}
                 <Text style={styles.modalSectionTitle}>Pipeline Stage</Text>
                 <View style={styles.modalSection}>
-                  {PIPELINE_STAGES.map((stage) => {
+                  {pipelineStages.map((stage) => {
                     const isCurrentStage = selectedContact.pipeline_stage === stage;
                     return (
                       <TouchableOpacity
