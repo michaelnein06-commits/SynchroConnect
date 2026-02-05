@@ -303,7 +303,7 @@ export default function PipelineSettings() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                   <Ionicons name="chevron-back" size={28} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Pipeline & Briefing</Text>
+                <Text style={styles.headerTitle}>Pipeline Settings</Text>
                 <TouchableOpacity onPress={saveSettings} disabled={saving} style={styles.saveButton}>
                   {saving ? (
                     <ActivityIndicator color="#fff" size="small" />
@@ -324,46 +324,6 @@ export default function PipelineSettings() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Morning Briefing Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconWrapper, { backgroundColor: COLORS.warning + '20' }]}>
-              <Ionicons name="sunny" size={18} color={COLORS.warning} />
-            </View>
-            <Text style={styles.sectionTitle}>Morning Briefing</Text>
-          </View>
-          
-          <View style={styles.card}>
-            <View style={styles.switchRow}>
-              <View style={styles.switchInfo}>
-                <Text style={styles.switchLabel}>Enable Morning Briefing</Text>
-                <Text style={styles.switchHint}>Daily summary of contacts to reach out to</Text>
-              </View>
-              <Switch
-                value={morningBriefingEnabled}
-                onValueChange={setMorningBriefingEnabled}
-                trackColor={{ false: COLORS.border, true: COLORS.primary + '60' }}
-                thumbColor={morningBriefingEnabled ? COLORS.primary : COLORS.textLight}
-              />
-            </View>
-            
-            {morningBriefingEnabled && (
-              <TouchableOpacity 
-                style={styles.timeSelector}
-                onPress={() => setShowTimePicker(true)}
-              >
-                <View style={styles.timeSelectorLeft}>
-                  <Ionicons name="time-outline" size={20} color={COLORS.primary} />
-                  <Text style={styles.timeSelectorLabel}>Briefing Time</Text>
-                </View>
-                <View style={styles.timeBadge}>
-                  <Text style={styles.timeBadgeText}>{morningBriefingTime}</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
         {/* Pipeline Stages Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
