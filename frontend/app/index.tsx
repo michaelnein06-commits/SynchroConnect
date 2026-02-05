@@ -382,6 +382,14 @@ export default function Index() {
     }
   }, [token]);
 
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    Promise.all([fetchContacts(), fetchGroups(), fetchProfile()]).finally(() => {
+      setRefreshing(false);
+    });
+  }, [token]);
+
   const handleDeleteAllContacts = () => {
     Alert.alert(
       'Delete All Contacts',
