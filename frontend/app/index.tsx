@@ -1078,17 +1078,132 @@ export default function Index() {
   );
 
   const renderGroups = () => {
-    // Use the Drag & Drop Groups view
+    const filteredGroups = groups.filter(g => 
+      g.name.toLowerCase().includes(groupSearchQuery.toLowerCase()) ||
+      (g.description && g.description.toLowerCase().includes(groupSearchQuery.toLowerCase()))
+    );
+    
     return (
-      <DragDropGroups
-        contacts={contacts}
-        groups={groups}
-        onAddContactToGroup={handleDragDropAddToGroup}
-        onRemoveContactFromGroup={handleDragDropRemoveFromGroup}
-        onContactPress={(contactId) => router.push(`/contact/${contactId}`)}
-        onGroupPress={(groupId) => router.push(`/group/${groupId}`)}
-        onCreateGroup={handleDragDropCreateGroup}
-      />
+      <View style={{ flex: 1 }}>
+        {/* Search bar for groups */}
+        <View style={styles.searchWrapper}>
+          <View style={styles.searchContainer}>
+            <View style={styles.searchIconWrapper}>
+              <Ionicons name="search" size={18} color={COLORS.primary} />
+            </View>
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('search') + ' ' + t('groups').toLowerCase() + '...'}
+              placeholderTextColor={COLORS.textLight}
+              value={groupSearchQuery}
+              onChangeText={setGroupSearchQuery}
+            />
+            {groupSearchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setGroupSearchQuery('')} style={styles.searchClearBtn}>
+                <Ionicons name="close-circle" size={20} color={COLORS.textLight} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+        
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+        >
+          {filteredGroups.length === 0 && groups.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconWrapper}>
+                <LinearGradient colors={COLORS.primaryGradient} style={styles.emptyIconGradient}>
+                  <Ionicons name="albums" size={40} color={COLORS.surface} />
+                </LinearGradient>
+              </View>
+              <Text style={styles.emptyText}>{t('noGroupsCreated')}</Text>
+              <Text style={styles.emptySubtext}>Tap + to create your first group</Text>
+            </View>
+          ) : filteredGroups.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="search-outline" size={48} color={COLORS.textLight} />
+              <Text style={styles.emptyText}>No groups found</Text>
+            </View>
+          ) : (
+            filteredGroups.map((group) => {
+              const groupContacts = contacts.filter(c => c.groups?.includes(group.id));
+              return (
+                <TouchableOpacity
+                  key={group.id}
+                  style={styles.groupCardNew}
+                  onPress={() => router.push(`/group/${group.id}`)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.groupColorBarNew, { backgroundColor: group.color || COLORS.primary }]} />
+                  {group.profile_picture ? (
+                    <Image source={{ uri: group.profile_picture }} style={styles.groupAvatarNew} />
+                  ) : (
+                    <LinearGradient 
+                      colors={[group.color || COLORS.primary, (group.color || COLORS.primary) + 'CC']} 
+                      style={styles.groupAvatarPlaceholderNew}
+                    >
+                      <Ionicons name="people" size={22} color={COLORS.surface} />
+                    </LinearGradient>
+                  )}
+                  <View style={styles.groupInfoNew}>
+                    <Text style={styles.groupNameNew}>{group.name}</Text>
+                    {group.description && (
+                      <Text style={styles.groupDescriptionNew} numberOfLines={1}>
+                        {group.description}
+                      </Text>
+                    )}
+                    <View style={styles.groupStatsNew}>
+                      <Ionicons name="people-outline" size={14} color={COLORS.textLight} />
+                      <Text style={styles.groupContactCountNew}>
+                        {groupContacts.length} {groupContacts.length === 1 ? 'contact' : 'contacts'}
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
+                </TouchableOpacity>
+              );
+            })
+          )}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+        
+        {/* Floating Action Button */}
+        <TouchableOpacity
+          style={styles.fabButton}
+          onPress={() => {
+            setNewGroupName('');
+            Alert.prompt(
+              'New Group',
+              'Enter group name',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Create',
+                  onPress: async (name) => {
+                    if (name && name.trim()) {
+                      try {
+                        await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/groups`, {
+                          name: name.trim()
+                        }, getAuthHeaders());
+                        triggerHaptic('success');
+                        fetchGroups();
+                      } catch (error) {
+                        Alert.alert('Error', 'Failed to create group');
+                      }
+                    }
+                  }
+                }
+              ],
+              'plain-text'
+            );
+          }}
+        >
+          <LinearGradient colors={COLORS.primaryGradient} style={styles.fabGradient}>
+            <Ionicons name="add" size={28} color="#fff" />
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
     );
   };
 
