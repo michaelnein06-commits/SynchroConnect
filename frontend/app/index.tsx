@@ -987,7 +987,7 @@ export default function Index() {
           style={styles.stagePillsContainer}
           contentContainerStyle={styles.stagePillsContent}
         >
-          {PIPELINE_STAGES.map((stage) => {
+          {pipelineStages.map((stage) => {
             const count = contacts.filter(c => c.pipeline_stage === stage).length;
             const isActive = selectedStage === stage;
             const color = getStageColor(stage);
