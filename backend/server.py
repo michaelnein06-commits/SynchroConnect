@@ -247,8 +247,37 @@ class Draft(BaseModel):
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
 # ============ Utility Functions ============
+async def calculate_target_interval_async(pipeline_stage: str, user_id: str = None) -> int:
+    """Convert pipeline stage to days based on user's custom pipeline settings"""
+    # Default intervals for backward compatibility
+    default_intervals = {
+        "New": 0,
+        "Weekly": 7,
+        "Bi-Weekly": 14,
+        "Monthly": 30,
+        "Quarterly": 90,
+        "Annually": 365
+    }
+    
+    # If no user_id, use defaults
+    if not user_id:
+        return default_intervals.get(pipeline_stage, 30)
+    
+    # Try to get user's custom pipeline stages
+    try:
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        if user and user.get('pipeline_stages'):
+            for stage in user['pipeline_stages']:
+                if stage.get('name') == pipeline_stage:
+                    return stage.get('interval_days', 30)
+    except:
+        pass
+    
+    return default_intervals.get(pipeline_stage, 30)
+
 def calculate_target_interval(pipeline_stage: str) -> int:
-    """Convert pipeline stage to days. 'New' stage has no interval (returns 0)"""
+    """Convert pipeline stage to days. 'New' stage has no interval (returns 0)
+    Note: This is a sync version for backward compatibility. Use calculate_target_interval_async when possible."""
     intervals = {
         "New": 0,  # New contacts have no countdown
         "Weekly": 7,
