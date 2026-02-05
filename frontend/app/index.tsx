@@ -104,7 +104,7 @@ const getStageGradient = (stage: string) => {
 const PIPELINE_STAGES = ['New', 'Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually'];
 
 type Tab = 'pipeline' | 'contacts' | 'groups' | 'planner' | 'profile';
-type PlannerSubTab = 'drafts' | 'calendar';
+type PlannerSubTab = 'briefing' | 'drafts' | 'calendar';
 type CalendarView = 'week' | 'month' | 'year';
 
 interface Contact {
