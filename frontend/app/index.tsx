@@ -1365,7 +1365,7 @@ export default function Index() {
   const renderDrafts = () => (
     <ScrollView 
       style={styles.content} 
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
       {drafts.length > 0 && (
