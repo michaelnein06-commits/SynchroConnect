@@ -1840,7 +1840,7 @@ export default function Index() {
       >
         {/* Greeting Card */}
         <LinearGradient 
-          colors={['#FF9500', '#FF6B00']} 
+          colors={['#5D3FD3', '#7B68EE']} 
           style={styles.briefingGreetingCard}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -1857,6 +1857,73 @@ export default function Index() {
             <Ionicons name="settings-outline" size={20} color="#fff" />
           </TouchableOpacity>
         </LinearGradient>
+
+        {/* AI Briefing Card */}
+        <View style={styles.aiBriefingCard}>
+          <View style={styles.aiBriefingHeader}>
+            <View style={styles.aiBriefingHeaderLeft}>
+              <LinearGradient colors={['#5D3FD3', '#7B68EE']} style={styles.aiBriefingIcon}>
+                <Ionicons name="sparkles" size={18} color="#fff" />
+              </LinearGradient>
+              <Text style={styles.aiBriefingTitle}>AI Daily Briefing</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.aiBriefingRefreshBtn}
+              onPress={generateAIBriefing}
+              disabled={loadingBriefing}
+            >
+              {loadingBriefing ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <Ionicons name="refresh" size={20} color={COLORS.primary} />
+              )}
+            </TouchableOpacity>
+          </View>
+          
+          {morningBriefing ? (
+            <View style={styles.aiBriefingContent}>
+              <Text style={styles.aiBriefingText}>{morningBriefing.briefing}</Text>
+              
+              {/* Stats Row */}
+              <View style={styles.aiBriefingStats}>
+                {morningBriefing.stats?.overdue_count > 0 && (
+                  <View style={[styles.aiBriefingStat, { backgroundColor: COLORS.accent + '15' }]}>
+                    <Ionicons name="alert-circle" size={14} color={COLORS.accent} />
+                    <Text style={[styles.aiBriefingStatText, { color: COLORS.accent }]}>
+                      {morningBriefing.stats.overdue_count} overdue
+                    </Text>
+                  </View>
+                )}
+                {morningBriefing.stats?.due_today_count > 0 && (
+                  <View style={[styles.aiBriefingStat, { backgroundColor: COLORS.warning + '15' }]}>
+                    <Ionicons name="today" size={14} color={COLORS.warning} />
+                    <Text style={[styles.aiBriefingStatText, { color: COLORS.warning }]}>
+                      {morningBriefing.stats.due_today_count} today
+                    </Text>
+                  </View>
+                )}
+                {morningBriefing.stats?.birthdays_today > 0 && (
+                  <View style={[styles.aiBriefingStat, { backgroundColor: '#FF69B4' + '15' }]}>
+                    <Ionicons name="gift" size={14} color="#FF69B4" />
+                    <Text style={[styles.aiBriefingStatText, { color: '#FF69B4' }]}>
+                      {morningBriefing.stats.birthdays_today} birthday
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.aiBriefingEmpty} onPress={generateAIBriefing}>
+              <Text style={styles.aiBriefingEmptyText}>
+                Tap to generate your personalized daily briefing
+              </Text>
+              <LinearGradient colors={COLORS.primaryGradient} style={styles.aiBriefingGenerateBtn}>
+                <Ionicons name="sparkles" size={16} color="#fff" />
+                <Text style={styles.aiBriefingGenerateBtnText}>Generate Briefing</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+        </View>
         
         {/* Tab Navigation */}
         <View style={styles.briefingTabsContainer}>
