@@ -10,11 +10,11 @@ import {
   ActivityIndicator,
   Modal,
   Switch,
-  Platform,
   RefreshControl,
   KeyboardAvoidingView,
   Keyboard,
   Pressable,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -23,7 +23,6 @@ import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 const EXPO_PUBLIC_BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
