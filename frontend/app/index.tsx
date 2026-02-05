@@ -394,6 +394,93 @@ export default function Index() {
     }
   };
 
+  // Fetch calendar events
+  const fetchCalendarEvents = async () => {
+    if (!token) return;
+    try {
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/calendar-events`, getAuthHeaders());
+      setCalendarEvents(response.data || []);
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+    }
+  };
+
+  // Fetch events for a specific date (day view)
+  const fetchDayEvents = async (date: string) => {
+    if (!token) return;
+    try {
+      const response = await axios.get(`${EXPO_PUBLIC_BACKEND_URL}/api/calendar-events/by-date/${date}`, getAuthHeaders());
+      setDayViewEvents(response.data || []);
+    } catch (error) {
+      console.error('Error fetching day events:', error);
+    }
+  };
+
+  // Create a new calendar event
+  const createCalendarEvent = async () => {
+    if (!newEventData.title.trim()) {
+      Alert.alert('Fehler', 'Bitte gib einen Titel ein');
+      return;
+    }
+    
+    try {
+      await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/calendar-events`, newEventData, getAuthHeaders());
+      triggerHaptic('success');
+      setShowCreateEventModal(false);
+      setNewEventData({
+        title: '',
+        description: '',
+        date: new Date().toISOString().split('T')[0],
+        start_time: '09:00',
+        end_time: '10:00',
+        participants: [],
+        reminder_minutes: 30,
+        color: '#5D3FD3',
+        all_day: false,
+      });
+      fetchCalendarEvents();
+      if (dayViewDate) {
+        fetchDayEvents(dayViewDate);
+      }
+      Alert.alert('✓', 'Termin erstellt');
+    } catch (error) {
+      console.error('Error creating event:', error);
+      Alert.alert('Fehler', 'Termin konnte nicht erstellt werden');
+    }
+  };
+
+  // Delete a calendar event
+  const deleteCalendarEvent = async (eventId: string) => {
+    Alert.alert(
+      'Termin löschen',
+      'Möchtest du diesen Termin wirklich löschen?',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        {
+          text: 'Löschen',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`${EXPO_PUBLIC_BACKEND_URL}/api/calendar-events/${eventId}`, getAuthHeaders());
+              triggerHaptic('success');
+              fetchCalendarEvents();
+              if (dayViewDate) {
+                fetchDayEvents(dayViewDate);
+              }
+            } catch (error) {
+              Alert.alert('Fehler', 'Termin konnte nicht gelöscht werden');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // Get events for a specific date (from cached events)
+  const getEventsForDate = (date: string) => {
+    return calendarEvents.filter(e => e.date === date);
+  };
+
   // Copy text to clipboard
   const copyToClipboard = async (text: string) => {
     try {
