@@ -45,6 +45,24 @@ def serialize_doc(doc):
 
 # ============ Models ============
 
+# --- Pipeline Stage Configuration ---
+class PipelineStageConfig(BaseModel):
+    name: str
+    interval_days: int  # Base interval in days
+    randomize: bool = False  # Whether to add randomization
+    random_variation: int = 0  # Days to add/subtract randomly (e.g., 2 means ±2 days)
+    color: str = "#6366F1"  # Stage color
+    enabled: bool = True
+
+# Default pipeline stages
+DEFAULT_PIPELINE_STAGES = [
+    {"name": "Weekly", "interval_days": 7, "randomize": False, "random_variation": 0, "color": "#8B5CF6", "enabled": True},
+    {"name": "Bi-Weekly", "interval_days": 14, "randomize": False, "random_variation": 0, "color": "#06B6D4", "enabled": True},
+    {"name": "Monthly", "interval_days": 30, "randomize": False, "random_variation": 0, "color": "#10B981", "enabled": True},
+    {"name": "Quarterly", "interval_days": 90, "randomize": False, "random_variation": 0, "color": "#F59E0B", "enabled": True},
+    {"name": "Annually", "interval_days": 365, "randomize": False, "random_variation": 0, "color": "#EC4899", "enabled": True},
+]
+
 # --- User Model (Google-only auth) ---
 class User(BaseModel):
     email: str
@@ -60,6 +78,11 @@ class User(BaseModel):
     default_writing_style: str = "Hey! How have you been? Just wanted to catch up and see what you've been up to lately."
     notification_time: str = "09:00"
     notifications_enabled: bool = True
+    # Morning Briefing settings
+    morning_briefing_enabled: bool = True
+    morning_briefing_time: str = "08:00"
+    # Custom pipeline stages
+    pipeline_stages: List[dict] = Field(default_factory=lambda: DEFAULT_PIPELINE_STAGES.copy())
     bio: Optional[str] = None
     profile_picture: Optional[str] = None  # base64 image
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
@@ -75,6 +98,9 @@ class UserProfileUpdate(BaseModel):
     default_writing_style: Optional[str] = None
     notification_time: Optional[str] = None
     notifications_enabled: Optional[bool] = None
+    morning_briefing_enabled: Optional[bool] = None
+    morning_briefing_time: Optional[str] = None
+    pipeline_stages: Optional[List[dict]] = None
     bio: Optional[str] = None
     profile_picture: Optional[str] = None
 
