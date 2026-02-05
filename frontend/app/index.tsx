@@ -1705,6 +1705,21 @@ export default function Index() {
       .slice(0, 10);
   }, [contacts]);
 
+  // Generate AI morning briefing
+  const generateAIBriefing = async () => {
+    setLoadingBriefing(true);
+    try {
+      const response = await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/morning-briefing/generate`, {}, getAuthHeaders());
+      setMorningBriefing(response.data);
+      triggerHaptic('success');
+    } catch (error) {
+      console.error('Error generating AI briefing:', error);
+      Alert.alert('Error', 'Failed to generate AI briefing');
+    } finally {
+      setLoadingBriefing(false);
+    }
+  };
+
   const renderMorningBriefing = () => {
     // Calculate contacts to reach out to
     const overdueContacts = contacts.filter(c => {
@@ -1730,7 +1745,7 @@ export default function Index() {
     
     const today = new Date();
     const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const formattedDate = today.toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', dateOptions);
+    const formattedDate = today.toLocaleDateString('en-US', dateOptions);
     
     // Get current tab contacts
     const getTabContacts = () => {
