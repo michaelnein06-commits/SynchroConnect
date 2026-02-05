@@ -2282,14 +2282,21 @@ export default function Index() {
 
           {/* Calendar View Selector */}
           <View style={styles.calendarViewSelector}>
-            {(['week', 'month', 'year'] as CalendarView[]).map((view) => (
+            {(['week', 'month', 'day'] as CalendarView[]).map((view) => (
               <TouchableOpacity
                 key={view}
                 style={[styles.calendarViewButton, calendarView === view && styles.calendarViewButtonActive]}
-                onPress={() => setCalendarView(view)}
+                onPress={() => {
+                  if (view === 'day') {
+                    setDayViewDate(selectedDate);
+                    fetchDayEvents(selectedDate);
+                  } else {
+                    setCalendarView(view);
+                  }
+                }}
               >
                 <Text style={[styles.calendarViewText, calendarView === view && styles.calendarViewTextActive]}>
-                  {view === 'week' ? 'Week' : view === 'month' ? 'Month' : 'Year'}
+                  {view === 'week' ? 'Woche' : view === 'month' ? 'Monat' : 'Tag'}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -2300,7 +2307,15 @@ export default function Index() {
             {calendarView === 'month' && (
               <Calendar
                 current={selectedDate}
-                onDayPress={(day: any) => setSelectedDate(day.dateString)}
+                onDayPress={(day: any) => {
+                  setSelectedDate(day.dateString);
+                  // Open day view on double tap or long press
+                }}
+                onDayLongPress={(day: any) => {
+                  setSelectedDate(day.dateString);
+                  setDayViewDate(day.dateString);
+                  fetchDayEvents(day.dateString);
+                }}
                 markingType="custom"
                 markedDates={{
                   ...getBirthdayMarkedDates,
@@ -2321,10 +2336,18 @@ export default function Index() {
                   const isSelected = date?.dateString === selectedDate;
                   const hasBirthday = getBirthdayMarkedDates[date?.dateString]?.contacts?.length > 0;
                   const birthdayCount = getBirthdayMarkedDates[date?.dateString]?.contacts?.length || 0;
+                  const dateEvents = getEventsForDate(date?.dateString || '');
+                  const hasEvents = dateEvents.length > 0;
                   
                   return (
                     <TouchableOpacity
                       onPress={() => setSelectedDate(date?.dateString)}
+                      onLongPress={() => {
+                        setSelectedDate(date?.dateString);
+                        setDayViewDate(date?.dateString);
+                        fetchDayEvents(date?.dateString);
+                      }}
+                      delayLongPress={300}
                       style={[
                         styles.calendarDayContainer,
                         isSelected && styles.calendarDaySelected,
@@ -2340,13 +2363,15 @@ export default function Index() {
                       ]}>
                         {date?.day}
                       </Text>
-                      {hasBirthday && (
-                        <View style={[styles.birthdayDot, isSelected && styles.birthdayDotSelected]}>
-                          {birthdayCount > 1 && (
-                            <Text style={styles.birthdayDotText}>{birthdayCount}</Text>
-                          )}
-                        </View>
-                      )}
+                      {/* Show dots for birthdays and events */}
+                      <View style={styles.calendarEventDots}>
+                        {hasBirthday && (
+                          <View style={[styles.calendarEventDot, { backgroundColor: isSelected ? '#fff' : '#FF69B4' }]} />
+                        )}
+                        {hasEvents && dateEvents.slice(0, 2).map((event, idx) => (
+                          <View key={idx} style={[styles.calendarEventDot, { backgroundColor: isSelected ? '#fff' : event.color }]} />
+                        ))}
+                      </View>
                     </TouchableOpacity>
                   );
                 }}
