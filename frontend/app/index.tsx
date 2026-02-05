@@ -152,7 +152,6 @@ export default function Index() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [selectedStage, setSelectedStage] = useState('Monthly');
   const [showImportPrompt, setShowImportPrompt] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,9 +171,6 @@ export default function Index() {
   const [plannerSubTab, setPlannerSubTab] = useState<PlannerSubTab>('briefing');
   const [calendarView, setCalendarView] = useState<CalendarView>('month');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  // Drag and drop view mode
-  const [useDragDropPipeline, setUseDragDropPipeline] = useState(true);
-  const [useDragDropGroups, setUseDragDropGroups] = useState(true);
   // Morning briefing data
   const [morningBriefing, setMorningBriefing] = useState<any>(null);
   const [loadingBriefing, setLoadingBriefing] = useState(false);
