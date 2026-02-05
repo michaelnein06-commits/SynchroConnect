@@ -1205,7 +1205,7 @@ export default function Index() {
             );
           }}
         >
-          <LinearGradient colors={COLORS.primaryGradient} style={styles.fabGradient}>
+          <LinearGradient colors={COLORS.primaryGradient} style={styles.fab}>
             <Ionicons name="add" size={28} color="#fff" />
           </LinearGradient>
         </TouchableOpacity>
