@@ -142,6 +142,21 @@ interface Group {
   contact_count?: number;
 }
 
+interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  date: string;
+  start_time: string;
+  end_time?: string;
+  participants: string[];
+  participant_details?: { id: string; name: string; profile_picture?: string }[];
+  reminder_minutes: number;
+  color: string;
+  all_day: boolean;
+  recurring?: string;
+}
+
 export default function Index() {
   const router = useRouter();
   const { user, token, logout } = useAuth();
