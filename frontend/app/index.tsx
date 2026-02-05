@@ -172,6 +172,9 @@ export default function Index() {
   const [plannerSubTab, setPlannerSubTab] = useState<PlannerSubTab>('briefing');
   const [calendarView, setCalendarView] = useState<CalendarView>('month');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  // Morning briefing state
+  const [briefingTab, setBriefingTab] = useState<'overdue' | 'today' | 'week'>('today');
+  const [generatingDraftForId, setGeneratingDraftForId] = useState<string | null>(null);
   // Morning briefing data
   const [morningBriefing, setMorningBriefing] = useState<any>(null);
   const [loadingBriefing, setLoadingBriefing] = useState(false);
