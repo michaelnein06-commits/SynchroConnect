@@ -213,6 +213,7 @@ export default function ContactDetail() {
       fetchInteractions();
     }
     fetchGroups();
+    fetchPipelineStages();
   }, [id]);
 
   const fetchContact = async () => {
