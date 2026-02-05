@@ -217,11 +217,14 @@ frontend:
     file: "/app/frontend/app/index.tsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implemented main screen with horizontal pipeline stage selector, draggable contact cards, overdue/due soon badges"
+        - working: "NA"
+          agent: "testing"
+          comment: "⚠️ AUTHENTICATION REQUIRED: Cannot test pipeline functionality without Google OAuth login. App loads correctly and shows proper login screen. Code review shows pipeline implementation is present with proper tab navigation, stage selectors, and drag & drop functionality."
 
   - task: "Morning briefing story-style view"
     implemented: true
@@ -229,11 +232,14 @@ frontend:
     file: "/app/frontend/app/morning-briefing.tsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implemented Instagram-story style morning briefing with swipeable cards and AI draft generation"
+        - working: "NA"
+          agent: "testing"
+          comment: "⚠️ AUTHENTICATION REQUIRED: Cannot test morning briefing without login. Code review shows implementation is present in morning-briefing.tsx with proper story-style navigation."
 
   - task: "Contact detail/edit screen"
     implemented: true
@@ -241,11 +247,14 @@ frontend:
     file: "/app/frontend/app/contact/[id].tsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implemented full contact CRUD with all fields (name, job, birthday, tags, notes, pipeline stage, etc.)"
+        - working: "NA"
+          agent: "testing"
+          comment: "⚠️ AUTHENTICATION REQUIRED: Cannot test contact screens without login. Code review shows contact detail/edit implementation is present in contact/[id].tsx."
 
   - task: "AI Drafts screen"
     implemented: true
@@ -253,11 +262,14 @@ frontend:
     file: "/app/frontend/app/drafts.tsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implemented drafts list with copy, mark sent, and dismiss actions with haptic feedback"
+        - working: "NA"
+          agent: "testing"
+          comment: "⚠️ AUTHENTICATION REQUIRED: Cannot test AI drafts screen without login. Code review shows drafts implementation is present in drafts.tsx."
 
   - task: "Settings screen"
     implemented: true
@@ -265,11 +277,14 @@ frontend:
     file: "/app/frontend/app/settings.tsx"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implemented settings screen for writing style customization with app info and features list"
+        - working: "NA"
+          agent: "testing"
+          comment: "⚠️ AUTHENTICATION REQUIRED: Cannot test settings screen without login. Code review shows settings implementation is present in settings.tsx with Google Calendar integration section."
 
 metadata:
   created_by: "main_agent"
