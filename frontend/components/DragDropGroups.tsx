@@ -310,65 +310,51 @@ const DragDropGroups: React.FC<DragDropGroupsProps> = ({
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
     >
-      <Pressable style={styles.container} onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.headerTitle}>Groups</Text>
-              <View style={styles.headerStats}>
-                <Text style={styles.headerStat}>{groups.length} groups</Text>
-                <Text style={styles.headerStatDivider}>•</Text>
-                <Text style={styles.headerStat}>{unassignedContacts.length} unassigned</Text>
-              </View>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>Groups</Text>
+            <View style={styles.headerStats}>
+              <Text style={styles.headerStat}>{groups.length} groups</Text>
+              <Text style={styles.headerStatDivider}>•</Text>
+              <Text style={styles.headerStat}>{unassignedContacts.length} unassigned</Text>
             </View>
-            <TouchableOpacity 
-              style={styles.createGroupBtn}
-              onPress={() => setShowCreateGroupModal(true)}
-            >
-              <Ionicons name="add" size={20} color={COLORS.surface} />
-              <Text style={styles.createGroupBtnText}>New</Text>
-            </TouchableOpacity>
           </View>
-
-          {/* Drag Hint */}
-          <View style={styles.dragHintBar}>
-            <Ionicons name="hand-left-outline" size={14} color={COLORS.primary} />
-            <Text style={styles.dragHintText}>Long press contacts to manage groups</Text>
-          </View>
-
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+          <TouchableOpacity 
+            style={styles.createGroupBtn}
+            onPress={() => setShowCreateGroupModal(true)}
           >
-            {/* Groups Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionIconWrapper}>
-                  <Ionicons name="albums" size={16} color={COLORS.primary} />
-                </View>
-                <Text style={styles.sectionTitle}>Your Groups</Text>
+            <Ionicons name="add" size={20} color={COLORS.surface} />
+            <Text style={styles.createGroupBtnText}>New</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Groups Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconWrapper}>
+                <Ionicons name="albums" size={16} color={COLORS.primary} />
               </View>
-              
-              {groups.length === 0 ? (
-                <View style={styles.emptySection}>
-                  <Ionicons name="albums-outline" size={48} color={COLORS.textLight} />
-                  <Text style={styles.emptySectionTitle}>No groups yet</Text>
-                  <Text style={styles.emptySectionText}>Create groups to organize your contacts</Text>
-                  <TouchableOpacity 
-                    style={styles.emptySectionBtn}
-                    onPress={() => setShowCreateGroupModal(true)}
-                  >
-                    <Ionicons name="add" size={18} color={COLORS.surface} />
-                    <Text style={styles.emptySectionBtnText}>Create Group</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                groups.map(group => renderGroupCard(group))
-              )}
+              <Text style={styles.sectionTitle}>Your Groups</Text>
             </View>
+            
+            {groups.length === 0 ? (
+              <View style={styles.emptySection}>
+                <Ionicons name="albums-outline" size={48} color={COLORS.textLight} />
+                <Text style={styles.emptySectionTitle}>No groups yet</Text>
+                <Text style={styles.emptySectionText}>Create groups to organize your contacts</Text>
+              </View>
+            ) : (
+              groups.map(group => renderGroupCard(group))
+            )}
+          </View>
 
         {/* Unassigned Contacts Section */}
         <View style={[styles.section, styles.unassignedSection]}>
