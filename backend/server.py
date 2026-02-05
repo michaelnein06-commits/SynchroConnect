@@ -1372,8 +1372,12 @@ Keep it friendly, helpful, and motivating. Use emojis sparingly. Maximum 200 wor
                 "due_today_count": len(due_today_contacts),
                 "due_this_week_count": len(due_this_week_contacts),
                 "birthdays_today": len(birthdays_today),
-                "upcoming_birthdays": len(upcoming_birthdays)
+                "upcoming_birthdays": len(upcoming_birthdays),
+                "today_events_count": len(today_events),
+                "week_events_count": len(week_events)
             },
+            "today_events": [serialize_doc(e) for e in today_events],
+            "week_events": [serialize_doc(e) for e in week_events],
             "generated_at": today.isoformat()
         }
     except Exception as e:
