@@ -124,14 +124,18 @@ export default function PipelineSettings() {
         return;
       }
       
+      // Sort stages by interval (smallest first)
+      const sortedStages = [...stages].sort((a, b) => a.interval_days - b.interval_days);
+      
       await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/profile`, {
-        pipeline_stages: stages,
+        pipeline_stages: sortedStages,
         morning_briefing_enabled: morningBriefingEnabled,
         morning_briefing_time: morningBriefingTime,
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      setStages(sortedStages);
       Alert.alert('✓', 'Settings saved successfully');
       router.back();
     } catch (error) {
@@ -152,6 +156,8 @@ export default function PipelineSettings() {
     
     const updatedStages = [...stages];
     updatedStages[editingIndex] = editingStage;
+    // Sort by interval after edit
+    updatedStages.sort((a, b) => a.interval_days - b.interval_days);
     setStages(updatedStages);
     setShowEditModal(false);
     setEditingStage(null);
