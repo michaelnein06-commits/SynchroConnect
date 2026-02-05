@@ -120,11 +120,11 @@ const DragDropPipeline: React.FC<DragDropPipelineProps> = ({
 
   const contactsByStage = useMemo(() => {
     const grouped: { [key: string]: Contact[] } = {};
-    PIPELINE_STAGES.forEach(stage => {
+    pipelineStages.forEach(stage => {
       grouped[stage] = contacts.filter(c => c.pipeline_stage === stage);
     });
     return grouped;
-  }, [contacts]);
+  }, [contacts, pipelineStages]);
 
   const totalOverdue = useMemo(() => {
     return contacts.filter(c => {
