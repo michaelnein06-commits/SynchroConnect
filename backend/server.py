@@ -746,9 +746,13 @@ async def move_pipeline(contact_id: str, request: MovePipelineRequest, current_u
         if not existing:
             raise HTTPException(status_code=404, detail="Contact not found")
         
-        target_interval = calculate_target_interval(request.pipeline_stage)
-        last_contact = existing.get('last_contact_date', datetime.utcnow().isoformat())
-        next_due = calculate_next_due_with_random_factor(last_contact, target_interval)
+        # Use async version to get custom interval from user's settings
+        target_interval = await calculate_target_interval_async(request.pipeline_stage, current_user["user_id"])
+        
+        # For pipeline moves, use TODAY as base date (not last_contact_date)
+        # This ensures the countdown starts fresh from now
+        today = datetime.utcnow().isoformat()
+        next_due = calculate_next_due_with_random_factor(today, target_interval)
         
         update_data = {
             'pipeline_stage': request.pipeline_stage,
