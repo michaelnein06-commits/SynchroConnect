@@ -176,6 +176,9 @@ export default function Index() {
   // Morning briefing data
   const [morningBriefing, setMorningBriefing] = useState<any>(null);
   const [loadingBriefing, setLoadingBriefing] = useState(false);
+  // Dynamic pipeline stages
+  const [pipelineStages, setPipelineStages] = useState<string[]>(['New', 'Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', 'Annually']);
+  const [pipelineStagesConfig, setPipelineStagesConfig] = useState<any[]>([]);
 
   // API headers with auth token
   const getAuthHeaders = () => ({
