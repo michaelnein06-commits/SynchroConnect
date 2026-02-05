@@ -2217,7 +2217,9 @@ export default function Index() {
           </View>
         </Pressable>
       </Modal>
-    </View>
+        </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
