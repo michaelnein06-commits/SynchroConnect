@@ -593,6 +593,44 @@ export default function ContactDetail() {
                     <Text style={styles.locationText}>{formData.location}</Text>
                   </View>
                 )}
+                
+                {/* Pipeline Stage & Groups Badges */}
+                <View style={styles.profileBadgesRow}>
+                  {/* Frequency Badge */}
+                  {formData.pipeline_stage && (
+                    <View style={[styles.profileFrequencyBadge, { backgroundColor: getStageColor(formData.pipeline_stage) + '20' }]}>
+                      <Ionicons name="repeat" size={14} color={getStageColor(formData.pipeline_stage)} />
+                      <Text style={[styles.profileFrequencyText, { color: getStageColor(formData.pipeline_stage) }]}>
+                        {formData.pipeline_stage}
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {/* Group Badges */}
+                  {formData.groups && formData.groups.length > 0 && (
+                    <View style={styles.profileGroupBadges}>
+                      {availableGroups
+                        .filter(g => formData.groups.includes(g.id) || formData.groups.includes(g.name))
+                        .slice(0, 2)
+                        .map((group) => (
+                          <View key={group.id} style={[styles.profileGroupBadge, { backgroundColor: (group.color || COLORS.primary) + '20' }]}>
+                            <View style={[styles.profileGroupDot, { backgroundColor: group.color || COLORS.primary }]} />
+                            <Text style={[styles.profileGroupText, { color: group.color || COLORS.primary }]} numberOfLines={1}>
+                              {group.name}
+                            </Text>
+                          </View>
+                        ))
+                      }
+                      {formData.groups.length > 2 && (
+                        <View style={[styles.profileGroupBadge, { backgroundColor: COLORS.textLight + '20' }]}>
+                          <Text style={[styles.profileGroupText, { color: COLORS.textLight }]}>
+                            +{formData.groups.length - 2}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
               </>
             )}
           </View>
