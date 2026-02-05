@@ -127,6 +127,20 @@ const INTERACTION_TYPES = [
 const LANGUAGES = ['English', 'German', 'Spanish', 'French', 'Italian', 'Portuguese', 'Dutch', 'Russian', 'Chinese', 'Japanese'];
 const TONES = ['Casual', 'Professional', 'Friendly', 'Formal'];
 
+// Pipeline stage colors helper
+const getStageColor = (stage: string): string => {
+  const stageColors: { [key: string]: string } = {
+    'New': '#64748B',
+    'Daily': '#EF4444',
+    'Weekly': '#8B5CF6',
+    'Bi-Weekly': '#06B6D4',
+    'Monthly': '#10B981',
+    'Quarterly': '#F59E0B',
+    'Annually': '#EC4899',
+  };
+  return stageColors[stage] || COLORS.primary;
+};
+
 interface Interaction {
   id: string;
   interaction_type: string;
