@@ -1597,7 +1597,7 @@ export default function Index() {
           </View>
           <TouchableOpacity 
             style={styles.briefingSettingsBtn}
-            onPress={() => router.push('/pipeline-settings')}
+            onPress={() => router.push('/briefing-settings')}
           >
             <Ionicons name="settings-outline" size={20} color="#fff" />
           </TouchableOpacity>
