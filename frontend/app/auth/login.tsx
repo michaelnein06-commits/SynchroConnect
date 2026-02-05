@@ -136,11 +136,11 @@ export default function Login() {
         <View style={styles.content}>
           {/* Logo and Brand Section */}
           <View style={styles.heroSection}>
-            <View style={styles.logoContainer}>
+            <View style={styles.logoWrapper}>
               <Image 
                 source={require('../../assets/images/convo-logo.png')} 
                 style={styles.logo}
-                resizeMode="contain"
+                resizeMode="cover"
               />
             </View>
             <Text style={styles.title}>Convo</Text>
