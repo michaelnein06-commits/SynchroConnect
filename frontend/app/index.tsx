@@ -6219,4 +6219,160 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  
+  // Calendar Event Styles
+  createEventModal: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 30,
+    maxHeight: '85%',
+  },
+  createEventForm: {
+    maxHeight: 400,
+  },
+  participantChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary + '15',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 6,
+  },
+  participantChipText: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: '500',
+  },
+  participantPickerModal: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 30,
+    maxHeight: '80%',
+  },
+  participantOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
+  },
+  participantOptionSelected: {
+    backgroundColor: COLORS.primary + '08',
+  },
+  participantAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+  },
+  participantAvatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  participantName: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 16,
+    fontWeight: '500',
+    color: COLORS.text,
+  },
+  
+  // Day View Modal Styles
+  dayViewModal: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 30,
+    maxHeight: '80%',
+    flex: 1,
+  },
+  dayViewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    paddingTop: 8,
+  },
+  dayViewTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  dayViewAddBtn: {
+    padding: 4,
+  },
+  dayViewSection: {
+    marginBottom: 20,
+  },
+  dayViewSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginBottom: 12,
+  },
+  dayViewEventCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+  },
+  dayViewEventColor: {
+    width: 4,
+    height: 40,
+    borderRadius: 2,
+    marginRight: 12,
+  },
+  dayViewEventInfo: {
+    flex: 1,
+  },
+  dayViewEventTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  dayViewEventTime: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  dayViewEventParticipants: {
+    fontSize: 12,
+    color: COLORS.textLight,
+  },
+  dayViewEmpty: {
+    alignItems: 'center',
+    paddingVertical: 30,
+  },
+  dayViewEmptyText: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginTop: 8,
+  },
+  
+  // Calendar Event Dots
+  calendarEventDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 2,
+  },
+  calendarEventDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 2,
+    marginTop: 2,
+  },
 });
