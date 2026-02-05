@@ -2233,7 +2233,7 @@ export default function Index() {
         <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/morning-briefing')}>
+      <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/briefing-settings')}>
         <Ionicons name="sunny-outline" size={24} color={COLORS.text} />
         <Text style={styles.menuText}>{t('morningBriefing')}</Text>
         <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
