@@ -4487,12 +4487,14 @@ const styles = StyleSheet.create({
   stageChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 20,
     backgroundColor: COLORS.background,
     marginRight: 8,
-    gap: 8,
+    gap: 6,
+    minWidth: 100,
   },
   stageChipActive: {
     backgroundColor: COLORS.primary,
