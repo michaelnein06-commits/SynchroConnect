@@ -2715,6 +2715,155 @@ export default function Index() {
           </View>
         </Pressable>
       </Modal>
+
+      {/* Create Group Modal */}
+      <Modal
+        visible={showCreateGroupModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCreateGroupModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowCreateGroupModal(false)}>
+          <Pressable style={styles.createGroupModal} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Create New Group</Text>
+            
+            <View style={styles.createGroupForm}>
+              <Text style={styles.createGroupLabel}>Group Name *</Text>
+              <TextInput
+                style={styles.createGroupInput}
+                placeholder="e.g., Work, University, Tennis Club"
+                placeholderTextColor={COLORS.textLight}
+                value={newGroupData.name}
+                onChangeText={(text) => setNewGroupData(prev => ({ ...prev, name: text }))}
+              />
+              
+              <Text style={styles.createGroupLabel}>Description</Text>
+              <TextInput
+                style={[styles.createGroupInput, styles.createGroupTextArea]}
+                placeholder="Add a description for this group..."
+                placeholderTextColor={COLORS.textLight}
+                value={newGroupData.description}
+                onChangeText={(text) => setNewGroupData(prev => ({ ...prev, description: text }))}
+                multiline
+                numberOfLines={3}
+              />
+              
+              <Text style={styles.createGroupLabel}>Color</Text>
+              <View style={styles.colorPicker}>
+                {groupColors.map((color) => (
+                  <TouchableOpacity
+                    key={color}
+                    style={[
+                      styles.colorOption,
+                      { backgroundColor: color },
+                      newGroupData.color === color && styles.colorOptionSelected,
+                    ]}
+                    onPress={() => setNewGroupData(prev => ({ ...prev, color }))}
+                  >
+                    {newGroupData.color === color && (
+                      <Ionicons name="checkmark" size={16} color="#fff" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.createGroupButton}
+              onPress={handleCreateGroup}
+            >
+              <LinearGradient colors={COLORS.primaryGradient} style={styles.createGroupButtonGradient}>
+                <Ionicons name="add-circle" size={20} color="#fff" />
+                <Text style={styles.createGroupButtonText}>Create Group</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.modalCloseButton}
+              onPress={() => setShowCreateGroupModal(false)}
+            >
+              <Text style={styles.modalCloseButtonText}>{t('cancel')}</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Group Actions Modal */}
+      <Modal
+        visible={showGroupActionsModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowGroupActionsModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowGroupActionsModal(false)}>
+          <Pressable style={styles.groupActionsModal} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalHandle} />
+            
+            {selectedGroupForAction && (
+              <>
+                <View style={styles.groupActionHeader}>
+                  <LinearGradient 
+                    colors={[selectedGroupForAction.color || COLORS.primary, (selectedGroupForAction.color || COLORS.primary) + 'CC']} 
+                    style={styles.groupActionAvatar}
+                  >
+                    <Ionicons name="people" size={28} color="#fff" />
+                  </LinearGradient>
+                  <Text style={styles.groupActionTitle}>{selectedGroupForAction.name}</Text>
+                </View>
+                
+                <View style={styles.groupActionButtons}>
+                  <TouchableOpacity
+                    style={styles.groupActionBtn}
+                    onPress={() => {
+                      setShowGroupActionsModal(false);
+                      router.push(`/group/${selectedGroupForAction.id}`);
+                    }}
+                  >
+                    <View style={[styles.groupActionBtnIcon, { backgroundColor: COLORS.primary + '15' }]}>
+                      <Ionicons name="pencil" size={20} color={COLORS.primary} />
+                    </View>
+                    <Text style={styles.groupActionBtnText}>Edit Group</Text>
+                    <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={styles.groupActionBtn}
+                    onPress={() => {
+                      setShowGroupActionsModal(false);
+                      router.push(`/group/${selectedGroupForAction.id}`);
+                    }}
+                  >
+                    <View style={[styles.groupActionBtnIcon, { backgroundColor: '#10B981' + '15' }]}>
+                      <Ionicons name="person-add" size={20} color="#10B981" />
+                    </View>
+                    <Text style={styles.groupActionBtnText}>Add Members</Text>
+                    <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={styles.groupActionBtn}
+                    onPress={() => handleDeleteGroup(selectedGroupForAction.id, selectedGroupForAction.name)}
+                  >
+                    <View style={[styles.groupActionBtnIcon, { backgroundColor: COLORS.accent + '15' }]}>
+                      <Ionicons name="trash" size={20} color={COLORS.accent} />
+                    </View>
+                    <Text style={[styles.groupActionBtnText, { color: COLORS.accent }]}>Delete Group</Text>
+                    <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+            
+            <TouchableOpacity 
+              style={styles.modalCloseButton}
+              onPress={() => setShowGroupActionsModal(false)}
+            >
+              <Text style={styles.modalCloseButtonText}>{t('cancel')}</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
         </View>
       </Pressable>
     </KeyboardAvoidingView>
