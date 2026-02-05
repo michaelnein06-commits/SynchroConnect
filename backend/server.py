@@ -261,19 +261,28 @@ async def calculate_target_interval_async(pipeline_stage: str, user_id: str = No
     
     # If no user_id, use defaults
     if not user_id:
+        print(f"No user_id provided, using default for {pipeline_stage}")
         return default_intervals.get(pipeline_stage, 30)
     
     # Try to get user's custom pipeline stages
     try:
         user = await db.users.find_one({"_id": ObjectId(user_id)})
         if user and user.get('pipeline_stages'):
+            print(f"Found user pipeline_stages: {[s.get('name') for s in user['pipeline_stages']]}")
             for stage in user['pipeline_stages']:
                 if stage.get('name') == pipeline_stage:
-                    return stage.get('interval_days', 30)
-    except:
-        pass
+                    interval = stage.get('interval_days', 30)
+                    print(f"Found custom interval for {pipeline_stage}: {interval} days")
+                    return interval
+            print(f"Pipeline stage {pipeline_stage} not found in user's custom stages")
+        else:
+            print(f"User found but no pipeline_stages: {user.get('email') if user else 'No user'}")
+    except Exception as e:
+        print(f"Error getting user pipeline stages: {e}")
     
-    return default_intervals.get(pipeline_stage, 30)
+    result = default_intervals.get(pipeline_stage, 30)
+    print(f"Using default interval for {pipeline_stage}: {result} days")
+    return result
 
 def calculate_target_interval(pipeline_stage: str) -> int:
     """Convert pipeline stage to days. 'New' stage has no interval (returns 0)
