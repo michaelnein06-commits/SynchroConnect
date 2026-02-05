@@ -135,8 +135,6 @@ export default function PipelineSettings() {
       
       await axios.put(`${EXPO_PUBLIC_BACKEND_URL}/api/profile`, {
         pipeline_stages: sortedStages,
-        morning_briefing_enabled: morningBriefingEnabled,
-        morning_briefing_time: morningBriefingTime,
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
