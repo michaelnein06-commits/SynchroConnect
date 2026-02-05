@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput, Image, Dimensions, Modal, Pressable, FlatList, Platform, Animated, KeyboardAvoidingView, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Image, Dimensions, Modal, Pressable, FlatList, Platform, Animated, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,8 +12,6 @@ import * as Clipboard from 'expo-clipboard';
 import ContactSyncService from '../services/ContactSyncService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, CalendarList, Agenda } from 'react-native-calendars';
-import DragDropPipeline from '../components/DragDropPipeline';
-import DragDropGroups from '../components/DragDropGroups';
 
 // Safe haptics wrapper
 const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => {
