@@ -900,53 +900,88 @@ export default function Index() {
             stageContacts.map((contact, index) => {
               const daysUntil = getDaysUntilDue(contact.next_due);
               const isOverdue = daysUntil !== null && daysUntil < 0 && contact.pipeline_stage !== 'New';
+              const isNewContact = contact.pipeline_stage === 'New';
+              const isGenerating = generatingDraftForId === contact.id;
               
               return (
-                <TouchableOpacity
-                  key={contact.id}
-                  style={[styles.pipelineContactCardNew, isOverdue && styles.pipelineContactCardOverdue]}
-                  onPress={() => router.push(`/contact/${contact.id}`)}
-                  onLongPress={() => handleLongPressContact(contact)}
-                  delayLongPress={400}
-                >
-                  {contact.profile_picture ? (
-                    <Image source={{ uri: contact.profile_picture }} style={styles.pipelineContactAvatarNew} />
-                  ) : (
-                    <LinearGradient 
-                      colors={[stageColor, stageColor + 'CC']} 
-                      style={styles.pipelineContactAvatarPlaceholderNew}
-                    >
-                      <Text style={styles.pipelineContactAvatarTextNew}>
-                        {contact.name.charAt(0).toUpperCase()}
-                      </Text>
-                    </LinearGradient>
-                  )}
-                  <View style={styles.pipelineContactInfoNew}>
-                    <Text style={styles.pipelineContactNameNew}>{contact.name}</Text>
-                    {contact.job && (
-                      <Text style={styles.pipelineContactJobNew} numberOfLines={1}>{contact.job}</Text>
+                <View key={contact.id} style={[styles.pipelineContactCardEnhanced, isOverdue && styles.pipelineContactCardOverdueEnhanced]}>
+                  <TouchableOpacity
+                    style={styles.pipelineContactMainArea}
+                    onPress={() => router.push(`/contact/${contact.id}`)}
+                    onLongPress={() => handleLongPressContact(contact)}
+                    delayLongPress={400}
+                    activeOpacity={0.7}
+                  >
+                    {contact.profile_picture ? (
+                      <Image source={{ uri: contact.profile_picture }} style={styles.pipelineContactAvatarEnhanced} />
+                    ) : (
+                      <LinearGradient 
+                        colors={[stageColor, stageColor + 'CC']} 
+                        style={styles.pipelineContactAvatarPlaceholderEnhanced}
+                      >
+                        <Text style={styles.pipelineContactAvatarTextEnhanced}>
+                          {contact.name.charAt(0).toUpperCase()}
+                        </Text>
+                      </LinearGradient>
                     )}
-                  </View>
-                  {daysUntil !== null && contact.pipeline_stage !== 'New' && (
-                    <View style={[
-                      styles.dueBadgeNew,
-                      isOverdue ? styles.dueBadgeOverdueNew : styles.dueBadgeOkNew
-                    ]}>
-                      <Ionicons 
-                        name={isOverdue ? "alert-circle" : "time-outline"} 
-                        size={12} 
-                        color={isOverdue ? '#fff' : COLORS.success} 
-                      />
-                      <Text style={[
-                        styles.dueBadgeTextNew,
-                        isOverdue && styles.dueBadgeTextOverdueNew
-                      ]}>
-                        {isOverdue ? `${Math.abs(daysUntil)}d overdue` : `${daysUntil}d`}
-                      </Text>
+                    <View style={styles.pipelineContactInfoEnhanced}>
+                      <Text style={styles.pipelineContactNameEnhanced} numberOfLines={1}>{contact.name}</Text>
+                      {contact.job && (
+                        <Text style={styles.pipelineContactJobEnhanced} numberOfLines={1}>{contact.job}</Text>
+                      )}
+                      {contact.phone && (
+                        <Text style={styles.pipelineContactPhoneEnhanced} numberOfLines={1}>{contact.phone}</Text>
+                      )}
                     </View>
-                  )}
-                  <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                  
+                  <View style={styles.pipelineContactActions}>
+                    {/* Due Badge */}
+                    {daysUntil !== null && !isNewContact && (
+                      <View style={[
+                        styles.pipelineDueBadgeEnhanced,
+                        isOverdue ? styles.pipelineDueBadgeOverdueEnhanced : styles.pipelineDueBadgeOkEnhanced
+                      ]}>
+                        <Ionicons 
+                          name={isOverdue ? "alert-circle" : "time-outline"} 
+                          size={11} 
+                          color={isOverdue ? '#fff' : COLORS.success} 
+                        />
+                        <Text style={[
+                          styles.pipelineDueBadgeTextEnhanced,
+                          isOverdue && styles.pipelineDueBadgeTextOverdueEnhanced
+                        ]}>
+                          {isOverdue ? `${Math.abs(daysUntil)}d` : `${daysUntil}d`}
+                        </Text>
+                      </View>
+                    )}
+                    {/* New Badge */}
+                    {isNewContact && (
+                      <View style={styles.pipelineNewBadge}>
+                        <Text style={styles.pipelineNewBadgeText}>NEW</Text>
+                      </View>
+                    )}
+                    
+                    {/* AI Draft Button */}
+                    <TouchableOpacity
+                      style={[styles.pipelineAIDraftBtn, isGenerating && styles.pipelineAIDraftBtnLoading]}
+                      onPress={() => {
+                        setGeneratingDraftForId(contact.id);
+                        generateDraft(contact.id, contact.name).finally(() => setGeneratingDraftForId(null));
+                      }}
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <Ionicons name="sparkles" size={14} color="#fff" />
+                          <Text style={styles.pipelineAIDraftBtnText}>Draft</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
               );
             })
           )}
