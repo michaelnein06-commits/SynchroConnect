@@ -354,6 +354,78 @@ export default function GroupDetail() {
           <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Add Contacts Modal */}
+      <Modal
+        visible={showAddContactsModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAddContactsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Contacts</Text>
+              <TouchableOpacity onPress={() => setShowAddContactsModal(false)}>
+                <Ionicons name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalContent}>
+              {getContactsNotInGroup().length === 0 ? (
+                <View style={styles.emptyMembers}>
+                  <Ionicons name="checkmark-circle" size={40} color={COLORS.primary} />
+                  <Text style={styles.emptyMembersText}>All contacts are already in this group</Text>
+                </View>
+              ) : (
+                getContactsNotInGroup().map((contact: any) => {
+                  const isSelected = selectedContactsToAdd.includes(contact.id);
+                  return (
+                    <TouchableOpacity
+                      key={contact.id}
+                      style={[styles.memberCard, isSelected && styles.memberCardSelected]}
+                      onPress={() => toggleContactSelection(contact.id)}
+                    >
+                      {contact.profile_picture ? (
+                        <Image source={{ uri: contact.profile_picture }} style={styles.memberAvatar} />
+                      ) : (
+                        <View style={styles.memberAvatarPlaceholder}>
+                          <Ionicons name="person" size={20} color={COLORS.primary} />
+                        </View>
+                      )}
+                      <View style={styles.memberInfo}>
+                        <Text style={styles.memberName}>{contact.name}</Text>
+                        {contact.job && <Text style={styles.memberJob}>{contact.job}</Text>}
+                      </View>
+                      <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                        {isSelected && <Ionicons name="checkmark" size={16} color="#fff" />}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </ScrollView>
+            
+            {getContactsNotInGroup().length > 0 && (
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={[styles.modalButton, selectedContactsToAdd.length === 0 && styles.modalButtonDisabled]}
+                  onPress={handleAddContacts}
+                  disabled={addingContacts || selectedContactsToAdd.length === 0}
+                >
+                  {addingContacts ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.modalButtonText}>
+                      Add {selectedContactsToAdd.length > 0 ? `${selectedContactsToAdd.length} Contact(s)` : 'Contacts'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
