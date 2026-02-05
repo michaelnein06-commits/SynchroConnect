@@ -178,7 +178,7 @@ export default function ImportContacts() {
 
       <Text style={styles.title}>Import Contacts</Text>
       <Text style={styles.description}>
-        Quickly add your existing contacts to SynchroConnectr and start nurturing your relationships
+        Quickly add your existing contacts to Convo and start nurturing your relationships
       </Text>
 
       {/* Feature Cards */}
