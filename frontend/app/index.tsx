@@ -167,12 +167,15 @@ export default function Index() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncResult, setLastSyncResult] = useState<string | null>(null);
   // Planner tab state
-  const [plannerSubTab, setPlannerSubTab] = useState<PlannerSubTab>('calendar');
+  const [plannerSubTab, setPlannerSubTab] = useState<PlannerSubTab>('briefing');
   const [calendarView, setCalendarView] = useState<CalendarView>('month');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   // Drag and drop view mode
   const [useDragDropPipeline, setUseDragDropPipeline] = useState(true);
   const [useDragDropGroups, setUseDragDropGroups] = useState(true);
+  // Morning briefing data
+  const [morningBriefing, setMorningBriefing] = useState<any>(null);
+  const [loadingBriefing, setLoadingBriefing] = useState(false);
 
   // API headers with auth token
   const getAuthHeaders = () => ({
