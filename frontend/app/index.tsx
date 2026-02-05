@@ -1223,10 +1223,275 @@ export default function Index() {
       .slice(0, 10);
   }, [contacts]);
 
+  const renderMorningBriefing = () => {
+    // Calculate contacts to reach out to today
+    const overdueContacts = contacts.filter(c => {
+      if (c.pipeline_stage === 'New') return false;
+      const days = getDaysUntilDue(c.next_due);
+      return days !== null && days <= 0;
+    });
+    
+    const dueTodayContacts = contacts.filter(c => {
+      const days = getDaysUntilDue(c.next_due);
+      return days !== null && days === 0;
+    });
+    
+    const dueThisWeekContacts = contacts.filter(c => {
+      const days = getDaysUntilDue(c.next_due);
+      return days !== null && days > 0 && days <= 7;
+    });
+    
+    const todayBirthdays = upcomingBirthdays.filter(b => b.daysUntil === 0);
+    const thisWeekBirthdays = upcomingBirthdays.filter(b => b.daysUntil > 0 && b.daysUntil <= 7);
+    
+    const today = new Date();
+    const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const formattedDate = today.toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', dateOptions);
+    
+    return (
+      <ScrollView 
+        style={styles.content} 
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Greeting Card */}
+        <LinearGradient 
+          colors={['#FF9500', '#FF6B00']} 
+          style={styles.briefingGreetingCard}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Ionicons name="sunny" size={36} color="#fff" />
+          <View style={styles.briefingGreetingText}>
+            <Text style={styles.briefingGreetingTitle}>Guten Morgen!</Text>
+            <Text style={styles.briefingGreetingDate}>{formattedDate}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.briefingSettingsBtn}
+            onPress={() => router.push('/pipeline-settings')}
+          >
+            <Ionicons name="settings-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+        </LinearGradient>
+        
+        {/* Stats Overview */}
+        <View style={styles.briefingStatsRow}>
+          <View style={[styles.briefingStat, { backgroundColor: COLORS.accent + '15' }]}>
+            <Text style={[styles.briefingStatNumber, { color: COLORS.accent }]}>{overdueContacts.length}</Text>
+            <Text style={styles.briefingStatLabel}>Überfällig</Text>
+          </View>
+          <View style={[styles.briefingStat, { backgroundColor: COLORS.warning + '15' }]}>
+            <Text style={[styles.briefingStatNumber, { color: COLORS.warning }]}>{dueTodayContacts.length}</Text>
+            <Text style={styles.briefingStatLabel}>Heute</Text>
+          </View>
+          <View style={[styles.briefingStat, { backgroundColor: COLORS.primary + '15' }]}>
+            <Text style={[styles.briefingStatNumber, { color: COLORS.primary }]}>{dueThisWeekContacts.length}</Text>
+            <Text style={styles.briefingStatLabel}>Diese Woche</Text>
+          </View>
+        </View>
+        
+        {/* Overdue Section */}
+        {overdueContacts.length > 0 && (
+          <View style={styles.briefingSection}>
+            <View style={styles.briefingSectionHeader}>
+              <View style={[styles.briefingSectionIcon, { backgroundColor: COLORS.accent + '15' }]}>
+                <Ionicons name="alert-circle" size={18} color={COLORS.accent} />
+              </View>
+              <Text style={styles.briefingSectionTitle}>Überfällige Kontakte</Text>
+              <View style={[styles.briefingSectionBadge, { backgroundColor: COLORS.accent }]}>
+                <Text style={styles.briefingSectionBadgeText}>{overdueContacts.length}</Text>
+              </View>
+            </View>
+            
+            {overdueContacts.slice(0, 5).map(contact => {
+              const days = Math.abs(getDaysUntilDue(contact.next_due) || 0);
+              return (
+                <TouchableOpacity 
+                  key={contact.id} 
+                  style={styles.briefingContactCard}
+                  onPress={() => router.push(`/contact/${contact.id}`)}
+                >
+                  {contact.profile_picture ? (
+                    <Image source={{ uri: contact.profile_picture }} style={styles.briefingContactAvatar} />
+                  ) : (
+                    <View style={[styles.briefingContactAvatarPlaceholder, { backgroundColor: COLORS.accent + '20' }]}>
+                      <Text style={[styles.briefingContactAvatarText, { color: COLORS.accent }]}>
+                        {contact.name.charAt(0)}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.briefingContactInfo}>
+                    <Text style={styles.briefingContactName}>{contact.name}</Text>
+                    <Text style={styles.briefingContactMeta}>{contact.pipeline_stage} • {days} Tage überfällig</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+                </TouchableOpacity>
+              );
+            })}
+            
+            {overdueContacts.length > 5 && (
+              <Text style={styles.briefingMoreText}>+{overdueContacts.length - 5} weitere</Text>
+            )}
+          </View>
+        )}
+        
+        {/* Birthdays Today */}
+        {todayBirthdays.length > 0 && (
+          <View style={styles.briefingSection}>
+            <View style={styles.briefingSectionHeader}>
+              <View style={[styles.briefingSectionIcon, { backgroundColor: '#FF69B4' + '15' }]}>
+                <Ionicons name="gift" size={18} color="#FF69B4" />
+              </View>
+              <Text style={styles.briefingSectionTitle}>Geburtstage heute!</Text>
+            </View>
+            
+            {todayBirthdays.map(({ contact }) => (
+              <TouchableOpacity 
+                key={contact.id} 
+                style={[styles.briefingContactCard, { backgroundColor: '#FF69B4' + '08' }]}
+                onPress={() => router.push(`/contact/${contact.id}`)}
+              >
+                {contact.profile_picture ? (
+                  <Image source={{ uri: contact.profile_picture }} style={styles.briefingContactAvatar} />
+                ) : (
+                  <View style={[styles.briefingContactAvatarPlaceholder, { backgroundColor: '#FF69B4' + '20' }]}>
+                    <Text style={[styles.briefingContactAvatarText, { color: '#FF69B4' }]}>
+                      {contact.name.charAt(0)}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.briefingContactInfo}>
+                  <Text style={styles.briefingContactName}>{contact.name}</Text>
+                  <Text style={styles.briefingContactMeta}>Hat heute Geburtstag! 🎂</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+        
+        {/* Due This Week */}
+        {dueThisWeekContacts.length > 0 && (
+          <View style={styles.briefingSection}>
+            <View style={styles.briefingSectionHeader}>
+              <View style={[styles.briefingSectionIcon, { backgroundColor: COLORS.primary + '15' }]}>
+                <Ionicons name="calendar" size={18} color={COLORS.primary} />
+              </View>
+              <Text style={styles.briefingSectionTitle}>Diese Woche kontaktieren</Text>
+              <View style={[styles.briefingSectionBadge, { backgroundColor: COLORS.primary }]}>
+                <Text style={styles.briefingSectionBadgeText}>{dueThisWeekContacts.length}</Text>
+              </View>
+            </View>
+            
+            {dueThisWeekContacts.slice(0, 5).map(contact => {
+              const days = getDaysUntilDue(contact.next_due) || 0;
+              return (
+                <TouchableOpacity 
+                  key={contact.id} 
+                  style={styles.briefingContactCard}
+                  onPress={() => router.push(`/contact/${contact.id}`)}
+                >
+                  {contact.profile_picture ? (
+                    <Image source={{ uri: contact.profile_picture }} style={styles.briefingContactAvatar} />
+                  ) : (
+                    <View style={[styles.briefingContactAvatarPlaceholder, { backgroundColor: COLORS.primary + '20' }]}>
+                      <Text style={[styles.briefingContactAvatarText, { color: COLORS.primary }]}>
+                        {contact.name.charAt(0)}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.briefingContactInfo}>
+                    <Text style={styles.briefingContactName}>{contact.name}</Text>
+                    <Text style={styles.briefingContactMeta}>{contact.pipeline_stage} • in {days} Tagen</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+        
+        {/* Upcoming Birthdays */}
+        {thisWeekBirthdays.length > 0 && (
+          <View style={styles.briefingSection}>
+            <View style={styles.briefingSectionHeader}>
+              <View style={[styles.briefingSectionIcon, { backgroundColor: '#FF69B4' + '15' }]}>
+                <Ionicons name="gift-outline" size={18} color="#FF69B4" />
+              </View>
+              <Text style={styles.briefingSectionTitle}>Kommende Geburtstage</Text>
+            </View>
+            
+            {thisWeekBirthdays.slice(0, 3).map(({ contact, daysUntil }) => (
+              <TouchableOpacity 
+                key={contact.id} 
+                style={styles.briefingContactCard}
+                onPress={() => router.push(`/contact/${contact.id}`)}
+              >
+                {contact.profile_picture ? (
+                  <Image source={{ uri: contact.profile_picture }} style={styles.briefingContactAvatar} />
+                ) : (
+                  <View style={[styles.briefingContactAvatarPlaceholder, { backgroundColor: '#FF69B4' + '20' }]}>
+                    <Text style={[styles.briefingContactAvatarText, { color: '#FF69B4' }]}>
+                      {contact.name.charAt(0)}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.briefingContactInfo}>
+                  <Text style={styles.briefingContactName}>{contact.name}</Text>
+                  <Text style={styles.briefingContactMeta}>Geburtstag in {daysUntil} Tagen</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+        
+        {/* All Good Message */}
+        {overdueContacts.length === 0 && dueTodayContacts.length === 0 && todayBirthdays.length === 0 && (
+          <View style={styles.briefingAllGood}>
+            <View style={styles.briefingAllGoodIcon}>
+              <Ionicons name="checkmark-circle" size={48} color={COLORS.success} />
+            </View>
+            <Text style={styles.briefingAllGoodTitle}>Alles erledigt!</Text>
+            <Text style={styles.briefingAllGoodText}>
+              Du hast heute keine überfälligen Kontakte. Weiter so!
+            </Text>
+          </View>
+        )}
+        
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    );
+  };
+
   const renderPlanner = () => (
     <View style={{ flex: 1 }}>
       {/* Sub-tab navigation */}
       <View style={styles.plannerSubTabs}>
+        <TouchableOpacity
+          style={[styles.plannerSubTabButton, plannerSubTab === 'briefing' && styles.plannerSubTabButtonActive]}
+          onPress={() => setPlannerSubTab('briefing')}
+        >
+          <Ionicons name="sunny" size={18} color={plannerSubTab === 'briefing' ? COLORS.surface : COLORS.primary} />
+          <Text style={[styles.plannerSubTabText, plannerSubTab === 'briefing' && styles.plannerSubTabTextActive]}>
+            Briefing
+          </Text>
+          {contacts.filter(c => {
+            if (c.pipeline_stage === 'New') return false;
+            const days = getDaysUntilDue(c.next_due);
+            return days !== null && days <= 0;
+          }).length > 0 && (
+            <View style={[styles.plannerBadge, { backgroundColor: COLORS.accent }]}>
+              <Text style={styles.plannerBadgeText}>
+                {contacts.filter(c => {
+                  if (c.pipeline_stage === 'New') return false;
+                  const days = getDaysUntilDue(c.next_due);
+                  return days !== null && days <= 0;
+                }).length}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.plannerSubTabButton, plannerSubTab === 'calendar' && styles.plannerSubTabButtonActive]}
           onPress={() => setPlannerSubTab('calendar')}
@@ -1252,7 +1517,7 @@ export default function Index() {
         </TouchableOpacity>
       </View>
       
-      {plannerSubTab === 'calendar' ? (
+      {plannerSubTab === 'briefing' ? renderMorningBriefing() : plannerSubTab === 'calendar' ? (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Birthday Summary Card */}
           <View style={styles.birthdaySummaryCard}>
