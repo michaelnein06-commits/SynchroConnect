@@ -1485,6 +1485,21 @@ const styles = StyleSheet.create({
   groupChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, gap: 6 },
   groupDot: { width: 8, height: 8, borderRadius: 4 },
   groupChipText: { fontSize: 14, fontWeight: '600' },
+  groupChipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  groupChipSelectable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 2,
+    gap: 8,
+    backgroundColor: COLORS.background,
+  },
+  groupChipSelectableText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   
   // Options
   optionsScroll: { marginTop: 4 },
