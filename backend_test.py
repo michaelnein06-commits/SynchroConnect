@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 SynchroConnectr Backend API Test Suite
-Tests all backend endpoints for the SynchroConnectr Phase 1 MVP
+Tests all backend endpoints including Calendar Events API
 """
 
 import requests
@@ -9,9 +9,15 @@ import json
 from datetime import datetime, timedelta
 import time
 import sys
+import os
+from dotenv import load_dotenv
 
-# Use the production URL from frontend/.env
-BASE_URL = "https://sync-schedule-3.preview.emergentagent.com/api"
+# Load environment variables
+load_dotenv('/app/frontend/.env')
+
+# Get backend URL from frontend env
+BACKEND_URL = os.getenv('EXPO_PUBLIC_BACKEND_URL', 'https://sync-schedule-3.preview.emergentagent.com')
+BASE_URL = f"{BACKEND_URL}/api"
 
 class SynchroConnectrTester:
     def __init__(self):
