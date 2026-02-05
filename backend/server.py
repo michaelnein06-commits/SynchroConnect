@@ -1344,6 +1344,240 @@ Keep it friendly, helpful, and motivating. Use emojis sparingly. Maximum 200 wor
         logging.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============ Calendar Event Routes ============
+
+@api_router.post("/calendar-events", response_model=dict)
+async def create_calendar_event(event: CalendarEventCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new calendar event and optionally add to participant's interaction history"""
+    try:
+        event_dict = event.dict()
+        event_dict['user_id'] = current_user["user_id"]
+        event_dict['synced_to_google'] = False
+        event_dict['created_at'] = datetime.utcnow().isoformat()
+        event_dict['updated_at'] = datetime.utcnow().isoformat()
+        
+        result = await db.calendar_events.insert_one(event_dict)
+        event_dict['id'] = str(result.inserted_id)
+        if '_id' in event_dict:
+            del event_dict['_id']
+        
+        # Add to interaction history for each participant (as a future/scheduled meeting)
+        if event.participants:
+            for contact_id in event.participants:
+                try:
+                    # Verify contact exists
+                    contact = await db.contacts.find_one({
+                        "_id": ObjectId(contact_id),
+                        "user_id": current_user["user_id"]
+                    })
+                    if contact:
+                        interaction_dict = {
+                            "contact_id": contact_id,
+                            "user_id": current_user["user_id"],
+                            "interaction_type": "Scheduled Meeting",
+                            "date": event.date,
+                            "notes": f"📅 {event.title}" + (f" - {event.description}" if event.description else ""),
+                            "calendar_event_id": event_dict['id'],
+                            "created_at": datetime.utcnow().isoformat()
+                        }
+                        await db.interactions.insert_one(interaction_dict)
+                except Exception as e:
+                    logging.warning(f"Could not add interaction for contact {contact_id}: {e}")
+        
+        return event_dict
+    except Exception as e:
+        logging.error(f"Error creating calendar event: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.get("/calendar-events", response_model=List[dict])
+async def get_calendar_events(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all calendar events, optionally filtered by date range"""
+    try:
+        query = {"user_id": current_user["user_id"]}
+        
+        if start_date and end_date:
+            query["date"] = {"$gte": start_date, "$lte": end_date}
+        elif start_date:
+            query["date"] = {"$gte": start_date}
+        elif end_date:
+            query["date"] = {"$lte": end_date}
+        
+        events = await db.calendar_events.find(query).sort("date", 1).to_list(500)
+        
+        # Enrich with participant details
+        result = []
+        for event in events:
+            event_data = serialize_doc(event)
+            if event_data.get('participants'):
+                participant_details = []
+                for contact_id in event_data['participants']:
+                    try:
+                        contact = await db.contacts.find_one({"_id": ObjectId(contact_id)})
+                        if contact:
+                            participant_details.append({
+                                "id": str(contact["_id"]),
+                                "name": contact.get("name", "Unknown"),
+                                "profile_picture": contact.get("profile_picture")
+                            })
+                    except:
+                        pass
+                event_data['participant_details'] = participant_details
+            result.append(event_data)
+        
+        return result
+    except Exception as e:
+        logging.error(f"Error fetching calendar events: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.get("/calendar-events/today", response_model=List[dict])
+async def get_today_events(current_user: dict = Depends(get_current_user)):
+    """Get today's calendar events"""
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    return await get_calendar_events(start_date=today, end_date=today, current_user=current_user)
+
+@api_router.get("/calendar-events/week", response_model=List[dict])
+async def get_week_events(current_user: dict = Depends(get_current_user)):
+    """Get this week's calendar events"""
+    today = datetime.utcnow()
+    week_start = today.strftime("%Y-%m-%d")
+    week_end = (today + timedelta(days=7)).strftime("%Y-%m-%d")
+    return await get_calendar_events(start_date=week_start, end_date=week_end, current_user=current_user)
+
+@api_router.get("/calendar-events/{event_id}", response_model=dict)
+async def get_calendar_event(event_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific calendar event"""
+    try:
+        event = await db.calendar_events.find_one({
+            "_id": ObjectId(event_id),
+            "user_id": current_user["user_id"]
+        })
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        event_data = serialize_doc(event)
+        
+        # Enrich with participant details
+        if event_data.get('participants'):
+            participant_details = []
+            for contact_id in event_data['participants']:
+                try:
+                    contact = await db.contacts.find_one({"_id": ObjectId(contact_id)})
+                    if contact:
+                        participant_details.append({
+                            "id": str(contact["_id"]),
+                            "name": contact.get("name", "Unknown"),
+                            "profile_picture": contact.get("profile_picture")
+                        })
+                except:
+                    pass
+            event_data['participant_details'] = participant_details
+        
+        return event_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.put("/calendar-events/{event_id}", response_model=dict)
+async def update_calendar_event(event_id: str, event_update: CalendarEventUpdate, current_user: dict = Depends(get_current_user)):
+    """Update a calendar event"""
+    try:
+        update_data = {k: v for k, v in event_update.dict().items() if v is not None}
+        update_data['updated_at'] = datetime.utcnow().isoformat()
+        
+        result = await db.calendar_events.update_one(
+            {"_id": ObjectId(event_id), "user_id": current_user["user_id"]},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        updated_event = await db.calendar_events.find_one({"_id": ObjectId(event_id)})
+        return serialize_doc(updated_event)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.delete("/calendar-events/{event_id}")
+async def delete_calendar_event(event_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a calendar event"""
+    try:
+        # Also delete related interactions
+        await db.interactions.delete_many({"calendar_event_id": event_id})
+        
+        result = await db.calendar_events.delete_one({
+            "_id": ObjectId(event_id),
+            "user_id": current_user["user_id"]
+        })
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Event not found")
+        return {"message": "Event deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.get("/calendar-events/by-date/{date}", response_model=List[dict])
+async def get_events_by_date(date: str, current_user: dict = Depends(get_current_user)):
+    """Get all events for a specific date (day view)"""
+    try:
+        events = await db.calendar_events.find({
+            "user_id": current_user["user_id"],
+            "date": date
+        }).sort("start_time", 1).to_list(100)
+        
+        result = []
+        for event in events:
+            event_data = serialize_doc(event)
+            if event_data.get('participants'):
+                participant_details = []
+                for contact_id in event_data['participants']:
+                    try:
+                        contact = await db.contacts.find_one({"_id": ObjectId(contact_id)})
+                        if contact:
+                            participant_details.append({
+                                "id": str(contact["_id"]),
+                                "name": contact.get("name", "Unknown"),
+                                "profile_picture": contact.get("profile_picture")
+                            })
+                    except:
+                        pass
+                event_data['participant_details'] = participant_details
+            result.append(event_data)
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.get("/contacts/{contact_id}/calendar-events", response_model=List[dict])
+async def get_contact_calendar_events(contact_id: str, current_user: dict = Depends(get_current_user)):
+    """Get all calendar events for a specific contact (their logbook/future meetings)"""
+    try:
+        # Verify contact exists
+        contact = await db.contacts.find_one({
+            "_id": ObjectId(contact_id),
+            "user_id": current_user["user_id"]
+        })
+        if not contact:
+            raise HTTPException(status_code=404, detail="Contact not found")
+        
+        events = await db.calendar_events.find({
+            "user_id": current_user["user_id"],
+            "participants": contact_id
+        }).sort("date", -1).to_list(100)
+        
+        return [serialize_doc(e) for e in events]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # ============ Include Router & Middleware ============
 
 app.include_router(api_router)
