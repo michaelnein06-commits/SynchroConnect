@@ -4701,6 +4701,134 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
   },
   
+  // Enhanced Pipeline Contact Card Styles
+  pipelineContactCardEnhanced: {
+    backgroundColor: COLORS.surface,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#5D3FD3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  pipelineContactCardOverdueEnhanced: {
+    borderColor: COLORS.accent + '40',
+    backgroundColor: '#FFF5F5',
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.accent,
+  },
+  pipelineContactMainArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  pipelineContactAvatarEnhanced: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+  },
+  pipelineContactAvatarPlaceholderEnhanced: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pipelineContactAvatarTextEnhanced: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  pipelineContactInfoEnhanced: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  pipelineContactNameEnhanced: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  pipelineContactJobEnhanced: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  pipelineContactPhoneEnhanced: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  pipelineContactActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 10,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
+  },
+  pipelineDueBadgeEnhanced: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+  },
+  pipelineDueBadgeOkEnhanced: {
+    backgroundColor: COLORS.success + '15',
+  },
+  pipelineDueBadgeOverdueEnhanced: {
+    backgroundColor: COLORS.accent,
+  },
+  pipelineDueBadgeTextEnhanced: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.success,
+  },
+  pipelineDueBadgeTextOverdueEnhanced: {
+    color: '#fff',
+  },
+  pipelineNewBadge: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  pipelineNewBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  pipelineAIDraftBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#5D3FD3',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    gap: 6,
+    shadowColor: '#5D3FD3',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  pipelineAIDraftBtnLoading: {
+    paddingHorizontal: 20,
+  },
+  pipelineAIDraftBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  
   // FAB Button
   fabButton: {
     position: 'absolute',
