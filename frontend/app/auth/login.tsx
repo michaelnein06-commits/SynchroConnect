@@ -203,10 +203,14 @@ const styles = StyleSheet.create({
   logoContainer: {
     marginBottom: 16,
   },
+  logo: {
+    width: 100,
+    height: 100,
+  },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: COLORS.primary,
+    color: '#5D3FD3',
     marginBottom: 12,
     textAlign: 'center',
   },
