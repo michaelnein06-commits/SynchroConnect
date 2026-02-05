@@ -174,6 +174,9 @@ export default function ContactDetail() {
   const [availableGroups, setAvailableGroups] = useState<Group[]>([]);
   const [showGroupsModal, setShowGroupsModal] = useState(false);
   
+  // Dynamic Pipeline Stages
+  const [pipelineStages, setPipelineStages] = useState<string[]>(PIPELINE_STAGES_DEFAULT);
+  
   const [profileImage, setProfileImage] = useState('');
   const [formData, setFormData] = useState({
     name: '',
