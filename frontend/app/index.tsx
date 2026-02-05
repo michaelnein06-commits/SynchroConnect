@@ -385,6 +385,29 @@ export default function Index() {
     }
   }, [token]);
 
+  // Auto-refresh when screen is focused (e.g., after importing contacts or editing)
+  useFocusEffect(
+    useCallback(() => {
+      if (token) {
+        fetchContacts();
+        fetchDrafts();
+        fetchGroups();
+      }
+    }, [token])
+  );
+
+  // Also refresh when app comes to foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active' && token) {
+        fetchContacts();
+        fetchDrafts();
+        fetchGroups();
+      }
+    });
+    return () => subscription?.remove();
+  }, [token]);
+
   // Pull-to-refresh handler
   const onRefresh = useCallback(() => {
     setRefreshing(true);
