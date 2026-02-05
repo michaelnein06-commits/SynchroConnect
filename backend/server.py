@@ -1644,6 +1644,432 @@ async def get_contact_calendar_events(contact_id: str, current_user: dict = Depe
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# ============ Google Calendar Integration (MOCKED until credentials provided) ============
+
+class GoogleCalendarTokenUpdate(BaseModel):
+    access_token: str
+    refresh_token: str
+
+@api_router.get("/google-calendar/status")
+async def get_google_calendar_status(current_user: dict = Depends(get_current_user)):
+    """Check Google Calendar integration status"""
+    is_configured = is_google_calendar_configured()
+    
+    # Check if user has connected their Google Calendar
+    user_tokens = await db.google_calendar_tokens.find_one({"user_id": current_user["user_id"]})
+    is_connected = user_tokens is not None and user_tokens.get("access_token") is not None
+    
+    return {
+        "is_configured": is_configured,
+        "is_connected": is_connected,
+        "message": "Google Calendar Credentials not configured" if not is_configured else (
+            "Connected to Google Calendar" if is_connected else "Not connected - click to authorize"
+        ),
+        "setup_instructions": None if is_configured else {
+            "step1": "Go to https://console.cloud.google.com/apis/credentials",
+            "step2": "Create or select a project",
+            "step3": "Enable 'Google Calendar API'",
+            "step4": "Create OAuth 2.0 credentials (Web application)",
+            "step5": "Add redirect URI: YOUR_BACKEND_URL/api/google-calendar/callback",
+            "step6": "Copy Client ID and Client Secret to backend/.env file"
+        }
+    }
+
+@api_router.get("/google-calendar/auth-url")
+async def get_google_calendar_auth_url(current_user: dict = Depends(get_current_user)):
+    """Get the Google OAuth authorization URL"""
+    if not is_google_calendar_configured():
+        raise HTTPException(
+            status_code=400, 
+            detail="Google Calendar is not configured. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to backend/.env"
+        )
+    
+    try:
+        # Create OAuth flow
+        client_config = {
+            "web": {
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [GOOGLE_REDIRECT_URI]
+            }
+        }
+        
+        flow = Flow.from_client_config(
+            client_config,
+            scopes=GOOGLE_CALENDAR_SCOPES,
+            redirect_uri=GOOGLE_REDIRECT_URI
+        )
+        
+        auth_url, state = flow.authorization_url(
+            prompt='consent',
+            access_type='offline',
+            include_granted_scopes='true'
+        )
+        
+        # Store state for verification
+        await db.google_calendar_states.update_one(
+            {"user_id": current_user["user_id"]},
+            {"$set": {
+                "user_id": current_user["user_id"],
+                "state": state,
+                "created_at": datetime.utcnow().isoformat()
+            }},
+            upsert=True
+        )
+        
+        return {"auth_url": auth_url, "state": state}
+    except Exception as e:
+        logging.error(f"Error creating Google auth URL: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/google-calendar/callback")
+async def google_calendar_callback(code: str, state: str):
+    """Handle Google OAuth callback"""
+    if not is_google_calendar_configured():
+        raise HTTPException(status_code=400, detail="Google Calendar is not configured")
+    
+    try:
+        # Find user by state
+        state_record = await db.google_calendar_states.find_one({"state": state})
+        if not state_record:
+            raise HTTPException(status_code=400, detail="Invalid or expired state")
+        
+        user_id = state_record["user_id"]
+        
+        # Create OAuth flow and exchange code for tokens
+        client_config = {
+            "web": {
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [GOOGLE_REDIRECT_URI]
+            }
+        }
+        
+        flow = Flow.from_client_config(
+            client_config,
+            scopes=GOOGLE_CALENDAR_SCOPES,
+            redirect_uri=GOOGLE_REDIRECT_URI
+        )
+        
+        flow.fetch_token(code=code)
+        credentials = flow.credentials
+        
+        # Store tokens
+        await db.google_calendar_tokens.update_one(
+            {"user_id": user_id},
+            {"$set": {
+                "user_id": user_id,
+                "access_token": credentials.token,
+                "refresh_token": credentials.refresh_token,
+                "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
+                "scopes": list(credentials.scopes) if credentials.scopes else [],
+                "updated_at": datetime.utcnow().isoformat()
+            }},
+            upsert=True
+        )
+        
+        # Clean up state
+        await db.google_calendar_states.delete_one({"state": state})
+        
+        # Redirect to success page or app
+        return RedirectResponse(url="/settings?google_calendar=connected")
+        
+    except Exception as e:
+        logging.error(f"Google Calendar callback error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def get_google_calendar_service(user_id: str):
+    """Get authenticated Google Calendar service for a user"""
+    if not is_google_calendar_configured():
+        return None
+    
+    token_record = await db.google_calendar_tokens.find_one({"user_id": user_id})
+    if not token_record:
+        return None
+    
+    try:
+        credentials = Credentials(
+            token=token_record.get("access_token"),
+            refresh_token=token_record.get("refresh_token"),
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=GOOGLE_CLIENT_ID,
+            client_secret=GOOGLE_CLIENT_SECRET,
+            scopes=token_record.get("scopes", GOOGLE_CALENDAR_SCOPES)
+        )
+        
+        # Refresh if expired
+        if credentials.expired and credentials.refresh_token:
+            credentials.refresh(GoogleRequest())
+            # Update stored tokens
+            await db.google_calendar_tokens.update_one(
+                {"user_id": user_id},
+                {"$set": {
+                    "access_token": credentials.token,
+                    "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
+                    "updated_at": datetime.utcnow().isoformat()
+                }}
+            )
+        
+        service = build('calendar', 'v3', credentials=credentials)
+        return service
+    except Exception as e:
+        logging.error(f"Error getting Google Calendar service: {e}")
+        return None
+
+@api_router.post("/google-calendar/sync-to-google/{event_id}")
+async def sync_event_to_google(event_id: str, current_user: dict = Depends(get_current_user)):
+    """Sync a local event to Google Calendar"""
+    if not is_google_calendar_configured():
+        raise HTTPException(status_code=400, detail="Google Calendar is not configured")
+    
+    service = await get_google_calendar_service(current_user["user_id"])
+    if not service:
+        raise HTTPException(status_code=401, detail="Google Calendar not connected. Please authorize first.")
+    
+    try:
+        # Get local event
+        event = await db.calendar_events.find_one({
+            "_id": ObjectId(event_id),
+            "user_id": current_user["user_id"]
+        })
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        # Convert to Google Calendar format
+        google_event = {
+            'summary': event.get('title', 'Untitled'),
+            'description': event.get('description', ''),
+            'location': event.get('location', ''),
+            'start': {
+                'dateTime': f"{event['date']}T{event.get('start_time', '09:00')}:00",
+                'timeZone': 'Europe/Berlin',
+            },
+            'end': {
+                'dateTime': f"{event['date']}T{event.get('end_time', event.get('start_time', '10:00'))}:00",
+                'timeZone': 'Europe/Berlin',
+            },
+        }
+        
+        if event.get('all_day'):
+            google_event['start'] = {'date': event['date']}
+            google_event['end'] = {'date': event['date']}
+        
+        # Create or update in Google Calendar
+        if event.get('google_event_id'):
+            # Update existing
+            result = service.events().update(
+                calendarId='primary',
+                eventId=event['google_event_id'],
+                body=google_event
+            ).execute()
+        else:
+            # Create new
+            result = service.events().insert(
+                calendarId='primary',
+                body=google_event
+            ).execute()
+            
+            # Store Google event ID
+            await db.calendar_events.update_one(
+                {"_id": ObjectId(event_id)},
+                {"$set": {
+                    "google_event_id": result['id'],
+                    "synced_to_google": True,
+                    "updated_at": datetime.utcnow().isoformat()
+                }}
+            )
+        
+        return {"success": True, "google_event_id": result['id'], "message": "Event synced to Google Calendar"}
+    except Exception as e:
+        logging.error(f"Error syncing to Google Calendar: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/google-calendar/import-from-google")
+async def import_from_google_calendar(
+    days_ahead: int = 30,
+    current_user: dict = Depends(get_current_user)
+):
+    """Import events from Google Calendar"""
+    if not is_google_calendar_configured():
+        raise HTTPException(status_code=400, detail="Google Calendar is not configured")
+    
+    service = await get_google_calendar_service(current_user["user_id"])
+    if not service:
+        raise HTTPException(status_code=401, detail="Google Calendar not connected. Please authorize first.")
+    
+    try:
+        now = datetime.utcnow()
+        time_min = now.isoformat() + 'Z'
+        time_max = (now + timedelta(days=days_ahead)).isoformat() + 'Z'
+        
+        # Fetch events from Google Calendar
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=time_min,
+            timeMax=time_max,
+            maxResults=100,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+        
+        google_events = events_result.get('items', [])
+        imported_count = 0
+        
+        for g_event in google_events:
+            # Check if already imported
+            existing = await db.calendar_events.find_one({
+                "user_id": current_user["user_id"],
+                "google_event_id": g_event['id']
+            })
+            
+            if existing:
+                continue
+            
+            # Parse date/time
+            start = g_event.get('start', {})
+            end = g_event.get('end', {})
+            
+            if 'dateTime' in start:
+                date = start['dateTime'][:10]
+                start_time = start['dateTime'][11:16]
+                end_time = end.get('dateTime', start['dateTime'])[11:16]
+                all_day = False
+            else:
+                date = start.get('date', datetime.utcnow().strftime('%Y-%m-%d'))
+                start_time = '00:00'
+                end_time = '23:59'
+                all_day = True
+            
+            # Create local event
+            event_dict = {
+                "user_id": current_user["user_id"],
+                "title": g_event.get('summary', 'Untitled'),
+                "description": g_event.get('description', ''),
+                "date": date,
+                "start_time": start_time,
+                "end_time": end_time,
+                "all_day": all_day,
+                "participants": [],
+                "reminder_minutes": 30,
+                "color": "#4285F4",  # Google Blue
+                "google_event_id": g_event['id'],
+                "synced_to_google": True,
+                "created_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            
+            await db.calendar_events.insert_one(event_dict)
+            imported_count += 1
+        
+        return {
+            "success": True,
+            "imported_count": imported_count,
+            "message": f"Imported {imported_count} events from Google Calendar"
+        }
+    except Exception as e:
+        logging.error(f"Error importing from Google Calendar: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/google-calendar/disconnect")
+async def disconnect_google_calendar(current_user: dict = Depends(get_current_user)):
+    """Disconnect Google Calendar integration"""
+    await db.google_calendar_tokens.delete_one({"user_id": current_user["user_id"]})
+    return {"success": True, "message": "Google Calendar disconnected"}
+
+# ============ Push Notification Endpoints ============
+
+class PushTokenUpdate(BaseModel):
+    push_token: str
+    device_type: str = "unknown"  # ios, android, web
+
+class ReminderCreate(BaseModel):
+    event_id: str
+    reminder_time: str  # ISO datetime when to send reminder
+    title: str
+    body: str
+
+@api_router.post("/push-token")
+async def register_push_token(token_data: PushTokenUpdate, current_user: dict = Depends(get_current_user)):
+    """Register or update push notification token for user"""
+    try:
+        await db.push_tokens.update_one(
+            {"user_id": current_user["user_id"], "push_token": token_data.push_token},
+            {"$set": {
+                "user_id": current_user["user_id"],
+                "push_token": token_data.push_token,
+                "device_type": token_data.device_type,
+                "updated_at": datetime.utcnow().isoformat()
+            }},
+            upsert=True
+        )
+        return {"success": True, "message": "Push token registered"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.delete("/push-token/{push_token}")
+async def remove_push_token(push_token: str, current_user: dict = Depends(get_current_user)):
+    """Remove push notification token"""
+    await db.push_tokens.delete_one({
+        "user_id": current_user["user_id"],
+        "push_token": push_token
+    })
+    return {"success": True, "message": "Push token removed"}
+
+@api_router.get("/reminders/pending")
+async def get_pending_reminders(current_user: dict = Depends(get_current_user)):
+    """Get all pending reminders for today's and upcoming events"""
+    try:
+        now = datetime.utcnow()
+        today = now.strftime("%Y-%m-%d")
+        
+        # Get events for today and tomorrow
+        events = await db.calendar_events.find({
+            "user_id": current_user["user_id"],
+            "date": {"$gte": today, "$lte": (now + timedelta(days=1)).strftime("%Y-%m-%d")}
+        }).to_list(50)
+        
+        reminders = []
+        for event in events:
+            event_datetime_str = f"{event['date']}T{event.get('start_time', '09:00')}:00"
+            try:
+                event_datetime = datetime.fromisoformat(event_datetime_str)
+                reminder_minutes = event.get('reminder_minutes', 30)
+                reminder_time = event_datetime - timedelta(minutes=reminder_minutes)
+                
+                if reminder_time > now:
+                    reminders.append({
+                        "event_id": str(event["_id"]),
+                        "title": event.get("title", "Termin"),
+                        "body": f"In {reminder_minutes} Minuten: {event.get('title', 'Termin')}",
+                        "reminder_time": reminder_time.isoformat(),
+                        "event_time": event_datetime.isoformat()
+                    })
+            except Exception as e:
+                logging.warning(f"Could not parse event datetime: {e}")
+                continue
+        
+        return reminders
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.post("/reminders/schedule")
+async def schedule_reminder(reminder: ReminderCreate, current_user: dict = Depends(get_current_user)):
+    """Schedule a reminder for an event"""
+    try:
+        reminder_dict = reminder.dict()
+        reminder_dict["user_id"] = current_user["user_id"]
+        reminder_dict["status"] = "pending"
+        reminder_dict["created_at"] = datetime.utcnow().isoformat()
+        
+        result = await db.reminders.insert_one(reminder_dict)
+        return {"success": True, "reminder_id": str(result.inserted_id)}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # ============ Include Router & Middleware ============
 
 app.include_router(api_router)
