@@ -228,16 +228,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 20,
   },
-  logoWrapper: {
-    width: 140,
-    height: 140,
-    borderRadius: 35,
-    overflow: 'hidden',
+  logoCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 20,
-  },
-  logo: {
-    width: 140,
-    height: 140,
   },
   title: {
     fontSize: 42,
