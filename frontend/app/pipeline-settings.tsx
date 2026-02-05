@@ -646,7 +646,9 @@ export default function PipelineSettings() {
           </View>
         </View>
       </Modal>
-    </View>
+        </View>
+      </Pressable>
+    </KeyboardAvoidingView>
   );
 }
 
