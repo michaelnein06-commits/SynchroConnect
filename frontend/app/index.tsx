@@ -1499,7 +1499,7 @@ export default function Index() {
         >
           <Ionicons name="calendar" size={18} color={plannerSubTab === 'calendar' ? COLORS.surface : COLORS.primary} />
           <Text style={[styles.plannerSubTabText, plannerSubTab === 'calendar' && styles.plannerSubTabTextActive]}>
-            Kalender
+            Calendar
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -1519,7 +1519,12 @@ export default function Index() {
       </View>
       
       {plannerSubTab === 'briefing' ? renderMorningBriefing() : plannerSubTab === 'calendar' ? (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Birthday Summary Card */}
           <View style={styles.birthdaySummaryCard}>
             <LinearGradient colors={COLORS.accentGradient} style={styles.birthdaySummaryGradient}>
@@ -1527,7 +1532,7 @@ export default function Index() {
                 <Ionicons name="gift" size={28} color={COLORS.surface} />
                 <View style={styles.birthdaySummaryText}>
                   <Text style={styles.birthdaySummaryTitle}>
-                    {contacts.filter(c => c.birthday).length} Geburtstage
+                    {contacts.filter(c => c.birthday).length} Birthdays
                   </Text>
                   <Text style={styles.birthdaySummarySubtitle}>
                     {upcomingBirthdays.length > 0 && upcomingBirthdays[0]?.daysUntil === 0
