@@ -768,6 +768,9 @@ class SynchroConnectrTester:
         test_results['settings_management'] = self.test_settings_management()
         test_results['ai_draft_generation'] = self.test_ai_draft_generation()
         test_results['draft_management'] = self.test_draft_management()
+        test_results['calendar_events_crud'] = self.test_calendar_events_crud()
+        test_results['morning_briefing_with_events'] = self.test_morning_briefing_with_events()
+        test_results['calendar_events_error_handling'] = self.test_calendar_events_error_handling()
         
         # Cleanup
         self.cleanup_test_data()
