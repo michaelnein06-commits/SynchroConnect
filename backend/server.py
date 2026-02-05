@@ -246,6 +246,49 @@ class Draft(BaseModel):
     status: str = "pending"  # pending, sent, dismissed
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
+# --- Calendar Event Model ---
+class CalendarEventCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    date: str  # YYYY-MM-DD
+    start_time: str  # HH:MM
+    end_time: Optional[str] = None  # HH:MM
+    participants: List[str] = []  # List of contact IDs
+    reminder_minutes: int = 30  # Reminder before event in minutes
+    color: str = "#5D3FD3"  # Event color
+    all_day: bool = False
+    recurring: Optional[str] = None  # none, daily, weekly, monthly, yearly
+    google_event_id: Optional[str] = None  # For Google Calendar sync
+
+class CalendarEvent(BaseModel):
+    user_id: str
+    title: str
+    description: Optional[str] = None
+    date: str  # YYYY-MM-DD
+    start_time: str  # HH:MM
+    end_time: Optional[str] = None  # HH:MM
+    participants: List[str] = []  # List of contact IDs
+    reminder_minutes: int = 30
+    color: str = "#5D3FD3"
+    all_day: bool = False
+    recurring: Optional[str] = None
+    google_event_id: Optional[str] = None
+    synced_to_google: bool = False
+    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+
+class CalendarEventUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    date: Optional[str] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    participants: Optional[List[str]] = None
+    reminder_minutes: Optional[int] = None
+    color: Optional[str] = None
+    all_day: Optional[bool] = None
+    recurring: Optional[str] = None
+
 # ============ Utility Functions ============
 async def calculate_target_interval_async(pipeline_stage: str, user_id: str = None, apply_randomization: bool = True) -> int:
     """Convert pipeline stage to days based on user's custom pipeline settings with randomization support"""
