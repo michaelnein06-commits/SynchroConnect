@@ -79,6 +79,7 @@ export default function PipelineSettings() {
   const [morningBriefingEnabled, setMorningBriefingEnabled] = useState(true);
   const [morningBriefingTime, setMorningBriefingTime] = useState('08:00');
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   
   // Edit stage modal
   const [editingStage, setEditingStage] = useState<PipelineStage | null>(null);
@@ -106,7 +107,9 @@ export default function PipelineSettings() {
       const profile = response.data;
       
       if (profile.pipeline_stages && profile.pipeline_stages.length > 0) {
-        setStages(profile.pipeline_stages);
+        // Sort by interval on load
+        const sorted = [...profile.pipeline_stages].sort((a: PipelineStage, b: PipelineStage) => a.interval_days - b.interval_days);
+        setStages(sorted);
       }
       setMorningBriefingEnabled(profile.morning_briefing_enabled ?? true);
       setMorningBriefingTime(profile.morning_briefing_time || '08:00');
@@ -114,8 +117,14 @@ export default function PipelineSettings() {
       console.error('Error fetching settings:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchSettings();
+  }, []);
 
   const saveSettings = async () => {
     setSaving(true);
