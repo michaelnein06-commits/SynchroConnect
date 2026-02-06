@@ -464,10 +464,10 @@ export default function Settings() {
               {!googleCalendarStatus?.is_configured && (
                 <View style={[styles.settingCard, { backgroundColor: '#FEF3C7' }]}>
                   <View style={{ padding: 4 }}>
-                    <Text style={[styles.settingLabel, { color: '#92400E' }]}>Setup erforderlich</Text>
+                    <Text style={[styles.settingLabel, { color: '#92400E' }]}>Setup Required</Text>
                     <Text style={[styles.settingValue, { color: '#B45309', fontSize: 12, marginTop: 4 }]}>
-                      GOOGLE_CLIENT_ID und GOOGLE_CLIENT_SECRET{'\n'}
-                      in backend/.env eintragen
+                      Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET{'\n'}
+                      to backend/.env file
                     </Text>
                   </View>
                 </View>
