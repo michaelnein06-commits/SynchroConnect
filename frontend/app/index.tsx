@@ -3323,7 +3323,7 @@ export default function Index() {
                   }}
                 >
                   <Text style={{ color: COLORS.text, fontSize: 16 }}>
-                    {new Date(newEventData.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
+                    {new Date(newEventData.date).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
                   </Text>
                   <Ionicons name="calendar" size={22} color={COLORS.primary} />
                 </TouchableOpacity>
@@ -3331,7 +3331,7 @@ export default function Index() {
                 {/* Time Row */}
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.createGroupLabel}>Startzeit</Text>
+                    <Text style={styles.createGroupLabel}>Start Time</Text>
                     <TextInput
                       style={styles.createGroupInput}
                       placeholder="09:00"
@@ -3342,7 +3342,7 @@ export default function Index() {
                     />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.createGroupLabel}>Endzeit</Text>
+                    <Text style={styles.createGroupLabel}>End Time</Text>
                     <TextInput
                       style={styles.createGroupInput}
                       placeholder="10:00"
@@ -3359,22 +3359,25 @@ export default function Index() {
                   style={[styles.createGroupInput, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
                   onPress={() => setNewEventData(prev => ({ ...prev, all_day: !prev.all_day }))}
                 >
-                  <Text style={{ color: COLORS.text, fontSize: 15 }}>Ganztägig</Text>
+                  <Text style={{ color: COLORS.text, fontSize: 15 }}>All Day</Text>
                   <View style={[styles.toggle, newEventData.all_day && styles.toggleActive]}>
                     <View style={[styles.toggleThumb, newEventData.all_day && styles.toggleThumbActive]} />
                   </View>
                 </TouchableOpacity>
                 
                 {/* Participants */}
-                <Text style={styles.createGroupLabel}>Teilnehmer</Text>
+                <Text style={styles.createGroupLabel}>Participants</Text>
                 <TouchableOpacity
                   style={[styles.createGroupInput, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
-                  onPress={() => setShowParticipantPicker(true)}
+                  onPress={() => {
+                    setShowCreateEventModal(false);
+                    setTimeout(() => setShowParticipantPicker(true), 300);
+                  }}
                 >
                   <Text style={{ color: newEventData.participants.length > 0 ? COLORS.text : COLORS.textLight, fontSize: 15 }}>
                     {newEventData.participants.length > 0 
-                      ? `${newEventData.participants.length} Kontakt(e) ausgewählt`
-                      : 'Kontakte auswählen...'}
+                      ? `${newEventData.participants.length} contact(s) selected`
+                      : 'Select contacts...'}
                   </Text>
                   <Ionicons name="people" size={22} color={COLORS.primary} />
                 </TouchableOpacity>
