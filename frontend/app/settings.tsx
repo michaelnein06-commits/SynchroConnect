@@ -169,9 +169,27 @@ export default function Settings() {
         { days_ahead: 30 },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      Alert.alert('✓', `${response.data.imported_count} Termine importiert`);
+      Alert.alert('✓', `${response.data.imported_count} events imported`);
     } catch (error: any) {
-      Alert.alert('Fehler', error.response?.data?.detail || 'Import fehlgeschlagen');
+      Alert.alert('Error', error.response?.data?.detail || 'Import failed');
+    }
+  };
+
+  const fullSyncGoogleCalendar = async () => {
+    try {
+      Alert.alert('Syncing...', 'Two-way synchronization in progress...');
+      const response = await axios.post(
+        `${EXPO_PUBLIC_BACKEND_URL}/api/google-calendar/full-sync`,
+        { days_back: 7, days_ahead: 60 },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const stats = response.data.stats;
+      Alert.alert(
+        '✓ Sync Complete', 
+        `Imported: ${stats.imported_from_google}\nUpdated: ${stats.updated_from_google}\nPushed to Google: ${stats.pushed_to_google}\nDeleted: ${stats.deleted_locally}`
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Sync failed');
     }
   };
 
