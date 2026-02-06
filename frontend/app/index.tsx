@@ -473,12 +473,12 @@ export default function Index() {
   // Delete a calendar event
   const deleteCalendarEvent = async (eventId: string) => {
     Alert.alert(
-      'Termin löschen',
-      'Möchtest du diesen Termin wirklich löschen?',
+      'Delete Event',
+      'Do you really want to delete this event?',
       [
-        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Löschen',
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -489,7 +489,7 @@ export default function Index() {
                 fetchDayEvents(dayViewDate);
               }
             } catch (error) {
-              Alert.alert('Fehler', 'Termin konnte nicht gelöscht werden');
+              Alert.alert('Error', 'Could not delete event');
             }
           }
         }
