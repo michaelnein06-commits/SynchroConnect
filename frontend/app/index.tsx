@@ -461,10 +461,10 @@ export default function Index() {
         fetchDayEvents(dayViewDate);
       }
       
-      Alert.alert('✓', 'Termin erstellt');
+      Alert.alert('✓', 'Event created');
     } catch (error: any) {
       console.error('Error creating event:', error);
-      Alert.alert('Fehler', error.response?.data?.detail || 'Termin konnte nicht erstellt werden');
+      Alert.alert('Error', error.response?.data?.detail || 'Could not create event');
     } finally {
       setIsCreatingEvent(false);
     }
