@@ -2497,6 +2497,47 @@ export default function Index() {
                 style={styles.calendar}
               />
             )}
+            
+            {calendarView === 'year' && (
+              <CalendarList
+                current={selectedDate}
+                onDayPress={(day: any) => setSelectedDate(day.dateString)}
+                onDayLongPress={(day: any) => {
+                  setSelectedDate(day.dateString);
+                  setDayViewDate(day.dateString);
+                  fetchDayEvents(day.dateString);
+                }}
+                pastScrollRange={0}
+                futureScrollRange={12}
+                horizontal={true}
+                pagingEnabled={true}
+                markedDates={{
+                  ...getBirthdayMarkedDates,
+                  [selectedDate]: {
+                    ...getBirthdayMarkedDates[selectedDate],
+                    selected: true,
+                    selectedColor: COLORS.primary,
+                  }
+                }}
+                theme={{
+                  backgroundColor: COLORS.surface,
+                  calendarBackground: COLORS.surface,
+                  textSectionTitleColor: COLORS.textLight,
+                  selectedDayBackgroundColor: COLORS.primary,
+                  selectedDayTextColor: COLORS.surface,
+                  todayTextColor: COLORS.primary,
+                  dayTextColor: COLORS.text,
+                  textDisabledColor: COLORS.textLight,
+                  dotColor: COLORS.accent,
+                  selectedDotColor: COLORS.surface,
+                  arrowColor: COLORS.primary,
+                  monthTextColor: COLORS.text,
+                }}
+                calendarWidth={SCREEN_WIDTH - 32}
+                calendarHeight={350}
+                style={styles.calendarList}
+              />
+            )}
           </View>
           
           {/* Selected Date Birthdays */}
