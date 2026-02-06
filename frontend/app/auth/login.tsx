@@ -137,11 +137,11 @@ export default function Login() {
           {/* Logo and Brand Section */}
           <View style={styles.heroSection}>
             <Image 
-              source={require('../../assets/images/pitch-logo.png')} 
+              source={require('../../assets/images/convo-logo-new.png')} 
               style={styles.logoImage}
               resizeMode="contain"
             />
-            <Text style={styles.title}>Pitch</Text>
+            <Text style={styles.title}>Convo</Text>
             <Text style={styles.subtitle}>
               Stay meaningfully connected with everyone who matters
             </Text>
