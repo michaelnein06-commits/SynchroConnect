@@ -531,21 +531,23 @@ export default function Index() {
   useEffect(() => {
     const initNotifications = async () => {
       try {
-        const pushToken = await NotificationService.registerForPushNotifications();
-        if (pushToken && token) {
-          await NotificationService.registerTokenWithBackend(pushToken, token);
+        const NotifService = await loadNotificationService();
+        if (!NotifService || !token) return;
+        
+        const pushToken = await NotifService.registerForPushNotifications();
+        if (pushToken) {
+          await NotifService.registerTokenWithBackend(pushToken, token);
         }
         
         // Handle notification taps
-        const subscription = NotificationService.addNotificationResponseListener((response) => {
-          const eventId = response.notification.request.content.data?.eventId;
+        const subscription = NotifService.addNotificationResponseListener((response: any) => {
+          const eventId = response?.notification?.request?.content?.data?.eventId;
           if (eventId) {
-            // Navigate to the event or show event details
             console.log('Notification tapped for event:', eventId);
           }
         });
         
-        return () => subscription.remove();
+        return () => subscription?.remove?.();
       } catch (error) {
         console.log('Notifications not available:', error);
       }
@@ -558,9 +560,19 @@ export default function Index() {
 
   // Schedule reminders when calendar events change
   useEffect(() => {
-    if (calendarEvents.length > 0) {
-      NotificationService.scheduleRemindersForEvents(calendarEvents);
-    }
+    const scheduleReminders = async () => {
+      if (calendarEvents.length > 0) {
+        try {
+          const NotifService = await loadNotificationService();
+          if (NotifService) {
+            await NotifService.scheduleRemindersForEvents(calendarEvents);
+          }
+        } catch (error) {
+          console.log('Could not schedule reminders:', error);
+        }
+      }
+    };
+    scheduleReminders();
   }, [calendarEvents]);
 
   useEffect(() => {
