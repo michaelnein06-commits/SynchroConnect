@@ -3468,35 +3468,53 @@ export default function Index() {
           <Pressable style={styles.participantPickerModal} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Kontakte auswählen</Text>
+            <Text style={{ color: COLORS.textLight, marginBottom: 12, textAlign: 'center' }}>
+              {newEventData.participants.length} ausgewählt
+            </Text>
             
-            <ScrollView style={{ maxHeight: 400 }}>
-              {contacts.map(contact => {
-                const isSelected = newEventData.participants.includes(contact.id);
-                return (
-                  <TouchableOpacity
-                    key={contact.id}
-                    style={[styles.participantOption, isSelected && styles.participantOptionSelected]}
-                    onPress={() => {
-                      setNewEventData(prev => ({
-                        ...prev,
-                        participants: isSelected 
-                          ? prev.participants.filter(id => id !== contact.id)
-                          : [...prev.participants, contact.id]
-                      }));
-                    }}
-                  >
-                    {contact.profile_picture ? (
-                      <Image source={{ uri: contact.profile_picture }} style={styles.participantAvatar} />
-                    ) : (
-                      <View style={[styles.participantAvatarPlaceholder, { backgroundColor: COLORS.primary + '20' }]}>
-                        <Text style={{ color: COLORS.primary, fontWeight: '600' }}>{contact.name.charAt(0)}</Text>
+            <ScrollView style={{ maxHeight: 350 }} showsVerticalScrollIndicator={false}>
+              {contacts.length === 0 ? (
+                <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                  <Ionicons name="people-outline" size={48} color={COLORS.textLight} />
+                  <Text style={{ color: COLORS.textLight, marginTop: 12 }}>Keine Kontakte vorhanden</Text>
+                </View>
+              ) : (
+                contacts.slice(0, 50).map(contact => {
+                  const isSelected = newEventData.participants.includes(contact.id);
+                  return (
+                    <TouchableOpacity
+                      key={contact.id}
+                      style={[styles.participantOption, isSelected && styles.participantOptionSelected]}
+                      onPress={() => {
+                        setNewEventData(prev => ({
+                          ...prev,
+                          participants: isSelected 
+                            ? prev.participants.filter(id => id !== contact.id)
+                            : [...prev.participants, contact.id]
+                        }));
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      {contact.profile_picture ? (
+                        <Image source={{ uri: contact.profile_picture }} style={styles.participantAvatar} />
+                      ) : (
+                        <View style={[styles.participantAvatarPlaceholder, { backgroundColor: COLORS.primary + '20' }]}>
+                          <Text style={{ color: COLORS.primary, fontWeight: '600', fontSize: 16 }}>{contact.name.charAt(0).toUpperCase()}</Text>
+                        </View>
+                      )}
+                      <Text style={styles.participantName} numberOfLines={1}>{contact.name}</Text>
+                      <View style={[
+                        { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+                        isSelected 
+                          ? { backgroundColor: COLORS.primary, borderColor: COLORS.primary }
+                          : { backgroundColor: 'transparent', borderColor: COLORS.textLight }
+                      ]}>
+                        {isSelected && <Ionicons name="checkmark" size={16} color="#fff" />}
                       </View>
-                    )}
-                    <Text style={styles.participantName}>{contact.name}</Text>
-                    {isSelected && <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />}
-                  </TouchableOpacity>
-                );
-              })}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </ScrollView>
             
             <TouchableOpacity 
@@ -3505,8 +3523,19 @@ export default function Index() {
             >
               <LinearGradient colors={COLORS.primaryGradient} style={styles.createGroupButtonGradient}>
                 <Ionicons name="checkmark" size={20} color="#fff" />
-                <Text style={styles.createGroupButtonText}>Fertig</Text>
+                <Text style={styles.createGroupButtonText}>
+                  {newEventData.participants.length > 0 
+                    ? `${newEventData.participants.length} Teilnehmer ausgewählt`
+                    : 'Fertig'}
+                </Text>
               </LinearGradient>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.modalCloseButton}
+              onPress={() => setShowParticipantPicker(false)}
+            >
+              <Text style={styles.modalCloseButtonText}>Abbrechen</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
