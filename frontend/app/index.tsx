@@ -6583,4 +6583,31 @@ const styles = StyleSheet.create({
     gap: 2,
     marginTop: 2,
   },
+  
+  // Toggle Styles
+  toggle: {
+    width: 50,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.borderLight,
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  toggleActive: {
+    backgroundColor: COLORS.primary,
+  },
+  toggleThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleThumbActive: {
+    alignSelf: 'flex-end',
+  },
 });
