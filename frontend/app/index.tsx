@@ -2502,12 +2502,12 @@ export default function Index() {
           {/* Selected Date Birthdays */}
           <View style={styles.birthdaySection}>
             <Text style={styles.birthdaySectionTitle}>
-              <Ionicons name="gift" size={18} color={COLORS.accent} /> Geburtstage am {new Date(selectedDate).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}
+              <Ionicons name="gift" size={18} color={COLORS.accent} /> Birthdays on {new Date(selectedDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
             </Text>
             {getContactsForDate(selectedDate).length === 0 ? (
               <View style={styles.noBirthdayContainer}>
                 <Ionicons name="calendar-outline" size={40} color={COLORS.textLight} />
-                <Text style={styles.noBirthdayText}>Keine Geburtstage an diesem Tag</Text>
+                <Text style={styles.noBirthdayText}>No birthdays on this day</Text>
               </View>
             ) : (
               getContactsForDate(selectedDate).map((contact: Contact) => (
@@ -2527,7 +2527,7 @@ export default function Index() {
                     <View style={styles.birthdayInfo}>
                       <Text style={styles.birthdayName}>{contact.name}</Text>
                       <Text style={styles.birthdayDate}>
-                        <Ionicons name="gift-outline" size={12} color={COLORS.accent} /> Geburtstag
+                        <Ionicons name="gift-outline" size={12} color={COLORS.accent} /> Birthday
                       </Text>
                     </View>
                   </View>
@@ -2549,7 +2549,7 @@ export default function Index() {
           <View style={styles.birthdaySection}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <Text style={styles.birthdaySectionTitle}>
-                <Ionicons name="calendar" size={18} color={COLORS.primary} /> Termine am {new Date(selectedDate).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}
+                <Ionicons name="calendar" size={18} color={COLORS.primary} /> Events on {new Date(selectedDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
               </Text>
               <TouchableOpacity 
                 onPress={() => {
@@ -2564,7 +2564,7 @@ export default function Index() {
             {getEventsForDate(selectedDate).length === 0 ? (
               <View style={styles.noBirthdayContainer}>
                 <Ionicons name="time-outline" size={40} color={COLORS.textLight} />
-                <Text style={styles.noBirthdayText}>Keine Termine</Text>
+                <Text style={styles.noBirthdayText}>No events</Text>
                 <TouchableOpacity 
                   onPress={() => {
                     setNewEventData(prev => ({ ...prev, date: selectedDate }));
@@ -2573,7 +2573,7 @@ export default function Index() {
                   style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.primary + '15', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}
                 >
                   <Ionicons name="add" size={18} color={COLORS.primary} />
-                  <Text style={{ color: COLORS.primary, fontWeight: '600' }}>Termin erstellen</Text>
+                  <Text style={{ color: COLORS.primary, fontWeight: '600' }}>Create event</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -2586,7 +2586,7 @@ export default function Index() {
                     <View style={styles.birthdayInfo}>
                       <Text style={styles.birthdayName}>{event.title}</Text>
                       <Text style={styles.birthdayDate}>
-                        <Ionicons name="time-outline" size={12} color={COLORS.textLight} /> {event.all_day ? 'Ganztägig' : `${event.start_time}${event.end_time ? ` - ${event.end_time}` : ''}`}
+                        <Ionicons name="time-outline" size={12} color={COLORS.textLight} /> {event.all_day ? 'All day' : `${event.start_time}${event.end_time ? ` - ${event.end_time}` : ''}`}
                       </Text>
                       {event.participant_details && event.participant_details.length > 0 && (
                         <Text style={[styles.birthdayDate, { marginTop: 2 }]}>
@@ -3581,7 +3581,7 @@ export default function Index() {
             <View style={styles.modalHandle} />
             <View style={styles.dayViewHeader}>
               <Text style={styles.dayViewTitle}>
-                {dayViewDate ? new Date(dayViewDate).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
+                {dayViewDate ? new Date(dayViewDate).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
               </Text>
               <TouchableOpacity
                 style={styles.dayViewAddBtn}
@@ -3600,7 +3600,7 @@ export default function Index() {
               {dayViewDate && getContactsForDate(dayViewDate).length > 0 && (
                 <View style={styles.dayViewSection}>
                   <Text style={styles.dayViewSectionTitle}>
-                    <Ionicons name="gift" size={16} color="#FF69B4" /> Geburtstage
+                    <Ionicons name="gift" size={16} color="#FF69B4" /> Birthdaye
                   </Text>
                   {getContactsForDate(dayViewDate).map((contact: Contact) => (
                     <TouchableOpacity
@@ -3613,8 +3613,8 @@ export default function Index() {
                     >
                       <View style={[styles.dayViewEventColor, { backgroundColor: '#FF69B4' }]} />
                       <View style={styles.dayViewEventInfo}>
-                        <Text style={styles.dayViewEventTitle}>{contact.name}s Geburtstag</Text>
-                        <Text style={styles.dayViewEventTime}>Ganztägig</Text>
+                        <Text style={styles.dayViewEventTitle}>{contact.name}s Birthday</Text>
+                        <Text style={styles.dayViewEventTime}>All day</Text>
                       </View>
                       <Ionicons name="gift" size={20} color="#FF69B4" />
                     </TouchableOpacity>
@@ -3630,7 +3630,7 @@ export default function Index() {
                 {dayViewEvents.length === 0 ? (
                   <View style={styles.dayViewEmpty}>
                     <Ionicons name="calendar-outline" size={40} color={COLORS.textLight} />
-                    <Text style={styles.dayViewEmptyText}>Keine Termine</Text>
+                    <Text style={styles.dayViewEmptyText}>No events</Text>
                   </View>
                 ) : (
                   dayViewEvents.map(event => (
@@ -3639,7 +3639,7 @@ export default function Index() {
                       <View style={styles.dayViewEventInfo}>
                         <Text style={styles.dayViewEventTitle}>{event.title}</Text>
                         <Text style={styles.dayViewEventTime}>
-                          {event.all_day ? 'Ganztägig' : `${event.start_time}${event.end_time ? ` - ${event.end_time}` : ''}`}
+                          {event.all_day ? 'All day' : `${event.start_time}${event.end_time ? ` - ${event.end_time}` : ''}`}
                         </Text>
                         {event.participant_details && event.participant_details.length > 0 && (
                           <View style={{ flexDirection: 'row', marginTop: 4 }}>
@@ -3663,7 +3663,7 @@ export default function Index() {
               style={styles.modalCloseButton}
               onPress={() => setDayViewDate(null)}
             >
-              <Text style={styles.modalCloseButtonText}>Schließen</Text>
+              <Text style={styles.modalCloseButtonText}>Close</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
