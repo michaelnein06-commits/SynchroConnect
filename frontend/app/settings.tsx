@@ -430,19 +430,35 @@ export default function Settings() {
               </View>
               
               {googleCalendarStatus?.is_connected && (
-                <TouchableOpacity 
-                  style={styles.settingCard}
-                  onPress={importFromGoogleCalendar}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.settingCardContent}>
-                    <View>
-                      <Text style={styles.settingLabel}>Von Google importieren</Text>
-                      <Text style={styles.settingValue}>Nächsten 30 Tage importieren</Text>
+                <>
+                  <TouchableOpacity 
+                    style={[styles.settingCard, { backgroundColor: '#4285F4' + '10' }]}
+                    onPress={fullSyncGoogleCalendar}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.settingCardContent}>
+                      <View>
+                        <Text style={styles.settingLabel}>Full Two-Way Sync</Text>
+                        <Text style={styles.settingValue}>Sync all events both ways</Text>
+                      </View>
+                      <Ionicons name="sync" size={24} color="#4285F4" />
                     </View>
-                    <Ionicons name="download-outline" size={24} color={COLORS.primary} />
-                  </View>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.settingCard}
+                    onPress={importFromGoogleCalendar}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.settingCardContent}>
+                      <View>
+                        <Text style={styles.settingLabel}>Import from Google</Text>
+                        <Text style={styles.settingValue}>Import next 30 days</Text>
+                      </View>
+                      <Ionicons name="download-outline" size={24} color={COLORS.primary} />
+                    </View>
+                  </TouchableOpacity>
+                </>
               )}
               
               {!googleCalendarStatus?.is_configured && (
