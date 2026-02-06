@@ -3287,14 +3287,14 @@ export default function Index() {
           <Pressable style={styles.modalOverlay} onPress={() => !isCreatingEvent && setShowCreateEventModal(false)}>
             <Pressable style={styles.createEventModal} onPress={(e) => e.stopPropagation()}>
               <View style={styles.modalHandle} />
-              <Text style={styles.modalTitle}>Neuer Termin</Text>
+              <Text style={styles.modalTitle}>New Event</Text>
               
               <ScrollView style={styles.createEventForm} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 {/* Title */}
-                <Text style={styles.createGroupLabel}>Titel *</Text>
+                <Text style={styles.createGroupLabel}>Title *</Text>
                 <TextInput
                   style={styles.createGroupInput}
-                  placeholder="Termin Titel"
+                  placeholder="Event title"
                   placeholderTextColor={COLORS.textLight}
                   value={newEventData.title}
                   onChangeText={(text) => setNewEventData(prev => ({ ...prev, title: text }))}
@@ -3302,10 +3302,10 @@ export default function Index() {
                 />
                 
                 {/* Description */}
-                <Text style={styles.createGroupLabel}>Beschreibung</Text>
+                <Text style={styles.createGroupLabel}>Description</Text>
                 <TextInput
                   style={[styles.createGroupInput, { height: 70, textAlignVertical: 'top', paddingTop: 12 }]}
-                  placeholder="Beschreibung (optional)"
+                  placeholder="Description (optional)"
                   placeholderTextColor={COLORS.textLight}
                   value={newEventData.description}
                   onChangeText={(text) => setNewEventData(prev => ({ ...prev, description: text }))}
@@ -3314,10 +3314,13 @@ export default function Index() {
                 />
                 
                 {/* Date Picker */}
-                <Text style={styles.createGroupLabel}>Datum</Text>
+                <Text style={styles.createGroupLabel}>Date</Text>
                 <TouchableOpacity 
                   style={[styles.createGroupInput, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
-                  onPress={() => setShowDatePicker(true)}
+                  onPress={() => {
+                    setShowCreateEventModal(false);
+                    setTimeout(() => setShowDatePicker(true), 300);
+                  }}
                 >
                   <Text style={{ color: COLORS.text, fontSize: 16 }}>
                     {new Date(newEventData.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
