@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 import time
 
-BASE_URL = "https://smart-schedule-47.preview.emergentagent.com/api"
+BASE_URL = "https://visual-identity-161.preview.emergentagent.com/api"
 
 def test_draft_sent_functionality():
     session = requests.Session()
