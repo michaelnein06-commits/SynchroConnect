@@ -3462,18 +3462,25 @@ export default function Index() {
         visible={showDatePicker}
         animationType="fade"
         transparent={true}
-        onRequestClose={() => setShowDatePicker(false)}
+        onRequestClose={() => {
+          setShowDatePicker(false);
+          setTimeout(() => setShowCreateEventModal(true), 300);
+        }}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowDatePicker(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => {
+          setShowDatePicker(false);
+          setTimeout(() => setShowCreateEventModal(true), 300);
+        }}>
           <Pressable style={[styles.createEventModal, { maxHeight: '70%' }]} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Datum auswählen</Text>
+            <Text style={styles.modalTitle}>Select Date</Text>
             
             <Calendar
               current={newEventData.date}
               onDayPress={(day: any) => {
                 setNewEventData(prev => ({ ...prev, date: day.dateString }));
                 setShowDatePicker(false);
+                setTimeout(() => setShowCreateEventModal(true), 300);
               }}
               markedDates={{
                 [newEventData.date]: { selected: true, selectedColor: COLORS.primary }
@@ -3496,9 +3503,12 @@ export default function Index() {
             
             <TouchableOpacity 
               style={styles.modalCloseButton}
-              onPress={() => setShowDatePicker(false)}
+              onPress={() => {
+                setShowDatePicker(false);
+                setTimeout(() => setShowCreateEventModal(true), 300);
+              }}
             >
-              <Text style={styles.modalCloseButtonText}>Schließen</Text>
+              <Text style={styles.modalCloseButtonText}>Close</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
