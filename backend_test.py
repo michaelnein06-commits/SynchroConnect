@@ -829,6 +829,7 @@ class SynchroConnectrTester:
         test_results['calendar_events_crud'] = self.test_calendar_events_crud()
         test_results['morning_briefing_with_events'] = self.test_morning_briefing_with_events()
         test_results['calendar_events_error_handling'] = self.test_calendar_events_error_handling()
+        test_results['google_calendar_integration'] = self.test_google_calendar_integration()
         
         # Cleanup
         self.cleanup_test_data()
