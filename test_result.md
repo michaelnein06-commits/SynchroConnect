@@ -352,17 +352,20 @@ test_plan:
           agent: "testing"
           comment: "✅ TESTED: Morning Briefing with Calendar Events integration fully working. POST /api/morning-briefing/generate now includes: 1) Calendar event stats (today_events_count, week_events_count) in response stats, 2) today_events and week_events arrays with full event details, 3) AI briefing text mentions today's appointments when events exist, 4) Proper integration with existing contact briefing functionality. All calendar event data properly included in morning briefing response."
 
-  - task: "API: Google Calendar Integration (MOCKED)"
+  - task: "API: Google Calendar Integration (Full Two-Way Sync)"
     implemented: true
     working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
-    priority: "medium"
+    priority: "high"
     needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
           comment: "NEW: Google Calendar Integration with placeholders for credentials. Endpoints: GET /api/google-calendar/status, GET /api/google-calendar/auth-url, GET /api/google-calendar/callback, POST /api/google-calendar/sync-to-google/{event_id}, POST /api/google-calendar/import-from-google, DELETE /api/google-calendar/disconnect. Will work once GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are added to backend/.env"
+        - working: "NA"
+          agent: "main"
+          comment: "UPDATED: Full two-way sync implemented. NEW endpoints: POST /api/google-calendar/full-sync (syncs events both ways, imports, updates, pushes, deletes), PUT /api/google-calendar/update-event/{event_id} (updates event in app AND Google), DELETE /api/google-calendar/delete-event/{event_id} (deletes from both). CREDENTIALS CONFIGURED: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET added to .env. REQUIRES: User must add Redirect URI (https://smart-schedule-47.preview.emergentagent.com/api/google-calendar/callback) to their Google Cloud Console OAuth 2.0 Web Application client."
 
   - task: "API: Push Notifications Backend"
     implemented: true
