@@ -12,7 +12,20 @@ import * as Clipboard from 'expo-clipboard';
 import ContactSyncService from '../services/ContactSyncService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar, CalendarList, Agenda } from 'react-native-calendars';
-import NotificationService from './services/notifications';
+
+// Lazy load notification service to avoid crashes in Expo Go
+let NotificationService: any = null;
+const loadNotificationService = async () => {
+  if (NotificationService) return NotificationService;
+  try {
+    const module = await import('./services/notifications');
+    NotificationService = module.NotificationService;
+    return NotificationService;
+  } catch (error) {
+    console.log('Notifications not available');
+    return null;
+  }
+};
 
 // Safe haptics wrapper
 const triggerHaptic = async (type: 'light' | 'medium' | 'success' = 'light') => {
