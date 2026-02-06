@@ -13,7 +13,19 @@
       "bundleIdentifier": "com.synchroconnectr.app",
       "infoPlist": {
         "NSCalendarsUsageDescription": "Access your calendar to sync events",
-        "NSContactsUsageDescription": "Access contacts to manage relationships"
+        "NSContactsUsageDescription": "Access contacts to manage relationships",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.404719101013-sfucc6km3gpj9ibfcrbn9m4p9417sjlm"
+            ]
+          }
+        ]
+      },
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": "com.googleusercontent.apps.404719101013-sfucc6km3gpj9ibfcrbn9m4p9417sjlm"
+        }
       }
     },
     "android": {
@@ -43,6 +55,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "GOOGLE_WEB_CLIENT_ID": "404719101013-41ad238mrqchdc6486gosdisirgnj4vi.apps.googleusercontent.com",
+      "GOOGLE_IOS_CLIENT_ID": "404719101013-sfucc6km3gpj9ibfcrbn9m4p9417sjlm.apps.googleusercontent.com"
     }
   }
 }
