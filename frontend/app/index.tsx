@@ -212,6 +212,8 @@ export default function Index() {
     all_day: false,
   });
   const [showParticipantPicker, setShowParticipantPicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [dayViewDate, setDayViewDate] = useState<string | null>(null);
   const [dayViewEvents, setDayViewEvents] = useState<CalendarEvent[]>([]);
 
