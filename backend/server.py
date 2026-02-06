@@ -1980,6 +1980,302 @@ async def disconnect_google_calendar(current_user: dict = Depends(get_current_us
     await db.google_calendar_tokens.delete_one({"user_id": current_user["user_id"]})
     return {"success": True, "message": "Google Calendar disconnected"}
 
+@api_router.post("/google-calendar/full-sync")
+async def full_sync_google_calendar(
+    days_back: int = 7,
+    days_ahead: int = 60,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Perform full two-way sync with Google Calendar:
+    1. Import new events from Google
+    2. Update existing events (both directions)
+    3. Delete events removed from Google
+    4. Push new local events to Google
+    """
+    if not is_google_calendar_configured():
+        raise HTTPException(status_code=400, detail="Google Calendar is not configured")
+    
+    service = await get_google_calendar_service(current_user["user_id"])
+    if not service:
+        raise HTTPException(status_code=401, detail="Google Calendar not connected. Please authorize first.")
+    
+    try:
+        now = datetime.utcnow()
+        time_min = (now - timedelta(days=days_back)).isoformat() + 'Z'
+        time_max = (now + timedelta(days=days_ahead)).isoformat() + 'Z'
+        
+        # Fetch all events from Google Calendar
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=time_min,
+            timeMax=time_max,
+            maxResults=500,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+        
+        google_events = events_result.get('items', [])
+        google_event_ids = set()
+        
+        imported_count = 0
+        updated_from_google = 0
+        pushed_to_google = 0
+        deleted_locally = 0
+        
+        # Process Google events
+        for g_event in google_events:
+            google_event_ids.add(g_event['id'])
+            
+            # Check if event exists locally
+            existing = await db.calendar_events.find_one({
+                "user_id": current_user["user_id"],
+                "google_event_id": g_event['id']
+            })
+            
+            # Parse date/time
+            start = g_event.get('start', {})
+            end = g_event.get('end', {})
+            
+            if 'dateTime' in start:
+                date = start['dateTime'][:10]
+                start_time = start['dateTime'][11:16]
+                end_time = end.get('dateTime', start['dateTime'])[11:16] if 'dateTime' in end else start_time
+                all_day = False
+            else:
+                date = start.get('date', now.strftime('%Y-%m-%d'))
+                start_time = '00:00'
+                end_time = '23:59'
+                all_day = True
+            
+            event_data = {
+                "title": g_event.get('summary', 'Untitled'),
+                "description": g_event.get('description', ''),
+                "date": date,
+                "start_time": start_time,
+                "end_time": end_time,
+                "all_day": all_day,
+                "google_event_id": g_event['id'],
+                "synced_to_google": True,
+                "updated_at": datetime.utcnow().isoformat()
+            }
+            
+            if existing:
+                # Update local event with Google data
+                # Compare timestamps to see which is newer
+                google_updated = g_event.get('updated', '')
+                local_updated = existing.get('updated_at', '')
+                
+                # Always update from Google to keep in sync
+                await db.calendar_events.update_one(
+                    {"_id": existing["_id"]},
+                    {"$set": event_data}
+                )
+                updated_from_google += 1
+            else:
+                # Import new event from Google
+                event_data.update({
+                    "user_id": current_user["user_id"],
+                    "participants": [],
+                    "reminder_minutes": 30,
+                    "color": "#4285F4",  # Google Blue
+                    "created_at": datetime.utcnow().isoformat()
+                })
+                await db.calendar_events.insert_one(event_data)
+                imported_count += 1
+        
+        # Find local events that were deleted from Google (synced events only)
+        local_synced_events = await db.calendar_events.find({
+            "user_id": current_user["user_id"],
+            "synced_to_google": True,
+            "google_event_id": {"$exists": True, "$ne": None}
+        }).to_list(500)
+        
+        for local_event in local_synced_events:
+            if local_event.get('google_event_id') and local_event['google_event_id'] not in google_event_ids:
+                # Event was deleted from Google, delete locally too
+                await db.calendar_events.delete_one({"_id": local_event["_id"]})
+                deleted_locally += 1
+        
+        # Push unsynced local events to Google
+        unsynced_events = await db.calendar_events.find({
+            "user_id": current_user["user_id"],
+            "synced_to_google": {"$ne": True}
+        }).to_list(100)
+        
+        for local_event in unsynced_events:
+            try:
+                # Convert to Google Calendar format
+                google_event = {
+                    'summary': local_event.get('title', 'Untitled'),
+                    'description': local_event.get('description', ''),
+                }
+                
+                if local_event.get('all_day'):
+                    google_event['start'] = {'date': local_event['date']}
+                    google_event['end'] = {'date': local_event['date']}
+                else:
+                    google_event['start'] = {
+                        'dateTime': f"{local_event['date']}T{local_event.get('start_time', '09:00')}:00",
+                        'timeZone': 'Europe/Berlin',
+                    }
+                    end_time = local_event.get('end_time') or local_event.get('start_time', '10:00')
+                    google_event['end'] = {
+                        'dateTime': f"{local_event['date']}T{end_time}:00",
+                        'timeZone': 'Europe/Berlin',
+                    }
+                
+                # Create in Google Calendar
+                result = service.events().insert(
+                    calendarId='primary',
+                    body=google_event
+                ).execute()
+                
+                # Update local event with Google ID
+                await db.calendar_events.update_one(
+                    {"_id": local_event["_id"]},
+                    {"$set": {
+                        "google_event_id": result['id'],
+                        "synced_to_google": True,
+                        "updated_at": datetime.utcnow().isoformat()
+                    }}
+                )
+                pushed_to_google += 1
+            except Exception as e:
+                logging.warning(f"Could not push event to Google: {e}")
+        
+        return {
+            "success": True,
+            "stats": {
+                "imported_from_google": imported_count,
+                "updated_from_google": updated_from_google,
+                "pushed_to_google": pushed_to_google,
+                "deleted_locally": deleted_locally
+            },
+            "message": f"Sync complete: {imported_count} imported, {updated_from_google} updated, {pushed_to_google} pushed, {deleted_locally} deleted"
+        }
+    except Exception as e:
+        logging.error(f"Error during full sync: {e}")
+        import traceback
+        logging.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/google-calendar/update-event/{event_id}")
+async def update_google_calendar_event(
+    event_id: str, 
+    event_update: CalendarEventUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Update a calendar event both locally and on Google Calendar
+    """
+    try:
+        # Get existing event
+        existing = await db.calendar_events.find_one({
+            "_id": ObjectId(event_id),
+            "user_id": current_user["user_id"]
+        })
+        if not existing:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        # Update local event
+        update_data = {k: v for k, v in event_update.dict().items() if v is not None}
+        update_data['updated_at'] = datetime.utcnow().isoformat()
+        
+        await db.calendar_events.update_one(
+            {"_id": ObjectId(event_id)},
+            {"$set": update_data}
+        )
+        
+        # If synced to Google, update there too
+        if existing.get('google_event_id') and existing.get('synced_to_google'):
+            service = await get_google_calendar_service(current_user["user_id"])
+            if service:
+                try:
+                    # Get current Google event
+                    g_event = service.events().get(
+                        calendarId='primary',
+                        eventId=existing['google_event_id']
+                    ).execute()
+                    
+                    # Update fields
+                    if 'title' in update_data:
+                        g_event['summary'] = update_data['title']
+                    if 'description' in update_data:
+                        g_event['description'] = update_data['description']
+                    
+                    # Update date/time
+                    date = update_data.get('date', existing['date'])
+                    start_time = update_data.get('start_time', existing.get('start_time', '09:00'))
+                    end_time = update_data.get('end_time', existing.get('end_time', start_time))
+                    all_day = update_data.get('all_day', existing.get('all_day', False))
+                    
+                    if all_day:
+                        g_event['start'] = {'date': date}
+                        g_event['end'] = {'date': date}
+                    else:
+                        g_event['start'] = {
+                            'dateTime': f"{date}T{start_time}:00",
+                            'timeZone': 'Europe/Berlin',
+                        }
+                        g_event['end'] = {
+                            'dateTime': f"{date}T{end_time}:00",
+                            'timeZone': 'Europe/Berlin',
+                        }
+                    
+                    # Update on Google
+                    service.events().update(
+                        calendarId='primary',
+                        eventId=existing['google_event_id'],
+                        body=g_event
+                    ).execute()
+                except Exception as e:
+                    logging.warning(f"Could not update event on Google: {e}")
+        
+        # Return updated event
+        updated_event = await db.calendar_events.find_one({"_id": ObjectId(event_id)})
+        return serialize_doc(updated_event)
+    except Exception as e:
+        logging.error(f"Error updating event: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.delete("/google-calendar/delete-event/{event_id}")
+async def delete_google_calendar_event(event_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Delete a calendar event both locally and from Google Calendar
+    """
+    try:
+        # Get existing event
+        existing = await db.calendar_events.find_one({
+            "_id": ObjectId(event_id),
+            "user_id": current_user["user_id"]
+        })
+        if not existing:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        # If synced to Google, delete there too
+        if existing.get('google_event_id') and existing.get('synced_to_google'):
+            service = await get_google_calendar_service(current_user["user_id"])
+            if service:
+                try:
+                    service.events().delete(
+                        calendarId='primary',
+                        eventId=existing['google_event_id']
+                    ).execute()
+                except Exception as e:
+                    logging.warning(f"Could not delete event from Google: {e}")
+        
+        # Delete locally
+        await db.calendar_events.delete_one({"_id": ObjectId(event_id)})
+        
+        # Also delete related interactions
+        await db.interactions.delete_many({"calendar_event_id": event_id})
+        
+        return {"success": True, "message": "Event deleted from app and Google Calendar"}
+    except Exception as e:
+        logging.error(f"Error deleting event: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
 # ============ Push Notification Endpoints ============
 
 class PushTokenUpdate(BaseModel):
