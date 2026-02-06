@@ -426,10 +426,20 @@ export default function Index() {
       return;
     }
     
+    if (isCreatingEvent) return; // Prevent double-tap
+    
+    setIsCreatingEvent(true);
+    
     try {
-      await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/calendar-events`, newEventData, getAuthHeaders());
+      const eventPayload = {
+        ...newEventData,
+        participants: newEventData.participants || [],
+      };
+      
+      await axios.post(`${EXPO_PUBLIC_BACKEND_URL}/api/calendar-events`, eventPayload, getAuthHeaders());
       triggerHaptic('success');
-      setShowCreateEventModal(false);
+      
+      // Reset form first
       setNewEventData({
         title: '',
         description: '',
@@ -441,14 +451,22 @@ export default function Index() {
         color: '#5D3FD3',
         all_day: false,
       });
+      
+      // Close modal
+      setShowCreateEventModal(false);
+      
+      // Refresh data in background
       fetchCalendarEvents();
       if (dayViewDate) {
         fetchDayEvents(dayViewDate);
       }
+      
       Alert.alert('✓', 'Termin erstellt');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating event:', error);
-      Alert.alert('Fehler', 'Termin konnte nicht erstellt werden');
+      Alert.alert('Fehler', error.response?.data?.detail || 'Termin konnte nicht erstellt werden');
+    } finally {
+      setIsCreatingEvent(false);
     }
   };
 
