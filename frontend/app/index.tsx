@@ -3439,7 +3439,7 @@ export default function Index() {
                   ) : (
                     <>
                       <Ionicons name="calendar" size={20} color="#fff" />
-                      <Text style={styles.createGroupButtonText}>Termin erstellen</Text>
+                      <Text style={styles.createGroupButtonText}>Create Event</Text>
                     </>
                   )}
                 </LinearGradient>
