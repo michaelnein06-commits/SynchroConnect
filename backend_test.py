@@ -782,6 +782,109 @@ class SynchroConnectrTester:
             self.log(f"❌ Exception in calendar events error handling test: {str(e)}", "ERROR")
             return False
     
+    def test_google_calendar_integration(self):
+        """Test Google Calendar Integration endpoints"""
+        self.log("Testing Google Calendar Integration...")
+        
+        try:
+            # Test 1: Google Calendar Status
+            self.log("Testing GET /api/google-calendar/status...")
+            response = self.session.get(f"{self.base_url}/google-calendar/status")
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.log(f"✅ Google Calendar Status Response:")
+                self.log(f"   is_configured: {data.get('is_configured')}")
+                self.log(f"   is_connected: {data.get('is_connected')}")
+                self.log(f"   message: {data.get('message')}")
+                
+                # Check if credentials are properly configured
+                if data.get('is_configured') == True:
+                    self.log("✅ Google Calendar IS configured (credentials found in .env)")
+                    status_test_passed = True
+                else:
+                    self.log("❌ Google Calendar is NOT configured")
+                    if data.get('setup_instructions'):
+                        self.log("   Setup instructions provided in response")
+                    status_test_passed = False
+            else:
+                self.log(f"❌ Failed to get Google Calendar status: {response.status_code}")
+                self.log(f"   Response: {response.text}")
+                status_test_passed = False
+            
+            # Test 2: Google Calendar Auth URL
+            self.log("Testing GET /api/google-calendar/auth-url...")
+            response = self.session.get(f"{self.base_url}/google-calendar/auth-url")
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.log(f"✅ Google Calendar Auth URL Response:")
+                auth_url = data.get('auth_url', '')
+                self.log(f"   auth_url: {auth_url[:100]}..." if auth_url else "   auth_url: None")
+                self.log(f"   state: {data.get('state')}")
+                
+                # Validate the auth URL
+                if 'accounts.google.com/o/oauth2/auth' in auth_url:
+                    self.log("✅ Valid Google OAuth authorization URL generated")
+                    
+                    # Check for required parameters
+                    required_params = ['client_id', 'redirect_uri', 'scope', 'response_type']
+                    for param in required_params:
+                        if param in auth_url:
+                            self.log(f"   ✓ Contains {param} parameter")
+                        else:
+                            self.log(f"   ⚠️ Missing {param} parameter")
+                    
+                    # Check for calendar scopes
+                    if 'calendar' in auth_url:
+                        self.log("   ✓ Contains calendar scope")
+                    
+                    auth_url_test_passed = True
+                else:
+                    self.log("❌ Invalid auth URL format")
+                    auth_url_test_passed = False
+            elif response.status_code == 400:
+                error_data = response.json()
+                self.log(f"❌ Configuration error: {error_data.get('detail')}")
+                auth_url_test_passed = False
+            else:
+                self.log(f"❌ Failed to get auth URL: {response.status_code}")
+                self.log(f"   Response: {response.text}")
+                auth_url_test_passed = False
+            
+            # Test 3: Callback endpoint validation
+            self.log("Testing Google Calendar Callback validation...")
+            response = self.session.get(f"{self.base_url}/google-calendar/callback?code=invalid&state=invalid")
+            
+            if response.status_code == 400:
+                error_data = response.json()
+                self.log(f"✅ Callback endpoint exists and validates properly")
+                self.log(f"   Expected error for invalid state: {error_data.get('detail')}")
+                callback_test_passed = True
+            elif response.status_code == 404:
+                self.log("❌ Callback endpoint not found")
+                callback_test_passed = False
+            elif response.status_code == 422:
+                self.log("✅ Callback endpoint exists (422 - missing required parameters)")
+                callback_test_passed = True
+            else:
+                self.log(f"⚠️ Unexpected callback response: {response.status_code}")
+                callback_test_passed = True  # Endpoint exists but different validation
+            
+            # Overall result
+            overall_passed = status_test_passed and auth_url_test_passed and callback_test_passed
+            
+            if overall_passed:
+                self.log("✅ Google Calendar Integration tests passed")
+            else:
+                self.log("❌ Some Google Calendar Integration tests failed")
+            
+            return overall_passed
+            
+        except Exception as e:
+            self.log(f"❌ Exception in Google Calendar Integration test: {str(e)}", "ERROR")
+            return False
+    
     def cleanup_test_data(self):
         """Clean up test data"""
         self.log("Cleaning up test data...")
