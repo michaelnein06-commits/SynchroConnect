@@ -108,7 +108,7 @@ const PIPELINE_STAGES = ['New', 'Weekly', 'Bi-Weekly', 'Monthly', 'Quarterly', '
 
 type Tab = 'pipeline' | 'contacts' | 'groups' | 'planner' | 'profile';
 type PlannerSubTab = 'briefing' | 'drafts' | 'calendar';
-type CalendarView = 'day' | 'week' | 'month' | 'year';
+type CalendarView = 'day' | 'week' | 'month';
 
 interface Contact {
   id: string;
