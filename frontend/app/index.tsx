@@ -513,53 +513,8 @@ export default function Index() {
     }
   };
 
-  // Initialize push notifications
-  useEffect(() => {
-    const initNotifications = async () => {
-      try {
-        const NotifService = await loadNotificationService();
-        if (!NotifService || !token) return;
-        
-        const pushToken = await NotifService.registerForPushNotifications();
-        if (pushToken) {
-          await NotifService.registerTokenWithBackend(pushToken, token);
-        }
-        
-        // Handle notification taps
-        const subscription = NotifService.addNotificationResponseListener((response: any) => {
-          const eventId = response?.notification?.request?.content?.data?.eventId;
-          if (eventId) {
-            console.log('Notification tapped for event:', eventId);
-          }
-        });
-        
-        return () => subscription?.remove?.();
-      } catch (error) {
-        console.log('Notifications not available:', error);
-      }
-    };
-    
-    if (token) {
-      initNotifications();
-    }
-  }, [token]);
-
-  // Schedule reminders when calendar events change
-  useEffect(() => {
-    const scheduleReminders = async () => {
-      if (calendarEvents.length > 0) {
-        try {
-          const NotifService = await loadNotificationService();
-          if (NotifService) {
-            await NotifService.scheduleRemindersForEvents(calendarEvents);
-          }
-        } catch (error) {
-          console.log('Could not schedule reminders:', error);
-        }
-      }
-    };
-    scheduleReminders();
-  }, [calendarEvents]);
+  // Push notifications are disabled in Expo Go - will work in production builds
+  // The notification service file has been removed to prevent crashes
 
   useEffect(() => {
     if (token) {
