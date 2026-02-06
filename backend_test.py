@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 SynchroConnectr Backend API Test Suite
-Tests all backend endpoints including Calendar Events API
+Tests all backend endpoints including Google Calendar Integration
 """
 
 import requests
