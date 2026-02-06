@@ -136,10 +136,12 @@ export default function Login() {
         <View style={styles.content}>
           {/* Logo and Brand Section */}
           <View style={styles.heroSection}>
-            <View style={styles.logoCircle}>
-              <Ionicons name="chatbubbles" size={60} color="#fff" />
-            </View>
-            <Text style={styles.title}>Convo</Text>
+            <Image 
+              source={require('../../assets/images/pitch-logo.png')} 
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>Pitch</Text>
             <Text style={styles.subtitle}>
               Stay meaningfully connected with everyone who matters
             </Text>
