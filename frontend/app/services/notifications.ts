@@ -1,22 +1,40 @@
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import axios from 'axios';
 import Constants from 'expo-constants';
 
 const EXPO_PUBLIC_BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 
   process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
-// Configure how notifications should be handled when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Check if we're in Expo Go (which doesn't support all notification features)
+const isExpoGo = Constants.appOwnership === 'expo';
+
+// Lazy load notifications to avoid crashes in Expo Go
+let Notifications: any = null;
+let Device: any = null;
+
+const loadNotificationModules = async () => {
+  if (Notifications) return true;
+  
+  try {
+    Notifications = await import('expo-notifications');
+    Device = await import('expo-device');
+    
+    // Only configure handler if not in Expo Go or if it's supported
+    if (Notifications && !isExpoGo) {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+        }),
+      });
+    }
+    return true;
+  } catch (error) {
+    console.log('Notifications not available:', error);
+    return false;
+  }
+};
 
 export interface CalendarReminder {
   event_id: string;
@@ -28,17 +46,35 @@ export interface CalendarReminder {
 
 export class NotificationService {
   private static pushToken: string | null = null;
+  private static initialized = false;
+
+  /**
+   * Initialize the notification service
+   */
+  static async initialize(): Promise<boolean> {
+    if (this.initialized) return true;
+    
+    const loaded = await loadNotificationModules();
+    this.initialized = loaded;
+    return loaded;
+  }
 
   /**
    * Request notification permissions and register for push notifications
    */
   static async registerForPushNotifications(): Promise<string | null> {
-    if (!Device.isDevice) {
-      console.log('Push notifications require a physical device');
-      return null;
-    }
-
     try {
+      const loaded = await this.initialize();
+      if (!loaded || !Notifications || !Device) {
+        console.log('Notifications module not available');
+        return null;
+      }
+
+      if (!Device.isDevice) {
+        console.log('Push notifications require a physical device');
+        return null;
+      }
+
       // Check existing permissions
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
@@ -54,7 +90,12 @@ export class NotificationService {
         return null;
       }
 
-      // Get push token
+      // Get push token - skip if in Expo Go as it requires EAS
+      if (isExpoGo) {
+        console.log('Push tokens not available in Expo Go');
+        return null;
+      }
+
       const tokenData = await Notifications.getExpoPushTokenAsync({
         projectId: Constants.expoConfig?.extra?.eas?.projectId,
       });
@@ -65,8 +106,8 @@ export class NotificationService {
       // Configure Android channel
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('calendar-reminders', {
-          name: 'Kalender Erinnerungen',
-          importance: Notifications.AndroidImportance.HIGH,
+          name: 'Calendar Reminders',
+          importance: Notifications.AndroidImportance?.HIGH || 4,
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#5D3FD3',
           sound: 'default',
@@ -75,7 +116,7 @@ export class NotificationService {
 
       return this.pushToken;
     } catch (error) {
-      console.error('Error registering for push notifications:', error);
+      console.log('Error registering for push notifications:', error);
       return null;
     }
   }
@@ -112,22 +153,28 @@ export class NotificationService {
     triggerDate: Date
   ): Promise<string | null> {
     try {
+      const loaded = await this.initialize();
+      if (!loaded || !Notifications) {
+        console.log('Cannot schedule notification - module not available');
+        return null;
+      }
+
       // Don't schedule if in the past
       if (triggerDate <= new Date()) {
         console.log('Cannot schedule reminder in the past');
         return null;
       }
 
+      // Use local notifications which work in Expo Go
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
           title: `📅 ${title}`,
           body: body,
           sound: 'default',
-          priority: Notifications.AndroidNotificationPriority.HIGH,
           data: { eventId, type: 'calendar_reminder' },
         },
         trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          type: 'date',
           date: triggerDate,
         },
       });
@@ -135,7 +182,7 @@ export class NotificationService {
       console.log(`Scheduled reminder ${notificationId} for ${triggerDate}`);
       return notificationId;
     } catch (error) {
-      console.error('Error scheduling notification:', error);
+      console.log('Error scheduling notification:', error);
       return null;
     }
   }
@@ -153,44 +200,55 @@ export class NotificationService {
       participant_details?: Array<{ name: string }>;
     }>
   ): Promise<number> {
-    // Cancel existing scheduled notifications first
-    await Notifications.cancelAllScheduledNotificationsAsync();
+    try {
+      const loaded = await this.initialize();
+      if (!loaded || !Notifications) {
+        console.log('Cannot schedule reminders - module not available');
+        return 0;
+      }
 
-    let scheduledCount = 0;
-    const now = new Date();
+      // Cancel existing scheduled notifications first
+      await Notifications.cancelAllScheduledNotificationsAsync();
 
-    for (const event of events) {
-      try {
-        const eventDatetime = new Date(`${event.date}T${event.start_time}:00`);
-        const reminderTime = new Date(
-          eventDatetime.getTime() - (event.reminder_minutes || 30) * 60 * 1000
-        );
+      let scheduledCount = 0;
+      const now = new Date();
 
-        // Only schedule future reminders
-        if (reminderTime > now) {
-          let body = `Beginnt um ${event.start_time}`;
-          if (event.participant_details && event.participant_details.length > 0) {
-            body += ` mit ${event.participant_details.map((p) => p.name).join(', ')}`;
-          }
-
-          const notificationId = await this.scheduleEventReminder(
-            event.id,
-            event.title,
-            body,
-            reminderTime
+      for (const event of events) {
+        try {
+          const eventDatetime = new Date(`${event.date}T${event.start_time}:00`);
+          const reminderTime = new Date(
+            eventDatetime.getTime() - (event.reminder_minutes || 30) * 60 * 1000
           );
 
-          if (notificationId) {
-            scheduledCount++;
-          }
-        }
-      } catch (error) {
-        console.error(`Error scheduling reminder for event ${event.id}:`, error);
-      }
-    }
+          // Only schedule future reminders
+          if (reminderTime > now) {
+            let body = `Starts at ${event.start_time}`;
+            if (event.participant_details && event.participant_details.length > 0) {
+              body += ` with ${event.participant_details.map((p) => p.name).join(', ')}`;
+            }
 
-    console.log(`Scheduled ${scheduledCount} reminders`);
-    return scheduledCount;
+            const notificationId = await this.scheduleEventReminder(
+              event.id,
+              event.title,
+              body,
+              reminderTime
+            );
+
+            if (notificationId) {
+              scheduledCount++;
+            }
+          }
+        } catch (error) {
+          console.log(`Error scheduling reminder for event ${event.id}:`, error);
+        }
+      }
+
+      console.log(`Scheduled ${scheduledCount} reminders`);
+      return scheduledCount;
+    } catch (error) {
+      console.log('Error in scheduleRemindersForEvents:', error);
+      return 0;
+    }
   }
 
   /**
@@ -201,47 +259,81 @@ export class NotificationService {
     body: string,
     data?: Record<string, unknown>
   ): Promise<void> {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        sound: 'default',
-        data,
-      },
-      trigger: null, // Immediate
-    });
+    try {
+      const loaded = await this.initialize();
+      if (!loaded || !Notifications) return;
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          sound: 'default',
+          data,
+        },
+        trigger: null, // Immediate
+      });
+    } catch (error) {
+      console.log('Error sending notification:', error);
+    }
   }
 
   /**
    * Cancel all scheduled notifications
    */
   static async cancelAllNotifications(): Promise<void> {
-    await Notifications.cancelAllScheduledNotificationsAsync();
+    try {
+      const loaded = await this.initialize();
+      if (!loaded || !Notifications) return;
+      
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    } catch (error) {
+      console.log('Error canceling notifications:', error);
+    }
   }
 
   /**
    * Get all scheduled notifications
    */
-  static async getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
-    return await Notifications.getAllScheduledNotificationsAsync();
+  static async getScheduledNotifications(): Promise<any[]> {
+    try {
+      const loaded = await this.initialize();
+      if (!loaded || !Notifications) return [];
+      
+      return await Notifications.getAllScheduledNotificationsAsync();
+    } catch (error) {
+      console.log('Error getting scheduled notifications:', error);
+      return [];
+    }
   }
 
   /**
    * Add notification response listener
    */
   static addNotificationResponseListener(
-    callback: (response: Notifications.NotificationResponse) => void
-  ): Notifications.EventSubscription {
-    return Notifications.addNotificationResponseReceivedListener(callback);
+    callback: (response: any) => void
+  ): { remove: () => void } | null {
+    try {
+      if (!Notifications) return null;
+      return Notifications.addNotificationResponseReceivedListener(callback);
+    } catch (error) {
+      console.log('Error adding notification listener:', error);
+      return null;
+    }
   }
 
   /**
    * Add notification received listener (when app is in foreground)
    */
   static addNotificationReceivedListener(
-    callback: (notification: Notifications.Notification) => void
-  ): Notifications.EventSubscription {
-    return Notifications.addNotificationReceivedListener(callback);
+    callback: (notification: any) => void
+  ): { remove: () => void } | null {
+    try {
+      if (!Notifications) return null;
+      return Notifications.addNotificationReceivedListener(callback);
+    } catch (error) {
+      console.log('Error adding notification listener:', error);
+      return null;
+    }
   }
 }
 
