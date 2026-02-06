@@ -2757,12 +2757,12 @@ export default function Index() {
                 <View style={styles.headerContent}>
                   <View style={styles.headerLogoContainer}>
                     <Image 
-                      source={require('../assets/images/pitch-logo.png')} 
+                      source={require('../assets/images/convo-logo-new.png')} 
                       style={styles.headerLogo}
                       resizeMode="contain"
                     />
                     <View style={styles.headerTextContainer}>
-                      <Text style={styles.headerTitle}>Pitch</Text>
+                      <Text style={styles.headerTitle}>Convo</Text>
                       <Text style={styles.headerSubtitle}>
                         {activeTab === 'pipeline' && 'Organize by frequency'}
                         {activeTab === 'contacts' && `${contacts.length} contacts`}
