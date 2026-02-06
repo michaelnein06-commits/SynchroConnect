@@ -117,7 +117,7 @@ export default function Settings() {
     if (!googleCalendarStatus?.is_configured) {
       Alert.alert(
         'Google Calendar Setup',
-        'Um Google Calendar zu nutzen, müssen Sie:\n\n1. Google Cloud Console öffnen\n2. Calendar API aktivieren\n3. OAuth Credentials erstellen\n4. Client ID & Secret in backend/.env eintragen',
+        'To use Google Calendar:\n\n1. Open Google Cloud Console\n2. Enable Calendar API\n3. Create OAuth Credentials\n4. Add Client ID & Secret to backend/.env',
         [{ text: 'OK' }]
       );
       return;
@@ -133,18 +133,18 @@ export default function Settings() {
       const { Linking } = await import('react-native');
       Linking.openURL(auth_url);
     } catch (error: any) {
-      Alert.alert('Fehler', error.response?.data?.detail || 'Konnte Google Calendar nicht verbinden');
+      Alert.alert('Error', error.response?.data?.detail || 'Could not connect Google Calendar');
     }
   };
 
   const disconnectGoogleCalendar = async () => {
     Alert.alert(
-      'Google Calendar trennen',
-      'Möchtest du die Verbindung zu Google Calendar wirklich trennen?',
+      'Disconnect Google Calendar',
+      'Do you really want to disconnect Google Calendar?',
       [
-        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Trennen',
+          text: 'Disconnect',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -152,9 +152,9 @@ export default function Settings() {
                 headers: { Authorization: `Bearer ${token}` }
               });
               fetchGoogleCalendarStatus();
-              Alert.alert('✓', 'Google Calendar getrennt');
+              Alert.alert('✓', 'Google Calendar disconnected');
             } catch (error) {
-              Alert.alert('Fehler', 'Konnte nicht trennen');
+              Alert.alert('Error', 'Could not disconnect');
             }
           }
         }
