@@ -395,15 +395,15 @@ export default function Settings() {
               <View style={styles.settingCard}>
                 <View style={styles.settingCardContent}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.settingLabel}>Synchronisierung</Text>
+                    <Text style={styles.settingLabel}>Synchronization</Text>
                     <Text style={[styles.settingValue, { color: googleCalendarStatus?.is_connected ? COLORS.success : COLORS.textLight }]}>
                       {loadingGoogleStatus 
-                        ? 'Lädt...' 
+                        ? 'Loading...' 
                         : googleCalendarStatus?.is_connected 
-                          ? '✓ Verbunden' 
+                          ? '✓ Connected' 
                           : googleCalendarStatus?.is_configured 
-                            ? 'Nicht verbunden'
-                            : 'Nicht konfiguriert'}
+                            ? 'Not connected'
+                            : 'Not configured'}
                     </Text>
                   </View>
                   {googleCalendarStatus?.is_connected ? (
@@ -423,7 +423,7 @@ export default function Settings() {
                         borderRadius: 20 
                       }}
                     >
-                      <Text style={{ color: '#fff', fontWeight: '600' }}>Verbinden</Text>
+                      <Text style={{ color: '#fff', fontWeight: '600' }}>Connect</Text>
                     </TouchableOpacity>
                   )}
                 </View>
