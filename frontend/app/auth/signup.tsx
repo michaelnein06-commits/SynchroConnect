@@ -71,7 +71,7 @@ export default function Signup() {
               <Ionicons name="people-circle" size={80} color={COLORS.primary} />
             </View>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join Pitch today</Text>
+            <Text style={styles.subtitle}>Join Convo today</Text>
           </View>
 
           {/* Signup Form */}
