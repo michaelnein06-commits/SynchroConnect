@@ -2339,7 +2339,7 @@ export default function Index() {
 
           {/* Calendar View Selector */}
           <View style={styles.calendarViewSelector}>
-            {(['day', 'week', 'month', 'year'] as CalendarView[]).map((view) => (
+            {(['day', 'week', 'month'] as CalendarView[]).map((view) => (
               <TouchableOpacity
                 key={view}
                 style={[styles.calendarViewButton, calendarView === view && styles.calendarViewButtonActive]}
@@ -2353,7 +2353,7 @@ export default function Index() {
                 }}
               >
                 <Text style={[styles.calendarViewText, calendarView === view && styles.calendarViewTextActive]}>
-                  {view === 'day' ? 'Tag' : view === 'week' ? 'Woche' : view === 'month' ? 'Monat' : 'Jahr'}
+                  {view === 'day' ? 'Day' : view === 'week' ? 'Week' : 'Month'}
                 </Text>
               </TouchableOpacity>
             ))}
