@@ -3519,21 +3519,27 @@ export default function Index() {
         visible={showParticipantPicker}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setShowParticipantPicker(false)}
+        onRequestClose={() => {
+          setShowParticipantPicker(false);
+          setTimeout(() => setShowCreateEventModal(true), 300);
+        }}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowParticipantPicker(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => {
+          setShowParticipantPicker(false);
+          setTimeout(() => setShowCreateEventModal(true), 300);
+        }}>
           <Pressable style={styles.participantPickerModal} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Kontakte auswählen</Text>
+            <Text style={styles.modalTitle}>Select Contacts</Text>
             <Text style={{ color: COLORS.textLight, marginBottom: 12, textAlign: 'center' }}>
-              {newEventData.participants.length} ausgewählt
+              {newEventData.participants.length} selected
             </Text>
             
             <ScrollView style={{ maxHeight: 350 }} showsVerticalScrollIndicator={false}>
               {contacts.length === 0 ? (
                 <View style={{ alignItems: 'center', paddingVertical: 40 }}>
                   <Ionicons name="people-outline" size={48} color={COLORS.textLight} />
-                  <Text style={{ color: COLORS.textLight, marginTop: 12 }}>Keine Kontakte vorhanden</Text>
+                  <Text style={{ color: COLORS.textLight, marginTop: 12 }}>No contacts available</Text>
                 </View>
               ) : (
                 contacts.slice(0, 50).map(contact => {
@@ -3576,23 +3582,29 @@ export default function Index() {
             
             <TouchableOpacity 
               style={styles.createGroupButton}
-              onPress={() => setShowParticipantPicker(false)}
+              onPress={() => {
+                setShowParticipantPicker(false);
+                setTimeout(() => setShowCreateEventModal(true), 300);
+              }}
             >
               <LinearGradient colors={COLORS.primaryGradient} style={styles.createGroupButtonGradient}>
                 <Ionicons name="checkmark" size={20} color="#fff" />
                 <Text style={styles.createGroupButtonText}>
                   {newEventData.participants.length > 0 
-                    ? `${newEventData.participants.length} Teilnehmer ausgewählt`
-                    : 'Fertig'}
+                    ? `${newEventData.participants.length} participants selected`
+                    : 'Done'}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.modalCloseButton}
-              onPress={() => setShowParticipantPicker(false)}
+              onPress={() => {
+                setShowParticipantPicker(false);
+                setTimeout(() => setShowCreateEventModal(true), 300);
+              }}
             >
-              <Text style={styles.modalCloseButtonText}>Abbrechen</Text>
+              <Text style={styles.modalCloseButtonText}>Cancel</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
